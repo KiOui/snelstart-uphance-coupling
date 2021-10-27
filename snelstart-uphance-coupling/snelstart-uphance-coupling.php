@@ -25,6 +25,6 @@ if ( ! defined( 'SUC_PLUGIN_URI' ) ) {
 
 include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
 
-// include_once dirname( __FILE__ ) . '/includes/class-aicore.php';
+include_once dirname( __FILE__ ) . '/includes/class-succore.php';
 
-// $GLOBALS['AICore'] = AICore::instance();
+$GLOBALS['SUCCore'] = SUCCore::instance();
