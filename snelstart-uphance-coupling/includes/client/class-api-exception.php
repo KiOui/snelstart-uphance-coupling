@@ -1,6 +1,6 @@
 <?php
 /**
- * Snelstart API Exception
+ * API Exception
  *
  * @package snelstart-uphance-coupling
  */
@@ -9,14 +9,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! class_exists( 'SUCSnelstartAPIException' ) ) {
+if ( ! class_exists( 'SUCAPIException' ) ) {
 	/**
-	 * Snelstart API Exception class
+	 * API Exception class
 	 *
-	 * @class SUCSnelstartAPIException
+	 * @class SUCAPIException
 	 */
-	class SUCSnelstartAPIException extends Exception {
-
+	class SUCAPIException extends Exception {
 
 		public int $http_status;
 		public ?string $reason;

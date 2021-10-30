@@ -116,7 +116,7 @@ if ( ! class_exists( 'SUCCore' ) ) {
 		 */
 		private function actions_and_filters() {
 			include_once SUC_ABSPATH . 'includes/api/v1/class-api-v1.php';
-			include_once SUC_ABSPATH . '/includes/class-sucsettings.php';
+			include_once SUC_ABSPATH . '/includes/class-suc-settings.php';
 			SUCSettings::instance();
 			try {
 				$suc_api_v1 = new SUCAPIV1();

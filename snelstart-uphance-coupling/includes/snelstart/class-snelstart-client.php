@@ -9,8 +9,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-include_once SUC_ABSPATH . 'includes/snelstart/class-snelstartapiexception.php';
-include_once SUC_ABSPATH . 'includes/snelstart/class-snelstartclientkey.php';
+include_once SUC_ABSPATH . 'includes/client/class-api-client.php';
+include_once SUC_ABSPATH . 'includes/snelstart/class-snelstart-api-exception.php';
+include_once SUC_ABSPATH . 'includes/snelstart/class-snelstart-client-key.php';
 
 if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 	/**
@@ -18,28 +19,19 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 	 *
 	 * @class SUCSnelstartClient
 	 */
-	class SUCSnelstartClient {
-
+	class SUCSnelstartClient extends SUCAPIClient {
 
 		private string $snelstart_key;
 		private string $prefix = "https://b2bapi.snelstart.nl/v2/";
 		private string $subscription_key;
-		private SUCSnelstartClientKey $auth_manager; // TODO: Make this variable
-		private int $requests_timeout;
 
-		/**
-		 * @throws Exception
-		 */
-		public function __construct(string $snelstart_key, string $subscription_key, int $requests_timeout=45) {
+		public function __construct(string $snelstart_key, string $subscription_key, ?SUCAPIAuthClient $auth_client, int $requests_timeout=45) {
+			parent::__construct( isset( $auth_client ) ? $auth_client : new SUCSnelstartClientKey(), $requests_timeout=$requests_timeout);
 			$this->snelstart_key = $snelstart_key;
 			$this->requests_timeout = $requests_timeout;
-			$this->auth_manager = new SUCSnelstartClientKey( $this->snelstart_key );
 			$this->subscription_key = $subscription_key;
 		}
 
-		/**
-		 * @throws SUCSnelstartAPIException
-		 */
 		private function _auth_headers(): array {
 			if ( ! isset( $this->auth_manager ) ) {
 				return array("Ocp-Apim-Subscription-Key" => $this->subscription_key);

@@ -90,7 +90,7 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 			add_settings_section(
 				'snelstart_key_settings',
 				__( 'Snelstart Key settings', 'snelstart-uphance-coupling' ),
-				array( $this, 'suc_settings_callback' ),
+				array( $this, 'snelstart_settings_callback' ),
 				'suc_settings'
 			);
 
@@ -109,6 +109,29 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 				'suc_settings',
 				'snelstart_key_settings'
 			);
+
+			add_settings_section(
+				'uphance_settings',
+				__( 'Uphance settings', 'snelstart-uphance-coupling' ),
+				array( $this, 'uphance_settings_callback' ),
+				'suc_settings'
+			);
+
+			add_settings_field(
+				'uphance_username',
+				__( 'Uphance username', 'snelstart-uphance-coupling' ),
+				array( $this, 'uphance_username_renderer' ),
+				'suc_settings',
+				'uphance_settings'
+			);
+
+			add_settings_field(
+				'uphance_password',
+				__( 'Uphance password', 'snelstart-uphance-coupling' ),
+				array( $this, 'uphance_password_renderer' ),
+				'suc_settings',
+				'uphance_settings'
+			);
 		}
 
 		/**
@@ -121,8 +144,17 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		public function suc_settings_validate( $input ): array {
 			$output['snelstart_client_key']     = $input['snelstart_client_key']; // TODO: Add sanitization
             $output['snelstart_subscription_key'] = $input['snelstart_subscription_key'];
+            $output['uphance_username'] = $input['uphance_username'];
+            $output['uphance_password'] = $input['uphance_password'];
 
 			return $output;
+		}
+
+		/**
+		 * Render the section title of autotelex url settings.
+		 */
+		public function snelstart_settings_callback() {
+			echo esc_html( __( 'Snelstart settings', 'snelstart-uphance-coupling' ) );
 		}
 
 		/**
@@ -150,8 +182,30 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		/**
 		 * Render the section title of autotelex url settings.
 		 */
-		public function suc_settings_callback() {
-			echo esc_html( __( 'Snelstart Uphance Coupling settings', 'snelstart-uphance-coupling' ) );
+		public function uphance_settings_callback() {
+			echo esc_html( __( 'Uphance settings', 'snelstart-uphance-coupling' ) );
+		}
+
+		/**
+		 * Render Snelstart Client Key setting.
+		 */
+		public function uphance_username_renderer() {
+			$options = get_option( 'suc_settings' ); ?>
+            <p><?php echo esc_html( __( 'Uphance username (e-mail address)', 'snelstart-uphance-coupling' ) ); ?></p>
+            <input type='text' name='suc_settings[uphance_username]'
+                   value="<?php echo esc_attr( $options['uphance_username'] ); ?>">
+			<?php
+		}
+
+		/**
+		 * Render Snelstart Subscription key setting.
+		 */
+		public function uphance_password_renderer() {
+			$options = get_option( 'suc_settings' ); ?>
+            <p><?php echo esc_html( __( 'Uphance password', 'snelstart-uphance-coupling' ) ); ?></p>
+            <input type='password' name='suc_settings[uphance_password]'
+                   value="<?php echo esc_attr( $options['uphance_password'] ); ?>">
+			<?php
 		}
 
 		/**

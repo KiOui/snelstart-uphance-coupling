@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-include_once SUC_ABSPATH . 'includes/snelstart/class-snelstartapiexception.php';
+include_once SUC_ABSPATH . 'includes/client/class-api-auth-client.php';
 
 /**
  * @throws Exception
@@ -41,7 +41,7 @@ if ( ! class_exists( 'SUCSnelstartClientKey' ) ) {
 	 *
 	 * @class SUCSnelstartClientKey
 	 */
-	class SUCSnelstartClientKey {
+	class SUCSnelstartClientKey extends SUCAPIAuthClient {
 
 		private string $_client_key;
 		private string $_token_url = "https://auth.snelstart.nl/b2b/token";
@@ -54,7 +54,7 @@ if ( ! class_exists( 'SUCSnelstartClientKey' ) ) {
 			$this->_client_key = _ensure_value($client_key, 'snelstart_client_key');
 		}
 
-		public function get_cached_token() {
+		public function get_cached_token(): ?string {
 			$token_info = get_option('suc_token_info', null);
 			if ( isset( $token_info ) && $this->is_token_expired( $token_info ) ) {
 				return null;
