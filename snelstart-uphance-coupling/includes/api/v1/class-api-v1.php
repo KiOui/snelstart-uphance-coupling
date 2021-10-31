@@ -10,6 +10,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 include_once SUC_ABSPATH . 'includes/snelstart/class-snelstart-client.php';
+include_once SUC_ABSPATH . 'includes/snelstart/class-snelstart-auth-client.php';
+include_once SUC_ABSPATH . 'includes/uphance/class-uphance-client.php';
+include_once SUC_ABSPATH . 'includes/uphance/class-uphance-auth-client.php';
 
 
 if ( ! class_exists( 'SUCAPIV1' ) ) {
@@ -24,26 +27,11 @@ if ( ! class_exists( 'SUCAPIV1' ) ) {
 		 * @var SUCSnelstartClient
 		 */
 		private SUCSnelstartClient $snelstart_client;
+		private SUCUphanceClient $uphance_client;
 
-		/**
-		 * @throws Exception
-		 */
-		public function __construct() {
-			$settings = get_option( 'suc_settings', null );
-			if ( ! isset( $settings ) ) {
-				throw new Exception( 'Subscription key and Snelstart client key not set.' );
-			}
-			$snelstart_key = $settings['snelstart_client_key'];
-			$subscription_key = $settings['snelstart_subscription_key'];
-
-			if ( ! isset( $subscription_key ) ) {
-				throw new Exception( 'Subscription key not set.' );
-			}
-			if ( ! isset( $snelstart_key ) ) {
-				throw new Exception( 'Snelstart key not set.' );
-			}
-
-			$this->snelstart_client = new SUCSnelstartClient( $snelstart_key, $subscription_key );
+		public function __construct(SUCSnelstartClient $snelstart_client, SUCUphanceClient $uphance_client) {
+			$this->snelstart_client = $snelstart_client;
+			$this->uphance_client = $uphance_client;
 		}
 
 		/**
@@ -72,7 +60,10 @@ if ( ! class_exists( 'SUCAPIV1' ) ) {
 		 */
 		public function get_test( WP_REST_Request $request ) {
 			try {
-				$response = $this->snelstart_client->bankboekingen();
+				//$response = $this->uphance_client->organisations();
+				$response = $this->uphance_client->set_current_organisation(36573);
+				SUCLogging::instance()->write("Succeeded!");
+				SUCLogging::instance()->write("Succeeded 123487!");
 				return rest_ensure_response( $response );
 			} catch ( Exception $e ) {
 				return rest_ensure_response( 'Something went wrong' );

@@ -18,7 +18,7 @@
 		?>
 	</form>
     <p>
-        <input disabled value="<?php echo get_option('suc_token_info')['access_token'] ?>"/>
+        <input disabled value="<?php echo get_option('suc_uphance_token_info')['access_token'] ?>"/>
         <input disabled value="<?php echo get_option('suc_token_info')['expires_at'] ?>"/>
     </p>
 </div>

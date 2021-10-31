@@ -112,19 +112,42 @@ if ( ! class_exists( 'SUCCore' ) ) {
 		}
 
 		/**
+		 * Add the Testimonials post type and Testimonials Category type.
+		 */
+		public function add_post_type()
+		{
+
+		}
+
+		/**
 		 * Add actions and filters.
 		 */
 		private function actions_and_filters() {
 			include_once SUC_ABSPATH . 'includes/api/v1/class-api-v1.php';
 			include_once SUC_ABSPATH . '/includes/class-suc-settings.php';
+			include_once SUC_ABSPATH . '/includes/class-suc-logging.php';
 			SUCSettings::instance();
-			try {
-				$suc_api_v1 = new SUCAPIV1();
+			SUCLogging::instance();
+			$uphance_client = SUCUphanceClient::instance();
+			$snelstart_client = SUCSnelstartClient::instance();
+			if ( ! isset( $uphance_client ) || ! isset( $snelstart_client ) ) {
+				/**
+				 * Add admin notice that the plugin is not configured.
+				 */
+				function suc_admin_notice_plugin_not_configured() {
+					if ( is_admin() && current_user_can( 'edit_plugins' ) ) {
+						echo '<div class="notice notice-error"><p>' . esc_html( __( 'Snelstart Uphance coupling requires Uphance and Snelstart settings to be configured in order to work.', 'snelstart-uphance-coupling' ) ) . '</p></div>';
+					}
+				}
+
+				add_action( 'admin_notices', 'suc_admin_notice_plugin_not_configured' );
+			}
+			else {
+				$suc_api_v1 = new SUCAPIV1( $snelstart_client, $uphance_client );
 				$suc_api_v1->define_rest_routes();
 			}
-			catch (Exception $e) {
-				// TODO
-			}
+
+
 		}
 	}
 }
