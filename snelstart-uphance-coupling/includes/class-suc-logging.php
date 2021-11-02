@@ -143,7 +143,7 @@ class SUCLogging {
 		    'show_in_admin_bar' => true,
 		    'show_in_rest' => false,
 		    'menu_position' => 56,
-		    'menu_icon' => 'dashicons-format-quote',
+		    'menu_icon' => 'dashicons-media-text',
 		    'taxonomies' => array(),
 		    'has_archive' => false,
 		    'can_export' => true,

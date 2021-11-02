@@ -61,9 +61,9 @@ if ( ! class_exists( 'SUCAPIV1' ) ) {
 		public function get_test( WP_REST_Request $request ) {
 			try {
 				//$response = $this->uphance_client->organisations();
-				$response = $this->uphance_client->set_current_organisation(36573);
-				SUCLogging::instance()->write("Succeeded!");
-				SUCLogging::instance()->write("Succeeded 123487!");
+				$this->uphance_client->set_current_organisation(36573);
+				// $response = $this->snelstart_client->add_verkoopboeking("1234", "5c2557c8-ed7d-4ad8-b950-2ad3ff022545", array());
+				$response = $this->snelstart_client->grootboeken();
 				return rest_ensure_response( $response );
 			} catch ( Exception $e ) {
 				return rest_ensure_response( 'Something went wrong' );

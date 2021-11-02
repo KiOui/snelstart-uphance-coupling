@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 include_once SUC_ABSPATH . 'includes/uphance/class-uphance-client.php';
+include_once SUC_ABSPATH . 'includes/snelstart/class-snelstart-client.php';
 
 if ( ! class_exists( 'SUCSettings' ) ) {
 	/**
@@ -96,6 +97,7 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 				'suc_settings'
 			);
 
+            // TODO: Rename snelstart_key_settings to snelstart_settings
 			add_settings_field(
 				'snelstart_client_key',
 				__( 'Snelstart Client Key', 'snelstart-uphance-coupling' ),
@@ -111,6 +113,17 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 				'suc_settings',
 				'snelstart_key_settings'
 			);
+
+			$snelstart_client = SUCSnelstartClient::instance();
+			if ( isset( $snelstart_client ) ) {
+				add_settings_field(
+					'snelstart_grootboekcode',
+					__( 'Snelstart Ledger code', 'snelstart-uphance-coupling' ),
+					array( $this, 'snelstart_grootboekcode_renderer' ),
+					'suc_settings',
+					'snelstart_key_settings',
+				);
+			}
 
 			add_settings_section(
 				'uphance_settings',
@@ -144,6 +157,14 @@ if ( ! class_exists( 'SUCSettings' ) ) {
                     'suc_settings',
                     'uphance_settings',
                 );
+
+                add_settings_field(
+                'uphance_synchronise_invoices_from',
+	                __( 'Uphance Synchronise invoices from', 'snelstart-uphance-coupling' ),
+	                array( $this, 'uphance_synchronise_invoices_from_renderer' ),
+	                'suc_settings',
+	                'uphance_settings',
+                );
             }
 		}
 
@@ -162,6 +183,9 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 
             // TODO: Add sanitization for this setting
 			$output['uphance_organisation'] =  $input['uphance_organisation'];
+			$output['uphance_synchronise_invoices_from'] =  $input['uphance_synchronise_invoices_from'];
+
+            $output['snelstart_grootboekcode'] =  $input['snelstart_grootboekcode'];
 
 			return $output;
 		}
@@ -237,7 +261,7 @@ if ( ! class_exists( 'SUCSettings' ) ) {
             try {
                 $selections = $uphance_client->organisations();
             } catch (SUCAPIException $e) {
-                ?> <p class="notice notice-error"><?php esc_html( __( "There was a problem rendering the organisations, please make sure your uphance username and password are correct." ) ); ?></p><?php
+                ?> <p class="notice notice-error"><?php echo esc_html( __( "There was a problem rendering the organisations, please make sure your uphance username and password are correct.", "snelstart-uphance-coupling" ) ); ?></p><?php
                 return;
             }
 
@@ -254,6 +278,74 @@ if ( ! class_exists( 'SUCSettings' ) ) {
                 <?php if (! $selected_value_in_set && isset( $selected_value ) ) : ?>
                 <option selected value="<?php echo esc_html( $selected_value ); ?>">Currently set organisation with ID <?php echo esc_html( $selected_value ); ?> (not in Uphance anymore)</option>
                 <?php endif; ?>
+            </select>
+			<?php
+		}
+
+		/**
+		 * Render Snelstart Subscription key setting.
+		 */
+		public function uphance_synchronise_invoices_from_renderer() {
+			?>
+            <p><?php echo esc_html( __( 'Uphance Synchronise invoices from this invoice number onward.', 'snelstart-uphance-coupling' ) ); ?></p>
+			<?php
+			$options = get_option( 'suc_settings' );
+			$selected_value = isset( $options['uphance_synchronise_invoices_from'] ) && $options['uphance_synchronise_invoices_from'] != "" ? $options['uphance_synchronise_invoices_from'] : null;
+			$uphance_client = SUCUphanceClient::instance();
+			try {
+				$selections = $uphance_client->invoices();
+			} catch (SUCAPIException $e) {
+				?> <p class="notice notice-error"><?php echo esc_html( __( "There was a problem rendering the invoices, please make sure your uphance username and password are correct.", "snelstart-uphance-coupling" ) ); ?></p><?php
+				return;
+			}
+
+			$selected_value_in_set = false;
+			// TODO: __() the text below
+			?>
+            <select name="suc_settings[uphance_synchronise_invoices_from]">
+                <option value="">----------</option>
+				<?php foreach( $selections->result['invoices'] as $selection ) : ?>
+                    <option value="<?php echo esc_html( $selection["id"] ); ?>" <?php if ( $selection['id'] == $selected_value) { $selected_value_in_set = true; ?> selected <?php } ?>>
+						<?php echo esc_html( $selection["invoice_number"] ); ?>
+                    </option>
+				<?php endforeach; ?>
+				<?php if (! $selected_value_in_set && isset( $selected_value ) ) : ?>
+                    <option selected value="<?php echo esc_html( $selected_value ); ?>">Currently set invoice with ID <?php echo esc_html( $selected_value ); ?> (not in Uphance anymore)</option>
+				<?php endif; ?>
+            </select>
+			<?php
+		}
+
+		/**
+		 * Render Snelstart Subscription key setting.
+		 */
+		public function snelstart_grootboekcode_renderer() {
+			?>
+            <p><?php echo esc_html( __( 'Snelstart Ledger code (code to book all invoices to).', 'snelstart-uphance-coupling' ) ); ?></p>
+			<?php
+			$options = get_option( 'suc_settings' );
+			$selected_value = isset( $options['snelstart_grootboekcode'] ) && $options['snelstart_grootboekcode'] != "" ? $options['snelstart_grootboekcode'] : null;
+			$snelstart_client = SUCSnelstartClient::instance();
+			try {
+				$selections = $snelstart_client->grootboeken();
+			} catch (SUCAPIException $e) {
+				?> <p class="notice notice-error"><?php echo esc_html( __( "There was a problem rendering the Ledger codes, please make sure your snelstart key settings are correct.", "snelstart-uphance-coupling" ) ); ?></p><?php
+				return;
+			}
+
+			$selected_value_in_set = false;
+			// TODO: __() the text below
+			?>
+            <select name="suc_settings[snelstart_grootboekcode]">
+                <option value="">----------</option>
+				<?php foreach( $selections as $selection ) : ?>
+                    <option value="<?php echo esc_html( $selection["id"] ); ?>" <?php if ( $selection['id'] == $selected_value) { $selected_value_in_set = true; ?> selected <?php } ?>>
+						<?php echo esc_html( $selection["nummer"] . " (" . $selection["omschrijving"] . ", " . $selection["rekeningCode"] . ")" ); ?>
+                    </option>
+				<?php endforeach; ?>
+				<?php if (! $selected_value_in_set && isset( $selected_value ) ) : ?>
+                    <option selected value="<?php echo esc_html( $selected_value ); ?>">Currently set ledger code with ID <?php echo esc_html( $selected_value ); ?> (not in Snelstart anymore)</option>
+				<?php endif; ?>
             </select>
 			<?php
 		}

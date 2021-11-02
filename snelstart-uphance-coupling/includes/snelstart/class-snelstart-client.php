@@ -75,5 +75,30 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		public function bankboekingen(): array {
 			return $this->_get('bankboekingen', null, null);
 		}
+
+		public function add_verkoopboeking(string $factuurnummer, string $klant, array $boekingsregels) {
+			return $this->_post('verkoopboekingen', null, array(
+				"factuurnummer" => $factuurnummer,
+				"klant" => array(
+					"id" => $klant,
+				),
+				"boekingsregels" => $boekingsregels,
+				"factuurdatum" => date("Y-m-d H:i:s"),
+			));
+		}
+
+		/**
+		 * @throws SUCAPIException
+		 */
+		public function grootboeken(): array {
+			return $this->_get('grootboeken', null, null);
+		}
+
+		/**
+		 * @throws SUCAPIException
+		 */
+		public function relaties(): array {
+			return $this->_get('relaties', null, null);
+		}
 	}
 }
