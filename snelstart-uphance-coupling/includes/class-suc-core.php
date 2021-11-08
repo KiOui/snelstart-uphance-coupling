@@ -103,12 +103,17 @@ if ( ! class_exists( 'SUCCore' ) ) {
 		 * Activation hook call.
 		 */
 		public function activation() {
+			if ( !wp_next_scheduled( 'suc_sync_all' ) ) {
+				wp_schedule_event( time(), 'hourly', 'suc_sync_all' );
+			}
 		}
 
 		/**
 		 * Deactivation hook call.
 		 */
 		public function deactivation() {
+			$timestamp = wp_next_scheduled( 'suc_sync_all' );
+			wp_unschedule_event( $timestamp, 'suc_sync_all' );
 		}
 
 		/**
@@ -117,10 +122,12 @@ if ( ! class_exists( 'SUCCore' ) ) {
 		private function actions_and_filters() {
 			include_once SUC_ABSPATH . '/includes/class-suc-settings.php';
 			include_once SUC_ABSPATH . '/includes/class-suc-logging.php';
+			include_once SUC_ABSPATH . '/includes/class-suc-functions.php';
 			SUCSettings::instance();
 			SUCLogging::instance();
 			$uphance_client = SUCUphanceClient::instance();
 			$snelstart_client = SUCSnelstartClient::instance();
+			add_action( 'suc_sync_all', 'cron_runner_sync_invoices' );
 			if ( ! isset( $uphance_client ) || ! isset( $snelstart_client ) ) {
 				/**
 				 * Add admin notice that the plugin is not configured.

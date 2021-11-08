@@ -19,8 +19,5 @@
         <a class="button button-secondary" href="/wp-admin/admin.php?page=suc_admin_menu&do_cron=1">
             <?php echo __( 'Synchronize invoices now', 'snelstart-uphance-coupling' ); ?>
         </a>
-        <a class="button button-secondary" href="/wp-admin/admin.php?page=suc_admin_menu&clear_logs=1">
-			<?php echo __( 'Clear all log messages', 'snelstart-uphance-coupling' ); ?>
-        </a>
 	</form>
 </div>

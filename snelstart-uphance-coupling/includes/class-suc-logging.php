@@ -37,16 +37,6 @@ if ( ! class_exists( 'SUCLogging' ) ) {
 		}
 
 		/**
-		 * Clear all Log messages.
-		 */
-		public static function clear_all() {
-			$log_messages_posts = get_posts( array( 'post_type' => 'suc_log_messages', 'numberposts' => -1 ) );
-			foreach ( $log_messages_posts as $post ) {
-				wp_delete_post( $post->ID, true );
-			}
-		}
-
-		/**
 		 * hooks
 		 */
 		public function __construct( int $log_id = null ) {

@@ -75,6 +75,9 @@ if ( ! class_exists( 'SUCSettings' ) ) {
             add_action( 'current_screen', array( $this, 'do_custom_actions' ), 99 );
 		}
 
+		/**
+		 * Execute custom actions.
+		 */
         public function do_custom_actions() {
 	        if (get_current_screen()->id === "toplevel_page_suc_admin_menu") {
 		        if ( isset( $_GET['do_cron'] ) && $_GET['do_cron'] == 1 ) {
@@ -89,21 +92,6 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 			        }
 			        add_action( 'admin_notices', 'suc_admin_notice_cron_run' );
                     wp_redirect('/wp-admin/admin.php?page=suc_admin_menu');
-                    exit;
-		        }
-
-		        if ( isset( $_GET['clear_logs'] ) && $_GET['clear_logs'] == 1 ) {
-			        SUCLogging::clear_all();
-			        /**
-			         * Add admin notice that logs have been cleared.
-			         */
-			        function suc_admin_notice_logs_cleared() {
-				        if ( is_admin() && current_user_can( 'edit_plugins' ) ) {
-					        echo '<div class="notice notice-info"><p>' . esc_html( __( 'Logs cleared successfully.', 'snelstart-uphance-coupling' ) ) . '</p></div>';
-				        }
-			        }
-			        add_action( 'admin_notices', 'suc_admin_notice_logs_cleared' );
-			        wp_redirect('/wp-admin/admin.php?page=suc_admin_menu');
                     exit;
 		        }
 	        }
