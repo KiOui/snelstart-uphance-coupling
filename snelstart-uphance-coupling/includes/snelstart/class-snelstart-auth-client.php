@@ -13,22 +13,46 @@ include_once SUC_ABSPATH . 'includes/client/class-api-auth-client.php';
 
 if ( ! class_exists( 'SUCSnelstartAuthClient' ) ) {
 	/**
-	 * Snelstart OAuth class
+	 * Snelstart OAuth class.
 	 *
 	 * @class SUCSnelstartClientKey
 	 */
 	class SUCSnelstartClientKey extends SUCAPIAuthClient {
 
+		/**
+		 * Token setting name.
+		 *
+		 * @var string
+		 */
 		protected string $TOKEN_INFO_SETTING = 'suc_snelstart_token_info';
 
+		/**
+		 * Client key.
+		 *
+		 * @var string
+		 */
 		private string $_client_key;
+
+		/**
+		 * Token URL.
+		 *
+		 * @var string
+		 */
 		private string $_token_url = "https://auth.snelstart.nl/b2b/token";
 
+		/**
+		 * Constructor.
+		 *
+		 * @param string $client_key the client key.
+		 */
 		public function __construct(string $client_key) {
 			$this->_client_key = $client_key;
 		}
 
 		/**
+		 * Request an access token.
+		 *
+		 * @return array the response
 		 * @throws SUCAPIException
 		 */
 		public function request_access_token(): array {
@@ -43,11 +67,7 @@ if ( ! class_exists( 'SUCSnelstartAuthClient' ) ) {
 				"body" => $body,
 			));
 			if ( is_wp_error( $response ) ) {
-				try {
-					$msg = json_decode( wp_remote_retrieve_body( $response ), true )['message'];
-				} catch (Exception $e) {
-					$msg = "error";
-				}
+				$msg = SUCAPIClient::get_error_message(wp_remote_retrieve_body($response));
 				throw new SUCAPIException(
 					wp_remote_retrieve_response_code( $response ),
 					-1,

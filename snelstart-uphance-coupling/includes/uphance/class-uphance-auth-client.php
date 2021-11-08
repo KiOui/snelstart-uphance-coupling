@@ -13,7 +13,7 @@ include_once SUC_ABSPATH . 'includes/client/class-api-auth-client.php';
 
 if ( ! class_exists( 'SUCUphanceAuthClient' ) ) {
 	/**
-	 * Uphance OAuth class
+	 * Uphance Auth class
 	 *
 	 * @class SUCUphanceAuthClient
 	 */
@@ -49,11 +49,7 @@ if ( ! class_exists( 'SUCUphanceAuthClient' ) ) {
 				"body" => $body,
 			));
 			if ( is_wp_error( $response ) ) {
-				try {
-					$msg = json_decode( wp_remote_retrieve_body( $response ), true )['message'];
-				} catch (Exception $e) {
-					$msg = "error";
-				}
+				$msg = SUCAPIClient::get_error_message(wp_remote_retrieve_body($response));
 				throw new SUCAPIException(
 					wp_remote_retrieve_response_code( $response ),
 					-1,

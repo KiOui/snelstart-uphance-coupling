@@ -112,18 +112,9 @@ if ( ! class_exists( 'SUCCore' ) ) {
 		}
 
 		/**
-		 * Add the Testimonials post type and Testimonials Category type.
-		 */
-		public function add_post_type()
-		{
-
-		}
-
-		/**
 		 * Add actions and filters.
 		 */
 		private function actions_and_filters() {
-			include_once SUC_ABSPATH . 'includes/api/v1/class-api-v1.php';
 			include_once SUC_ABSPATH . '/includes/class-suc-settings.php';
 			include_once SUC_ABSPATH . '/includes/class-suc-logging.php';
 			SUCSettings::instance();
@@ -142,12 +133,6 @@ if ( ! class_exists( 'SUCCore' ) ) {
 
 				add_action( 'admin_notices', 'suc_admin_notice_plugin_not_configured' );
 			}
-			else {
-				$suc_api_v1 = new SUCAPIV1( $snelstart_client, $uphance_client );
-				$suc_api_v1->define_rest_routes();
-			}
-
-
 		}
 	}
 }

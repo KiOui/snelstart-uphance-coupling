@@ -5,8 +5,6 @@
  * @package snelstart-uphance-coupling
  */
 
-use JetBrains\PhpStorm\Pure;
-
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -22,18 +20,34 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 	 */
 	class SUCSnelstartClient extends SUCAPIClient {
 
+		/**
+		 * The URL endpoint for the Snelstart API.
+		 *
+		 * @var string
+		 */
 		protected string $prefix = "https://b2bapi.snelstart.nl/v2/";
+
+		/**
+		 * Subscription key.
+		 *
+		 * @var string
+		 */
 		protected string $subscription_key;
 
+		/**
+		 * Snelstart Client instance.
+		 *
+		 * @var SUCSnelstartClient|null
+		 */
 		protected static ?SUCSnelstartClient $_instance = null;
 
 		/**
-		 * Snelstart Uphance Coupling Core.
+		 * Snelstart instance.
 		 *
 		 * Uses the Singleton pattern to load 1 instance of this class at maximum
 		 *
 		 * @static
-		 * @return ?SUCSnelstartClient
+		 * @return ?SUCSnelstartClient the client if all required settings are set, null otherwise
 		 */
 		public static function instance(): ?SUCSnelstartClient {
 			if ( is_null( self::$_instance ) ) {
@@ -54,13 +68,18 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 			return self::$_instance;
 		}
 
+		/**
+		 * @param string $subscription_key
+		 * @param SUCAPIAuthClient $auth_client
+		 * @param int $requests_timeout
+		 */
 		public function __construct(string $subscription_key, SUCAPIAuthClient $auth_client, int $requests_timeout=45) {
 			parent::__construct( $auth_client, $requests_timeout);
 			$this->requests_timeout = $requests_timeout;
 			$this->subscription_key = $subscription_key;
 		}
 
-		protected function _auth_headers(): array {
+		protected function auth_headers(): array {
 			if ( ! isset( $this->auth_manager ) ) {
 				return array("Ocp-Apim-Subscription-Key" => $this->subscription_key);
 			}
@@ -76,14 +95,19 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 			return $this->_get('bankboekingen', null, null);
 		}
 
-		public function add_verkoopboeking(string $factuurnummer, string $klant, array $boekingsregels) {
+		/**
+		 * @throws SUCAPIException
+		 */
+		public function add_verkoopboeking(string $factuurnummer, string $klant, float|string $factuurbedrag, array $boekingsregels, array $btw_regels): array {
 			return $this->_post('verkoopboekingen', null, array(
 				"factuurnummer" => $factuurnummer,
 				"klant" => array(
 					"id" => $klant,
 				),
 				"boekingsregels" => $boekingsregels,
+				"factuurbedrag" => $factuurbedrag,
 				"factuurdatum" => date("Y-m-d H:i:s"),
+				"btw" => $btw_regels,
 			));
 		}
 
@@ -97,8 +121,21 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		/**
 		 * @throws SUCAPIException
 		 */
-		public function relaties(): array {
-			return $this->_get('relaties', null, null);
+		public function relaties(int $skip = null, int $top = null, string $filter = null): array {
+			$queries = array(
+				"\$skip" => $skip,
+				"\$top" => $top,
+				"\$filter" => $filter,
+			);
+			$querystring = $this->create_querystring($queries);
+			return $this->_get('relaties' . $querystring, null, null);
+		}
+
+		/**
+		 * @throws SUCAPIException
+		 */
+		public function btwtarieven(): array {
+			return $this->_get('btwtarieven', null, null);
 		}
 	}
 }
