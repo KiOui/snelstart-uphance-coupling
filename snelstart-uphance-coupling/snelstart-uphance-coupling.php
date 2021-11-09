@@ -25,6 +25,6 @@ if ( ! defined( 'SUC_PLUGIN_URI' ) ) {
 
 include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
 
-include_once dirname( __FILE__ ) . '/includes/class-suc-core.php';
+include_once dirname( __FILE__ ) . '/includes/class-succore.php';
 
 $GLOBALS['SUCCore'] = SUCCore::instance();

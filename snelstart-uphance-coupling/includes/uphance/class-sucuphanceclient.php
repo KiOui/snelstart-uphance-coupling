@@ -9,9 +9,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-include_once SUC_ABSPATH . 'includes/client/class-api-client.php';
-include_once SUC_ABSPATH . 'includes/uphance/class-uphance-auth-client.php';
-include_once SUC_ABSPATH . 'includes/client/class-api-paginated-result.php';
+include_once SUC_ABSPATH . 'includes/client/class-sucapiclient.php';
+include_once SUC_ABSPATH . 'includes/uphance/class-sucuphanceauthclient.php';
+include_once SUC_ABSPATH . 'includes/client/class-sucapipaginatedresult.php';
 
 if ( ! class_exists( 'SUCUphanceClient' ) ) {
 	/**
@@ -52,7 +52,7 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 				$uphance_username = $settings['uphance_username'];
 				$uphance_password = $settings['uphance_password'];
 
-				if ( isset( $uphance_username ) && isset( $uphance_password ) && $uphance_username !== '' && $uphance_password !== '' ) {
+				if ( isset( $uphance_username ) && isset( $uphance_password ) && '' !== $uphance_username && '' !== $uphance_password ) {
 					self::$_instance = new SUCUphanceClient( new SUCUphanceAuthClient( $uphance_username, $uphance_password ) );
 				} else {
 					return null;
@@ -65,8 +65,8 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 		/**
 		 * Constructor.
 		 *
-		 * @param SUCAPIAuthClient|null $auth_client the authentication client
-		 * @param int $requests_timeout request timeout
+		 * @param SUCAPIAuthClient|null $auth_client the authentication client.
+		 * @param int                   $requests_timeout request timeout.
 		 */
 		public function __construct( ?SUCAPIAuthClient $auth_client, int $requests_timeout = 45 ) {
 			parent::__construct( $auth_client, $requests_timeout );
@@ -76,8 +76,8 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 		/**
 		 * Get all organisations.
 		 *
-		 * @return array organisations
-		 * @throws SUCAPIException
+		 * @return array organisations.
+		 * @throws SUCAPIException On exception with API request.
 		 */
 		public function organisations(): array {
 			return $this->_get( 'organisations', null, null );
@@ -88,12 +88,12 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 		 *
 		 * @param int $organisation_id the organisation ID to set.
 		 *
-		 * @return bool true if setting succeeded, false otherwise
-		 * @throws SUCAPIException
+		 * @return bool true if setting succeeded, false otherwise.
+		 * @throws SUCAPIException On exception with API request.
 		 */
 		public function set_current_organisation( int $organisation_id ): bool {
 			$response = $this->_post( 'organisations/set_current_org', null, array( 'organizationId' => $organisation_id ) );
-			if ( isset( $response['Status'] ) && $response['Status'] === 'Updated' ) {
+			if ( isset( $response['Status'] ) && 'Updated' === $response['Status'] ) {
 				return true;
 			} else {
 				return false;
@@ -103,18 +103,18 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 		/**
 		 * Get all invoices.
 		 *
-		 * @param int|null $since_id optional ID of invoice, when set only invoices from this ID will be requested
+		 * @param int|null $since_id optional ID of invoice, when set only invoices from this ID will be requested.
 		 *
-		 * @return SUCAPIPaginatedResult the result with invoices
-		 * @throws SUCAPIException
+		 * @return SUCAPIPaginatedResult the result with invoices.
+		 * @throws SUCAPIException On exception with API request.
 		 */
 		public function invoices( ?int $since_id = null ): SUCAPIPaginatedResult {
-			$url = "invoices";
-			if ( isset($since_id) ) {
+			$url = 'invoices';
+			if ( isset( $since_id ) ) {
 				$queries = array(
-					"since_id" => $since_id,
+					'since_id' => $since_id,
 				);
-				$url = $url . $this->create_querystring($queries);
+				$url = $url . $this->create_querystring( $queries );
 			}
 			$response = $this->_get( $url, null, null );
 			return new SUCAPIPaginatedResult( $response );
@@ -123,13 +123,13 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 		/**
 		 * Get Customer by ID.
 		 *
-		 * @param int $customer_id the customer ID to get
+		 * @param int $customer_id the customer ID to get.
 		 *
-		 * @return array a customer
-		 * @throws SUCAPIException
+		 * @return array a customer.
+		 * @throws SUCAPIException On exception with API request.
 		 */
-		public function customer_by_id(int $customer_id): array {
-			return $this->_get('customers/' . $customer_id, null, null);
+		public function customer_by_id( int $customer_id ): array {
+			return $this->_get( 'customers/' . $customer_id, null, null );
 		}
 	}
 }

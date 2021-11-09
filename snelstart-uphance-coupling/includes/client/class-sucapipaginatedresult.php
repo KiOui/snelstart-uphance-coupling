@@ -62,7 +62,7 @@ if ( ! class_exists( 'SUCAPIPaginatedResult' ) ) {
 		/**
 		 * Constructor.
 		 *
-		 * @param array $result the paginated result of the request
+		 * @param array $result the paginated result of the request.
 		 */
 		public function __construct( array $result ) {
 			$this->current_page = $result['meta']['current_page'];

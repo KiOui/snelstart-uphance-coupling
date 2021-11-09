@@ -9,65 +9,68 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-include_once SUC_ABSPATH . 'includes/client/class-api-auth-client.php';
+include_once SUC_ABSPATH . 'includes/client/class-sucapiauthclient.php';
 
 if ( ! class_exists( 'SUCSnelstartAuthClient' ) ) {
 	/**
 	 * Snelstart OAuth class.
 	 *
-	 * @class SUCSnelstartClientKey
+	 * @class SUCSnelstartAuthClient
 	 */
-	class SUCSnelstartClientKey extends SUCAPIAuthClient {
+	class SUCSnelstartAuthClient extends SUCAPIAuthClient {
 
 		/**
 		 * Token setting name.
 		 *
 		 * @var string
 		 */
-		protected string $TOKEN_INFO_SETTING = 'suc_snelstart_token_info';
+		protected string $token_info_setting = 'suc_snelstart_token_info';
 
 		/**
 		 * Client key.
 		 *
 		 * @var string
 		 */
-		private string $_client_key;
+		private string $client_key;
 
 		/**
 		 * Token URL.
 		 *
 		 * @var string
 		 */
-		private string $_token_url = "https://auth.snelstart.nl/b2b/token";
+		private string $_token_url = 'https://auth.snelstart.nl/b2b/token';
 
 		/**
 		 * Constructor.
 		 *
 		 * @param string $client_key the client key.
 		 */
-		public function __construct(string $client_key) {
-			$this->_client_key = $client_key;
+		public function __construct( string $client_key ) {
+			$this->client_key = $client_key;
 		}
 
 		/**
 		 * Request an access token.
 		 *
 		 * @return array the response
-		 * @throws SUCAPIException
+		 * @throws SUCAPIException On API communication error.
 		 */
 		public function request_access_token(): array {
 			$headers = array(
 				'Content-Type' => 'application/x-www-form-urlencoded',
 			);
 
-			$body = "grant_type=clientkey&clientkey=" . $this->_client_key;
+			$body = 'grant_type=clientkey&clientkey=' . $this->client_key;
 
-			$response = wp_remote_post($this->_token_url, array(
-				"headers" => $headers,
-				"body" => $body,
-			));
+			$response = wp_remote_post(
+				$this->_token_url,
+				array(
+					'headers' => $headers,
+					'body' => $body,
+				)
+			);
 			if ( is_wp_error( $response ) ) {
-				$msg = SUCAPIClient::get_error_message(wp_remote_retrieve_body($response));
+				$msg = SUCAPIClient::get_error_message( wp_remote_retrieve_body( $response ) );
 				throw new SUCAPIException(
 					wp_remote_retrieve_response_code( $response ),
 					-1,
@@ -75,8 +78,7 @@ if ( ! class_exists( 'SUCSnelstartAuthClient' ) ) {
 					null,
 					wp_remote_retrieve_headers( $response ),
 				);
-			}
-			else {
+			} else {
 				return json_decode( wp_remote_retrieve_body( $response ), true );
 			}
 		}

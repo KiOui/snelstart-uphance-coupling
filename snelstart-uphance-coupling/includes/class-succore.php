@@ -103,7 +103,7 @@ if ( ! class_exists( 'SUCCore' ) ) {
 		 * Activation hook call.
 		 */
 		public function activation() {
-			if ( !wp_next_scheduled( 'suc_sync_all' ) ) {
+			if ( ! wp_next_scheduled( 'suc_sync_all' ) ) {
 				wp_schedule_event( time(), 'hourly', 'suc_sync_all' );
 			}
 		}
@@ -120,9 +120,9 @@ if ( ! class_exists( 'SUCCore' ) ) {
 		 * Add actions and filters.
 		 */
 		private function actions_and_filters() {
-			include_once SUC_ABSPATH . '/includes/class-suc-settings.php';
-			include_once SUC_ABSPATH . '/includes/class-suc-logging.php';
-			include_once SUC_ABSPATH . '/includes/class-suc-functions.php';
+			include_once SUC_ABSPATH . '/includes/class-sucsettings.php';
+			include_once SUC_ABSPATH . '/includes/class-suclogging.php';
+			include_once SUC_ABSPATH . '/includes/suc-functions.php';
 			SUCSettings::instance();
 			SUCLogging::instance();
 			$uphance_client = SUCUphanceClient::instance();

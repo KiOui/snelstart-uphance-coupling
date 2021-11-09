@@ -41,14 +41,14 @@ if ( ! class_exists( 'SUCAPIException' ) ) {
 		/**
 		 * Constructor.
 		 *
-		 * @param int $http_status the HTTP status code
-		 * @param int $code the Error code
-		 * @param string $message the message
-		 * @param string|null $reason reason for Exception
-		 * @param array|null $headers the headers of the request
+		 * @param int         $http_status the HTTP status code.
+		 * @param int         $code the Error code.
+		 * @param string      $message the message.
+		 * @param string|null $reason reason for Exception.
+		 * @param array|null  $headers the headers of the request.
 		 */
-		public function __construct(int $http_status, int $code, string $message, ?string $reason, ?array $headers) {
-			parent::__construct($message, $code);
+		public function __construct( int $http_status, int $code, string $message, ?string $reason, ?array $headers ) {
+			parent::__construct( $message, $code );
 			$this->http_status = $http_status;
 			$this->reason = $reason;
 			if ( empty( $headers ) ) {
@@ -63,7 +63,7 @@ if ( ! class_exists( 'SUCAPIException' ) ) {
 		 * @return string this object in string format
 		 */
 		public function __toString(): string {
-			return "http status: " . $this->http_status . ", code: " . $this->code . " - " . $this->message . ", reason: " . $this->reason;
+			return 'http status: ' . $this->http_status . ', code: ' . $this->code . ' - ' . $this->message . ', reason: ' . $this->reason;
 		}
 
 	}
