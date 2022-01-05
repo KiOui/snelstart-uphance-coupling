@@ -92,23 +92,37 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 		}
 
 		/**
-		 * Get relatie with specific name.
+		 * Get or create relatie with specific name.
 		 *
 		 * @param string $naam the name to get the relatie for.
 		 *
 		 * @return array|null An array with the relatie if succeeded, null if the relatie does not exist or multiple relaties were returned.
 		 */
-		public function get_relatie_with_name( string $naam ): ?array {
+		public function get_or_create_relatie_with_name( string $naam ): ?array {
 			try {
 				$relaties = $this->client->relaties( null, null, "Naam eq '$naam'" );
 			} catch ( SUCAPIException $e ) {
+				SUCLogging::instance()->write( $e );
+				SUCLogging::instance()->write( sprintf( __( 'An exception occurred while getting relatie with name %s.', 'snelstart-uphance-coupling' ), $naam ) );
 				return null;
 			}
+
 			if ( count( $relaties ) === 1 ) {
 				return $relaties[0];
-			} else {
+			} else if ( count( $relaties ) > 1 ) {
+				SUCLogging::instance()->write( sprintf( __( 'Multiple relaties found in Snelstart with name %s.', 'snelstart-uphance-coupling' ), $naam ) );
 				return null;
 			}
+
+			SUCLogging::instance()->write( sprintf( __( 'Relatie with name %s not found, trying to create now.', 'snelstart-uphance-coupling' ), $naam ) );
+
+			try {
+				return $this->client->add_relatie( array( 'Klant' ), $naam );
+			} catch ( SUCAPIException $e ) {
+				SUCLogging::instance()->write( $e );
+				SUCLogging::instance()->write( sprintf( __( 'Could not create relatie with name %s in Snelstart', 'snelstart-uphance-coupling' ), $naam ) );
+			}
+			return null;
 		}
 
 		/**
@@ -277,7 +291,7 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 				$grootboek_regels = $this->construct_grootboek_regels( $invoice );
 				if ( isset( $grootboek_regels ) ) {
 					$btw_regels                  = $this->construct_btw_line_items( $invoice['line_items'] );
-					$snelstart_relatie_for_order = $this->get_relatie_with_name( $customer['name'] );
+					$snelstart_relatie_for_order = $this->get_or_create_relatie_with_name( $customer['name'] );
 					if ( ! isset( $btw_regels ) ) {
 						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %s because BTW regels could not be constructed.', 'snelstart-uphance-coupling' ), $invoice_id ) );
 						return false;
@@ -285,7 +299,7 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 
 					if ( ! isset( $snelstart_relatie_for_order ) ) {
 						$name = $customer['name'];
-						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %1$s because customer %2$s was not found in Snelstart.', 'snelstart-uphance-coupling' ), $invoice_id, $name ) );
+						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %1$s because customer %2$s could not be found and created in Snelstart.', 'snelstart-uphance-coupling' ), $invoice_id, $name ) );
 						return false;
 					}
 

@@ -154,6 +154,22 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		}
 
 		/**
+		 * Add a relatie.
+		 *
+		 * $@throws SUCAPIException On exception with API request
+		 */
+		public function add_relatie( array $relatiesoorten, string $naam ): array {
+			return $this->_post(
+				'relaties',
+				null,
+				array(
+					'relatiesoort' => $relatiesoorten,
+					'naam' => $naam,
+				)
+			);
+		}
+
+		/**
 		 * Get BTW tarieven.
 		 *
 		 * @throws SUCAPIException On exception with API request.
