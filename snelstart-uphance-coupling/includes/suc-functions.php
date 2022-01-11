@@ -174,10 +174,11 @@ if ( ! function_exists( 'sync_payments' ) ) {
 		$snelstart_grootboekcode_debiteuren = $settings['snelstart_grootboekcode_debiteuren'];
 
 		$grootboeken = $snelstart_client->grootboeken();
-		$grootboekmutaties = $snelstart_client->grootboekmutaties( null, null, "Grootboek/Id eq guid'$snelstart_grootboekcode_debiteuren'" );
+		$amount = 0;
+		$grootboekmutaties = $snelstart_client->grootboekmutaties( null, null, "Grootboek/Id eq guid'$snelstart_grootboekcode_debiteuren' and Saldo lt 0 and ModifiedOn gt datetime'2019-01-11T00:00:00'" );
 		$payments_with_debiteuren_obj = array_map(function ($grootboekmutatie) {
 			return SUCSnelstartGrootboekmutatie::from_snelstart($grootboekmutatie);
-		}, $payments_with_debiteuren);
+		}, $grootboekmutaties);
 		$payments_with_debiteuren_credit = array_filter($grootboekmutaties, function ($payment) {
 			return true;
 		});
