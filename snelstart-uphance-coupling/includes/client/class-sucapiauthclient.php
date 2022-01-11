@@ -114,5 +114,14 @@ abstract class SUCAPIAuthClient {
 		$now = time();
 		return $token_info['expires_at'] - $now < 60;
 	}
+
+	/**
+	 * Reset access token.
+	 *
+	 * @return void
+	 */
+	public function reset_token() {
+		$this->_save_token_info(null);
+	}
 }
 

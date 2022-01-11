@@ -183,7 +183,7 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 		 * @return string a string of the formatted number.
 		 */
 		public static function format_number( float $number ): string {
-			return number_format( $number, 2 );
+			return number_format( $number, 2, '.', '' );
 		}
 
 		/**
@@ -254,13 +254,17 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 				);
 				$tax_name = $this->convert_btw_amount_to_name( $tax_level );
 				if ( key_exists( $tax_name, $btw_items ) ) {
-					$btw_items[ $tax_name ]['btwBedrag'] = $btw_items[ $tax_name ]['btwBedrag'] + $price * $amount * $tax_level;
+					$btw_items[ $tax_name ]['btwBedrag'] = $btw_items[ $tax_name ]['btwBedrag'] + $price * $amount * $tax_level/100;
 				} else {
 					$btw_items[ $tax_name ] = array(
 						'btwSoort' => $tax_name,
-						'btwBedrag' => self::format_number( $price * $amount * $tax_level ),
+						'btwBedrag' => $price * $amount * $tax_level/100,
 					);
 				}
+			}
+			// Format all btw items such that they have a maximum of two decimals
+			foreach ( array_keys( $btw_items ) as $btw_items_key ) {
+				$btw_items[$btw_items_key]['btwBedrag'] = self::format_number($btw_items[$btw_items_key]['btwBedrag']);
 			}
 			return array_values( $btw_items );
 		}
@@ -290,8 +294,10 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 			if ( isset( $customer ) ) {
 				$grootboek_regels = $this->construct_grootboek_regels( $invoice );
 				if ( isset( $grootboek_regels ) ) {
+
 					$btw_regels                  = $this->construct_btw_line_items( $invoice['line_items'] );
 					$snelstart_relatie_for_order = $this->get_or_create_relatie_with_name( $customer['name'] );
+					$betalingstermijn            = suc_convert_date_to_amount_of_days_until( $invoice['due_date'] );
 					if ( ! isset( $btw_regels ) ) {
 						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %s because BTW regels could not be constructed.', 'snelstart-uphance-coupling' ), $invoice_id ) );
 						return false;
@@ -303,8 +309,13 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 						return false;
 					}
 
+					if ( ! isset( $betalingstermijn ) ) {
+						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %1$s because invoice due date could not be converted.', 'snelstart-uphance-coupling' ), $invoice_id, $name ) );
+						return false;
+					}
+
 					try {
-						$this->client->add_verkoopboeking( $invoice['invoice_number'], $snelstart_relatie_for_order['id'], self::format_number( $invoice['items_total'] ), $grootboek_regels, $btw_regels );
+						$this->client->add_verkoopboeking( $invoice['invoice_number'], $snelstart_relatie_for_order['id'], self::format_number( $invoice['grand_total'] ), $betalingstermijn, $grootboek_regels, $btw_regels );
 					} catch ( SUCAPIException $e ) {
 						SUCLogging::instance()->write( $e );
 						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %s because of an exception.', 'snelstart-uphance-coupling' ), $invoice_id ) );

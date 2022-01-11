@@ -127,7 +127,7 @@ if ( ! class_exists( 'SUCCore' ) ) {
 			SUCLogging::instance();
 			$uphance_client = SUCUphanceClient::instance();
 			$snelstart_client = SUCSnelstartClient::instance();
-			add_action( 'suc_sync_all', 'cron_runner_sync_invoices' );
+			add_action( 'suc_sync_all', 'cron_runner_sync_all' );
 			if ( ! isset( $uphance_client ) || ! isset( $snelstart_client ) ) {
 				/**
 				 * Add admin notice that the plugin is not configured.

@@ -112,7 +112,7 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		 *
 		 * @throws SUCAPIException On exception with API request.
 		 */
-		public function add_verkoopboeking( string $factuurnummer, string $klant, float|string $factuurbedrag, array $boekingsregels, array $btw_regels ): array {
+		public function add_verkoopboeking( string $factuurnummer, string $klant, float|string $factuurbedrag, int $betalingstermijn, array $boekingsregels, array $btw_regels ): array {
 			return $this->_post(
 				'verkoopboekingen',
 				null,
@@ -123,7 +123,8 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 					),
 					'boekingsregels' => $boekingsregels,
 					'factuurbedrag' => $factuurbedrag,
-					'factuurdatum' => gmdate( 'Y-m-d H:i:s' ),
+					'betalingstermijn' => $betalingstermijn,
+					'factuurdatum' => gmdate( 'Y-m-d H:i:s' ), // TODO: Change this to a date
 					'btw' => $btw_regels,
 				)
 			);
@@ -139,15 +140,32 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		}
 
 		/**
-		 * Get relaties.
+		 * Get grootboekmutaties.
 		 *
 		 * @throws SUCAPIException On exception with API request.
 		 */
-		public function relaties( int $skip = null, int $top = null, string $filter = null ): array {
+		public function grootboekmutaties(int $skip = null, int $top = null, string $filter = null, string $expand = null): array {
 			$queries = array(
 				'$skip' => $skip,
 				'$top' => $top,
 				'$filter' => $filter,
+				'$expand' => $expand,
+			);
+			$querystring = $this->create_querystring( $queries );
+			return $this->_get( 'grootboekmutaties' . $querystring, null, null );
+		}
+
+		/**
+		 * Get relaties.
+		 *
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		public function relaties( int $skip = null, int $top = null, string $filter = null, string $expand = null ): array {
+			$queries = array(
+				'$skip' => $skip,
+				'$top' => $top,
+				'$filter' => $filter,
+				'$expand' => $expand,
 			);
 			$querystring = $this->create_querystring( $queries );
 			return $this->_get( 'relaties' . $querystring, null, null );
