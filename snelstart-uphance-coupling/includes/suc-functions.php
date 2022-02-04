@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 include_once SUC_ABSPATH . 'includes/snelstart/class-sucsnelstartsynchronizer.php';
+include_once SUC_ABSPATH . 'includes/uphance/class-sucuphanceinvoicesearcher.php';
 
 if ( ! function_exists( 'suc_convert_date_to_amount_of_days_until' ) ) {
 	/**
@@ -84,7 +85,7 @@ if ( ! function_exists('convert_snelstart_payment_to_payment') ) {
 	 */
 	function convert_snelstart_payment_to_payment( array $snelstart_payment ): SUCPayment {
 		include_once SUC_ABSPATH . 'includes/model/class-sucpayment.php';
-		return new SUCPayment( floatval( $snelstart_payment['saldo'] ), $snelstart_payment['factuurNummer'], $snelstart_payment['omschrijving'], new DateTime( $snelstart_payment['datum'] ), new DateTime( $snelstart_payment['datum'] ) );
+		return new SUCPayment( "snelstart_" . $snelstart_payment['id'], floatval( $snelstart_payment['saldo'] ), $snelstart_payment['factuurNummer'], $snelstart_payment['omschrijving'], new DateTime( $snelstart_payment['datum'] ), new DateTime( $snelstart_payment['datum'] ) );
 	}
 }
 
@@ -172,21 +173,53 @@ if ( ! function_exists( 'sync_payments' ) ) {
 		}
 
 		$snelstart_grootboekcode_debiteuren = $settings['snelstart_grootboekcode_debiteuren'];
+		$max_payments_to_sync = $settings['max_payments_to_synchronize'];
 
-		$grootboeken = $snelstart_client->grootboeken();
-		$amount = 0;
-		$grootboekmutaties = $snelstart_client->grootboekmutaties( null, null, "Grootboek/Id eq guid'$snelstart_grootboekcode_debiteuren' and Saldo lt 0 and ModifiedOn gt datetime'2019-01-11T00:00:00'" );
-		$payments_with_debiteuren_obj = array_map(function ($grootboekmutatie) {
+		try {
+			$snelstart_synchronise_payments_from_date = new DateTime($settings['snelstart_synchronise_payments_from_date']);
+		} catch (Exception $e) {
+			$snelstart_synchronise_payments_from_date = new DateTime("@0");
+		}
+
+		$grootboekmutaties = $snelstart_client->get_all( array(
+			$snelstart_client,
+			'grootboekmutaties'
+		), null, "Grootboek/Id eq guid'$snelstart_grootboekcode_debiteuren' and Saldo lt 0 and ModifiedOn gt datetime'" . $snelstart_synchronise_payments_from_date->format( 'Y-m-d\TH:i:s' ) . "'" );
+
+		$grootboekmutaties = array_map(function ($grootboekmutatie) {
 			return SUCSnelstartGrootboekmutatie::from_snelstart($grootboekmutatie);
 		}, $grootboekmutaties);
-		$payments_with_debiteuren_credit = array_filter($grootboekmutaties, function ($payment) {
-			return true;
+		usort($grootboekmutaties, function (SUCSnelstartGrootboekmutatie $obj1, SUCSnelstartGrootboekmutatie $obj2) {
+			return $obj1->modifiedOn > $obj2->modifiedOn;
 		});
-		echo '<br>';
-		echo '<pre>';
-		print_r($payments_with_debiteuren_obj);
-		echo '</pre>';
-		exit;
+		if ( isset( $max_payments_to_sync ) ) {
+			$grootboekmutaties = array_slice( $grootboekmutaties, 0, $max_payments_to_sync );
+		}
+
+		$invoice_searcher = new SUCUphanceInvoiceSearcher($uphance_client);
+		$company_id = $settings['uphance_organisation'];
+
+		foreach ($grootboekmutaties as $grootboekmutatie) {
+			if ( isset ( $grootboekmutatie->factuurNummer ) ) {
+				$invoice = $invoice_searcher->search_invoice(intval( $grootboekmutatie->factuurNummer ) );
+				if ( ! is_null( $invoice ) ) {
+					try {
+						$uphance_client->add_payment( $grootboekmutatie->saldo*-1, "snelstart_" . $grootboekmutatie->id, $grootboekmutatie->datum, $invoice['sale_id'], $company_id, $invoice['id'], 'API Payment' );
+					} catch (Exception $e) {
+						SUCLogging::instance()->write( sprintf( __( 'Payment %s failed to synchronize because of the following exception.' ), $grootboekmutatie ) );
+						SUCLogging::instance()->write($e);
+					}
+				} else {
+					SUCLogging::instance()->write( sprintf( __( 'Skipping grootboekmutatie %s because its invoice number (%s) could not be found in Uphance.', 'snelstart-uphance-coupling' ), $grootboekmutatie->id, $grootboekmutatie->factuurNummer ) );
+				}
+			} else {
+				SUCLogging::instance()->write( sprintf( __( 'Skipping grootboekmutatie %s because it does not have an invoice number.', 'snelstart-uphance-coupling' ), $grootboekmutatie->id ) );
+			}
+		}
+		$latest_payment                                = $grootboekmutaties[ count( $grootboekmutaties ) - 1 ];
+		$settings['snelstart_synchronise_payments_from_date'] = $latest_payment->modifiedOn->format('Y-m-d\TH:i:sP');
+		update_option( 'suc_settings', $settings );
+		return true;
 	}
 
 }

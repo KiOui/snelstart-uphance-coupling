@@ -17,7 +17,7 @@
 		submit_button();
 		?>
 		<a class="button button-secondary" href="/wp-admin/admin.php?page=suc_admin_menu&do_cron=1">
-			<?php echo esc_html( __( 'Synchronize invoices now', 'snelstart-uphance-coupling' ) ); ?>
+			<?php echo esc_html( __( 'Synchronize now', 'snelstart-uphance-coupling' ) ); ?>
 		</a>
 	</form>
 </div>

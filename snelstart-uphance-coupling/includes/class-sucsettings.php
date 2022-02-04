@@ -145,6 +145,14 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 				'global_settings'
 			);
 
+			add_settings_field(
+				'max_payments_to_synchronize',
+				__( 'Maximum amount of payments to synchronize', 'snelstart-uphance-coupling' ),
+				array( $this, 'max_payments_to_synchronize_callback' ),
+				'suc_settings',
+				'global_settings'
+			);
+
             add_settings_field(
                 'synchronize_invoices_to_snelstart',
                 __( 'Whether to synchronize invoices from Uphance to Snelstart', 'snelstart-uphance-coupling' ),
@@ -210,6 +218,14 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 					'suc_settings',
 					'snelstart_settings',
 				);
+
+				add_settings_field(
+					'snelstart_synchronise_payments_from_date',
+					__( 'Snelstart Synchronise payments from modified at', 'snelstart-uphance-coupling' ),
+					array( $this, 'snelstart_synchronise_payments_from_date_renderer' ),
+					'suc_settings',
+					'snelstart_settings',
+				);
 			}
 
 			add_settings_section(
@@ -264,6 +280,7 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		 */
 		public function suc_settings_validate( array $input ): array {
 			$output['max_invoices_to_synchronize'] = absint( $input['max_invoices_to_synchronize'] );
+			$output['max_payments_to_synchronize'] = absint( $input['max_payments_to_synchronize'] );
 
 			$output['snelstart_client_key']     = esc_attr( $input['snelstart_client_key'] );
 			$output['snelstart_subscription_key'] = esc_attr( $input['snelstart_subscription_key'] );
@@ -276,6 +293,11 @@ if ( ! class_exists( 'SUCSettings' ) ) {
             $output['snelstart_grootboekcode_debiteuren'] = $input['snelstart_grootboekcode_debiteuren'];
 			$output['snelstart_grootboekcode_btw_hoog'] = $input['snelstart_grootboekcode_btw_hoog'];
 			$output['snelstart_grootboekcode_btw_geen'] = $input['snelstart_grootboekcode_btw_geen'];
+            try {
+	            $output['snelstart_synchronise_payments_from_date'] = (new DateTime($input['snelstart_synchronise_payments_from_date']))->format('Y-m-d\TH:i:sP');
+            } catch (Exception $e) {
+	            $output['snelstart_synchronise_payments_from_date'] = (new DateTime("@0"))->format('Y-m-d\TH:i:sP');
+            }
 
             $output['synchronize_invoices_to_snelstart'] = suc_sanitize_boolean_default_false( $input['synchronize_invoices_to_snelstart'] );
             $output['synchronize_payments_to_uphance'] = suc_sanitize_boolean_default_false( $input['synchronize_payments_to_uphance'] );
@@ -298,6 +320,17 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 			<p><?php echo esc_html( __( 'Maximum amount of invoices to synchronize per run (leave empty for all)', 'snelstart-uphance-coupling' ) ); ?></p>
 			<input type='number' name='suc_settings[max_invoices_to_synchronize]'
 				   value="<?php echo esc_attr( $options['max_invoices_to_synchronize'] ); ?>">
+			<?php
+		}
+
+		/**
+		 * Render max payments to synchronize setting.
+		 */
+		public function max_payments_to_synchronize_callback() {
+			$options = get_option( 'suc_settings' ); ?>
+            <p><?php echo esc_html( __( 'Maximum amount of payments to synchronize per run (leave empty for all)', 'snelstart-uphance-coupling' ) ); ?></p>
+            <input type='number' name='suc_settings[max_payments_to_synchronize]'
+                   value="<?php echo esc_attr( $options['max_payments_to_synchronize'] ); ?>">
 			<?php
 		}
 
@@ -572,6 +605,24 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 			</select>
 			<?php
 		}
+
+		/**
+		 * Render Snelstart Synchronise payments from date.
+		 */
+        public function snelstart_synchronise_payments_from_date_renderer() {
+	        ?>
+            <p><?php echo esc_html( __( 'Snelstart Synchronise payments from this modified at date onward.', 'snelstart-uphance-coupling' ) ); ?></p>
+	        <?php
+	        $options = get_option( 'suc_settings' );
+            try {
+	            $date = isset( $options['snelstart_synchronise_payments_from_date'] ) && '' != $options['snelstart_synchronise_payments_from_date'] ? new DateTime( $options['snelstart_synchronise_payments_from_date'] ) : null;
+            } catch (Exception $e) {
+                $date = null;
+            }
+	        ?>
+                <input name="suc_settings[snelstart_synchronise_payments_from_date]" type="datetime-local" value="<?php echo is_null( $date ) ? (new DateTime('@1'))->format('Y-m-d\TH:i:s') : $date->format('Y-m-d\TH:i:s'); ?>"/>
+	        <?php
+        }
 
 		/**
 		 * Admin menu dashboard callback.

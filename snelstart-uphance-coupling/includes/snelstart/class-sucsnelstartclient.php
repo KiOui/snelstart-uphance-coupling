@@ -41,6 +41,8 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		 */
 		protected static ?SUCSnelstartClient $_instance = null;
 
+		protected static int $MAXIMUM_RESULTS = 500;
+
 		/**
 		 * Snelstart instance.
 		 *
@@ -96,6 +98,15 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 					'Ocp-Apim-Subscription-Key' => $this->subscription_key,
 				);
 			}
+		}
+
+		public function get_all(callable $function, $maximum=null, ...$args): array {
+			$results = array();
+			do {
+				$result = $function( $skip=sizeof( $results ), $top=(is_null( $maximum ) ? null : min($maximum - sizeof( $results ), SUCSnelstartClient::$MAXIMUM_RESULTS)), ...$args );
+				$results = array_merge($results, $result);
+			} while ( sizeof( $result ) !== 0 && ($maximum === null || sizeof( $results ) < $maximum ) );
+			return $results;
 		}
 
 		/**

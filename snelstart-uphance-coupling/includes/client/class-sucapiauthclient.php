@@ -71,6 +71,7 @@ abstract class SUCAPIAuthClient {
 	 *
 	 * @return string the access token.
 	 * @throws SUCAPIException On API error or authentication fault.
+	 * @throws Exception
 	 */
 	public function get_access_token( bool $check_cache = true ): string {
 		if ( $check_cache ) {
@@ -85,10 +86,18 @@ abstract class SUCAPIAuthClient {
 		}
 
 		$token_info = $this->request_access_token();
-		$token_info = $this->add_custom_values_to_token_info( $token_info );
-		$this->token_info = $token_info;
-		$this->_save_token_info( $token_info );
-		return $this->token_info['access_token'];
+		if ( isset( $token_info['error'] ) ) {
+			throw new SUCAPIException( 200, 200, $token_info['error'], null, null);
+		}
+
+		if ( isset( $token_info['access_token']) ) {
+			$token_info = $this->add_custom_values_to_token_info( $token_info );
+			$this->token_info = $token_info;
+			$this->_save_token_info( $token_info );
+			return $this->token_info['access_token'];
+		} else {
+			throw new Exception("Access token is not defined");
+		}
 	}
 
 	/**

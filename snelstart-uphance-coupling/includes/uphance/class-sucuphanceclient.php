@@ -108,14 +108,13 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 		 * @return SUCAPIPaginatedResult the result with invoices.
 		 * @throws SUCAPIException On exception with API request.
 		 */
-		public function invoices( ?int $since_id = null ): SUCAPIPaginatedResult {
-			$url = 'invoices';
-			if ( isset( $since_id ) ) {
-				$queries = array(
-					'since_id' => $since_id,
-				);
-				$url = $url . $this->create_querystring( $queries );
-			}
+		public function invoices( ?int $since_id = null, int $page = 1 ): SUCAPIPaginatedResult {
+			$url = 'invoices/';
+			$queries = array(
+				'since_id' => $since_id,
+				'page' => $page,
+			);
+			$url = $url . $this->create_querystring( $queries );
 			$response = $this->_get( $url, null, null );
 			return new SUCAPIPaginatedResult( $response );
 		}
@@ -130,6 +129,19 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 		 */
 		public function customer_by_id( int $customer_id ): array {
 			return $this->_get( 'customers/' . $customer_id, null, null );
+		}
+
+		public function add_payment(float $amount, ?string $reference, DateTime $date, int $sale_id, int $company_id, int $invoice_id, string $source) {
+			return $this->_post('payments/', null, array(
+				'amount' => number_format($amount, 2, '.', ''),
+				'reference' => $reference,
+				'created_at' => $date->format('c'),
+				'date' => $date->format('Y-m-d'),
+				'sale_id' => $sale_id,
+				'company_id' => $company_id,
+				'invoice_id' => $invoice_id,
+				'source' => $source
+			));
 		}
 	}
 }

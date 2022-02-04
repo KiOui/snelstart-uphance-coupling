@@ -61,7 +61,6 @@ if ( ! class_exists( 'SUCSnelstartAuthClient' ) ) {
 			);
 
 			$body = 'grant_type=clientkey&clientkey=' . $this->client_key;
-
 			$response = wp_remote_post(
 				$this->_token_url,
 				array(

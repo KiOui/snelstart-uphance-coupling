@@ -77,5 +77,9 @@ if ( ! class_exists( 'SUCSnelstartGrootboekmutatie' ) ) {
 				$from_snelstart['uri']
 			);
 		}
+
+		public function __toString() {
+			return sprintf( "Snelstart Grootboekmutatie %s (invoice: %s)", $this->id, $this->factuurNummer );
+		}
 	}
 }
