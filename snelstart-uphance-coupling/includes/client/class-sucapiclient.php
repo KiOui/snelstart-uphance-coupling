@@ -140,7 +140,7 @@ abstract class SUCAPIClient {
 			$return_str = '';
 			$prepend = '?';
 			foreach ( $queries as $query => $value ) {
-				$return_str = $return_str . $prepend . $query . '=' . $value;
+				$return_str = $return_str . $prepend . urlencode( $query ) . '=' . urlencode( $value );
 				if ( '?' === $prepend ) {
 					$prepend = '&';
 				}
