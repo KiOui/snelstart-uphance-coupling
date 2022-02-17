@@ -97,7 +97,7 @@ if ( ! class_exists( 'SUCLogging' ) ) {
 
 			$set_type = null;
 
-			if ( empty( $typenow ) ) {
+			if ( empty( $typenow ) && array_key_exists( 'post', $_GET ) ) {
 				$post_id = empty( absint( wp_unslash( $_GET['post'] ) ) ) ? null : absint( wp_unslash( $_GET['post'] ) );
 				if ( isset( $post_id ) ) {
 					$post    = get_post( $post_id );

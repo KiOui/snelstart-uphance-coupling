@@ -14,8 +14,15 @@ if ( ! class_exists( 'SUCUphanceInvoiceSearcher' ) ) {
 
 		private function more_invoices(): bool {
 			if ( !$this->no_results_fetchable ) {
-				$results = $this->uphance_client->invoices( null, $this->current_page )->result;
-				if ( sizeof( $results ) === 0 ) {
+				try {
+					$results = $this->uphance_client->invoices( null, $this->current_page )->result;
+				} catch (SUCAPIException $e) {
+					SUCLogging::instance()->write("The following exception occurred while retrieving invoice data from Uphance:");
+					SUCLogging::instance()->write($e);
+					$this->no_results_fetchable = true;
+					return false;
+				}
+				if ( sizeof( $results['invoices'] ) === 0 ) {
 					$this->no_results_fetchable = true;
 					return false;
 				}

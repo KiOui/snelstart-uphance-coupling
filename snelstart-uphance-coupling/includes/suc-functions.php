@@ -126,7 +126,10 @@ if ( ! function_exists( 'sync_invoices' ) ) {
 
 		$invoices = $invoices['invoices'];
 
-		if ( count( $invoices ) > 0 ) {
+		if ( isset( $max_to_sync ) && $max_to_sync === 0 ) {
+			SUCLogging::instance()->write( __( 'Maximum amount of invoices to synchronize is 0, skipping invoice synchronization.', 'snelstart-uphance-coupling' ) );
+		}
+		else if ( count( $invoices ) > 0 ) {
 			if ( isset( $max_to_sync ) && '' !== $max_to_sync ) {
 				$invoices = array_slice( $invoices, 0, $max_to_sync );
 			}
@@ -192,7 +195,12 @@ if ( ! function_exists( 'sync_payments' ) ) {
 		usort($grootboekmutaties, function (SUCSnelstartGrootboekmutatie $obj1, SUCSnelstartGrootboekmutatie $obj2) {
 			return $obj1->modifiedOn > $obj2->modifiedOn;
 		});
-		if ( isset( $max_payments_to_sync ) ) {
+
+		if ( isset( $max_payments_to_sync ) && $max_payments_to_sync === 0) {
+			SUCLogging::instance()->write( __( 'Maximum amount of payments to synchronize is 0, skipping payment synchronization.', 'snelstart-uphance-coupling' ) );
+			return true;
+		}
+		else if ( isset( $max_payments_to_sync ) ) {
 			$grootboekmutaties = array_slice( $grootboekmutaties, 0, $max_payments_to_sync );
 		}
 

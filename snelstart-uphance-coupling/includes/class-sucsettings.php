@@ -620,7 +620,7 @@ if ( ! class_exists( 'SUCSettings' ) ) {
                 $date = null;
             }
 	        ?>
-                <input name="suc_settings[snelstart_synchronise_payments_from_date]" type="datetime-local" value="<?php echo is_null( $date ) ? (new DateTime('@1'))->format('Y-m-d\TH:i:s') : $date->format('Y-m-d\TH:i:s'); ?>"/>
+                <input name="suc_settings[snelstart_synchronise_payments_from_date]" type="datetime-local" value="<?php echo is_null( $date ) ? (new DateTime('@1'))->format('Y-m-d\TH:i') : $date->format('Y-m-d\TH:i'); ?>"/>
 	        <?php
         }
 
