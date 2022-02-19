@@ -217,17 +217,14 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 					SUCLogging::instance()->write( sprintf( __( 'Failed to get the grootboekcode for tax level %.2F.', 'snelstart-uphance-coupling' ), $tax_level ) );
 					return null;
 				}
-				$tax_name = $tax_type['btwSoort'];
-				array_push(
-					$to_order,
-					array(
-						'omschrijving' => "$amount x $product_id $product_name",
-						'grootboek' => array(
-							'id' => $grootboekcode,
-						),
-						'bedrag' => self::format_number( $price * $amount ),
-						'btwSoort' => $tax_name,
-					)
+				$tax_name   = $tax_type['btwSoort'];
+				$to_order[] = array(
+					'omschrijving' => "$amount x $product_id $product_name",
+					'grootboek'    => array(
+						'id' => $grootboekcode,
+					),
+					'bedrag'       => self::format_number( $price * $amount ),
+					'btwSoort'     => $tax_name,
 				);
 			}
 			return $to_order;
@@ -334,6 +331,54 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 		}
 
 		/**
+		 * Synchronize a credit note to Snelstart.
+		 *
+		 * @param array $credit_note the credit note to synchronize.
+		 *
+		 * @return bool true if synchonization succeeded, false otherwise.
+		 */
+		public function sync_credit_note_to_snelstart( array $credit_note ): bool {
+			$credit_note_id = $credit_note['id'];
+			SUCLogging::instance()->write( "Starting synchronization of credit note $credit_note_id." );
+			$customer = $credit_note['customer'];
+			if ( isset( $customer ) ) {
+				$grootboek_regels = $this->construct_grootboek_regels( $credit_note );
+				if ( isset( $grootboek_regels ) ) {
+
+					$btw_regels                  = $this->construct_btw_line_items( $credit_note['line_items'] );
+					$snelstart_relatie_for_order = $this->get_or_create_relatie_with_name( $customer['name'] );
+					if ( ! isset( $btw_regels ) ) {
+						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %s because BTW regels could not be constructed.', 'snelstart-uphance-coupling' ), $credit_note_id ) );
+						return false;
+					}
+
+					if ( ! isset( $snelstart_relatie_for_order ) ) {
+						$name = $customer['name'];
+						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %1$s because customer %2$s could not be found and created in Snelstart.', 'snelstart-uphance-coupling' ), $credit_note_id, $name ) );
+						return false;
+					}
+
+					try {
+						$this->client->add_verkoopboeking( $credit_note['credit_note_number'], $snelstart_relatie_for_order['id'], self::format_number( $credit_note['grand_total'] ), 0, $grootboek_regels, $btw_regels );
+					} catch ( SUCAPIException $e ) {
+						SUCLogging::instance()->write( $e );
+						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %s because of an exception.', 'snelstart-uphance-coupling' ), $credit_note_id ) );
+						return false;
+					}
+				} else {
+					SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %s because no grootboek regels could be created.', 'snelstart-uphance-coupling' ), $credit_note_id ) );
+					return false;
+				}
+			} else {
+				SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %s because no customer for credit note was set.', 'snelstart-uphance-coupling' ), $credit_note_id ) );
+				return false;
+			}
+			SUCLogging::instance()->write( sprintf( __( 'Synchronization of credit note %s succeeded.', 'snelstart-uphance-coupling' ), $credit_note_id ) );
+			exit;
+			return true;
+		}
+
+		/**
 		 * Synchronize multiple invoices to Snelstart.
 		 *
 		 * @param array $invoices array of invoices.
@@ -344,6 +389,23 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 			$return_value = true;
 			foreach ( $invoices as $invoice ) {
 				if ( ! $this->sync_invoice_to_snelstart( $invoice ) ) {
+					$return_value = false;
+				}
+			}
+			return $return_value;
+		}
+
+		/**
+		 * Synchronize multiple credit notes to Snelstart.
+		 *
+		 * @param array $credit_notes array of credit notes.
+		 *
+		 * @return bool true if all credit notes synchronized successfully, false otherwise.
+		 */
+		public function sync_credit_notes_to_snelstart( array $credit_notes ): bool {
+			$return_value = true;
+			foreach ( $credit_notes as $credit_note ) {
+				if ( ! $this->sync_credit_note_to_snelstart( $credit_note ) ) {
 					$return_value = false;
 				}
 			}

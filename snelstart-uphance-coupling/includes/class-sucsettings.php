@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 include_once SUC_ABSPATH . 'includes/uphance/class-sucuphanceclient.php';
 include_once SUC_ABSPATH . 'includes/snelstart/class-sucsnelstartclient.php';
 include_once SUC_ABSPATH . 'includes/suc-functions.php';
+include_once SUC_ABSPATH . 'includes/settings/class-settingsfactory.php';
 
 if ( ! class_exists( 'SUCSettings' ) ) {
 	/**
@@ -46,6 +47,22 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		private mixed $cached_invoices = null;
 
 		/**
+		 * Variable for storing credit notes.
+		 *
+		 * Null when not retrieved yet, array if this variable holds valid credit notes, false if retrieving failed.
+		 *
+		 * @var mixed
+		 */
+		private mixed $cached_credit_notes = null;
+
+		/**
+		 * Variable for storing the settings manager.
+		 *
+		 * @var SettingsManager
+		 */
+		private SettingsManager $manager;
+
+		/**
 		 * Uses the Singleton pattern to load 1 instance of this class at maximum.
 		 *
 		 * @static
@@ -63,6 +80,104 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		 * SUCSettings constructor.
 		 */
 		public function __construct() {
+			include_once SUC_ABSPATH . 'includes/settings/settings-init.php';
+			initialize_settings_fields();
+
+			$settings_configuration = array(
+				'group_name'   => 'suc_settings',
+				'setting_name' => 'suc_settings',
+				'page'         => array(
+					'page_title'        => esc_html__( 'Snelstart Uphance Coupling', 'snelstart-uphance-coupling' ),
+					'menu_title'        => esc_html__( 'Snelstart Uphance Coupling', 'snelstart-uphance-coupling' ),
+					'capability_needed' => 'edit_plugins',
+					'menu_slug'         => 'suc_admin_menu',
+					'icon'              => 'dashicons-rest-api',
+					'position'          => 56,
+				),
+				'menu_pages'   => array(
+					array(
+						'page_title'        => esc_html__( 'Snelstart Uphance Coupling Dashboard', 'snelstart-uphance-coupling' ),
+						'menu_title'        => esc_html__( 'Dashboard', 'snelstart-uphance-coupling' ),
+						'capability_needed' => 'edit_plugins',
+						'menu_slug'         => 'suc_admin_menu',
+						'renderer'          => array( $this, 'suc_admin_menu_dashboard_callback' )
+					)
+				),
+				'sections'     => array(
+					array(
+						'id'       => 'global_settings',
+						'name'     => __( 'Global settings', 'snelstart-uphance-coupling' ),
+						'settings' => array(
+							array(
+								'type'        => 'positive_int',
+								'id'          => 'max_invoices_to_synchronize',
+								'name'        => __( 'Maximum amount of invoices to synchronize', 'snelstart-uphance-coupling' ),
+								'default'     => 5,
+								'can_be_null' => true,
+                                'hint' => __( 'Maximum amount of invoices to synchronize per run (leave empty for all)', 'snelstart-uphance-coupling' ),
+								'maximum'     => null,
+							),
+							array(
+								'type'        => 'positive_int',
+								'id'          => 'max_credit_notes_to_synchronize',
+								'name'        => __( 'Maximum amount of credit notes to synchronize', 'snelstart-uphance-coupling' ),
+								'default'     => 5,
+								'can_be_null' => true,
+								'hint' => __( 'Maximum amount of credit notes to synchronize per run (leave empty for all)', 'snelstart-uphance-coupling' ),
+								'maximum'     => null,
+							),
+							array(
+								'type'        => 'positive_int',
+								'id'          => 'max_payments_to_synchronize',
+								'name'        => __( 'Maximum amount of payments to synchronize', 'snelstart-uphance-coupling' ),
+								'default'     => 5,
+								'can_be_null' => true,
+								'hint' => __( 'Maximum amount of payments to synchronize per run (leave empty for all)', 'snelstart-uphance-coupling' ),
+								'maximum'     => null,
+							),
+							array(
+								'type'        => 'bool',
+								'id'          => 'synchronize_invoices_to_snelstart',
+								'name'        => __( 'Synchronize invoices to Snelstart', 'snelstart-uphance-coupling' ),
+								'default'     => false,
+								'hint' => __( 'Whether to synchronize invoices from Uphance to Snelstart', 'snelstart-uphance-coupling' ),
+							),
+							array(
+								'type'        => 'bool',
+								'id'          => 'synchronize_credit_notes_to_snelstart',
+								'name'        => __( 'Synchronize credit notes to Snelstart', 'snelstart-uphance-coupling' ),
+								'default'     => false,
+								'hint' => __( 'Whether to synchronize credit notes from Uphance to Snelstart', 'snelstart-uphance-coupling' ),
+							),
+							array(
+								'type'        => 'bool',
+								'id'          => 'synchronize_payments_to_uphance',
+								'name'        => __( 'Synchronize payments to Uphance', 'snelstart-uphance-coupling' ),
+								'default'     => false,
+								'hint' => __( 'Whether to synchronize payments from Snelstart to Uphance', 'snelstart-uphance-coupling' ),
+							),
+						),
+					),
+                    array(
+	                    'id'       => 'snelstart_settings',
+	                    'name'     => __( 'Snelstart settings', 'snelstart-uphance-coupling' ),
+	                    'settings' => array(
+		                    array(
+			                    'type'        => 'positive_int',
+			                    'id'          => 'max_invoices_to_synchronize',
+			                    'name'        => __( 'Maximum amount of invoices to synchronize', 'snelstart-uphance-coupling' ),
+			                    'default'     => 5,
+			                    'can_be_null' => true,
+			                    'hint' => __( 'Maximum amount of invoices to synchronize per run (leave empty for all)', 'snelstart-uphance-coupling' ),
+			                    'maximum'     => null,
+		                    ),
+	                    ),
+                    ),
+				),
+			);
+
+			$this->manager = SettingsFactory::create_settings( $settings_configuration );
+
 			$this->actions_and_filters();
 		}
 
@@ -70,9 +185,10 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		 * Add actions and filters.
 		 */
 		public function actions_and_filters() {
-			add_action( 'admin_menu', array( $this, 'add_menu_page' ), 99 );
-			add_action( 'admin_init', array( $this, 'register_settings' ) );
+			//add_action( 'admin_menu', array( $this, 'add_menu_page' ), 99 );
+			//add_action( 'admin_init', array( $this, 'register_settings' ) );
 			add_action( 'current_screen', array( $this, 'do_custom_actions' ), 99 );
+			$this->manager->actions_and_filters();
 		}
 
 		/**
@@ -86,15 +202,15 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 					exit;
 				}
 			} else {
-                $uphance_client = SUCUphanceClient::instance();
-                if ( ! is_null( $uphance_client ) ) {
-	                $uphance_client->reset_auth_token();
-                }
-                $snelstart_client = SUCSnelstartClient::instance();
-                if ( ! is_null( $snelstart_client ) ) {
-	                $snelstart_client->reset_auth_token();
-                }
-            }
+				$uphance_client = SUCUphanceClient::instance();
+				if ( ! is_null( $uphance_client ) ) {
+					$uphance_client->reset_auth_token();
+				}
+				$snelstart_client = SUCSnelstartClient::instance();
+				if ( ! is_null( $snelstart_client ) ) {
+					$snelstart_client->reset_auth_token();
+				}
+			}
 		}
 
 		/**
@@ -129,47 +245,6 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 				'suc_settings',
 				array( $this, 'suc_settings_validate' )
 			);
-
-			add_settings_section(
-				'global_settings',
-				__( 'Global settings', 'snelstart-uphance-coupling' ),
-				array( $this, 'global_settings_callback' ),
-				'suc_settings'
-			);
-
-			add_settings_field(
-				'max_invoices_to_synchronize',
-				__( 'Maximum amount of invoices to synchronize', 'snelstart-uphance-coupling' ),
-				array( $this, 'max_invoices_to_synchronize_callback' ),
-				'suc_settings',
-				'global_settings'
-			);
-
-			add_settings_field(
-				'max_payments_to_synchronize',
-				__( 'Maximum amount of payments to synchronize', 'snelstart-uphance-coupling' ),
-				array( $this, 'max_payments_to_synchronize_callback' ),
-				'suc_settings',
-				'global_settings'
-			);
-
-            add_settings_field(
-                'synchronize_invoices_to_snelstart',
-                __( 'Whether to synchronize invoices from Uphance to Snelstart', 'snelstart-uphance-coupling' ),
-                array( $this, 'synchronize_invoices_to_snelstart_callback' ),
-                'suc_settings',
-                'global_settings'
-
-            );
-
-            add_settings_field(
-                'synchronize_payments_to_uphance',
-                __( 'Whether to synchronize payments from Snelstart to Uphance', 'snelstart-uphance-coupling' ),
-                array( $this, 'synchronize_payments_to_uphance_callback' ),
-                'suc_settings',
-                'global_settings'
-            );
-
 			add_settings_section(
 				'snelstart_settings',
 				__( 'Snelstart Key settings', 'snelstart-uphance-coupling' ),
@@ -268,6 +343,14 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 					'suc_settings',
 					'uphance_settings',
 				);
+
+				add_settings_field(
+					'uphance_synchronise_credit_notes_from',
+					__( 'Uphance Synchronise credit notes from', 'snelstart-uphance-coupling' ),
+					array( $this, 'uphance_synchronise_credit_notes_from_renderer' ),
+					'suc_settings',
+					'uphance_settings',
+				);
 			}
 		}
 
@@ -279,78 +362,34 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		 * @return array output settings.
 		 */
 		public function suc_settings_validate( array $input ): array {
-			$output['max_invoices_to_synchronize'] = absint( $input['max_invoices_to_synchronize'] );
-			$output['max_payments_to_synchronize'] = absint( $input['max_payments_to_synchronize'] );
+			$output['max_invoices_to_synchronize']     = absint( $input['max_invoices_to_synchronize'] );
+			$output['max_credit_notes_to_synchronize'] = absint( $input['max_credit_notes_to_synchronize'] );
+			$output['max_payments_to_synchronize']     = absint( $input['max_payments_to_synchronize'] );
 
-			$output['snelstart_client_key']     = esc_attr( $input['snelstart_client_key'] );
+			$output['snelstart_client_key']       = esc_attr( $input['snelstart_client_key'] );
 			$output['snelstart_subscription_key'] = esc_attr( $input['snelstart_subscription_key'] );
-			$output['uphance_username'] = sanitize_email( $input['uphance_username'] );
-			$output['uphance_password'] = $input['uphance_password'];
+			$output['uphance_username']           = sanitize_email( $input['uphance_username'] );
+			$output['uphance_password']           = $input['uphance_password'];
 
-			$output['uphance_organisation'] = '' !== $input['uphance_organisation'] ? absint( $input['uphance_organisation'] ) : '';
-			$output['uphance_synchronise_invoices_from'] = '' !== $input['uphance_synchronise_invoices_from'] ? absint( $input['uphance_synchronise_invoices_from'] ) : '';
+			$output['uphance_organisation']                  = '' !== $input['uphance_organisation'] ? absint( $input['uphance_organisation'] ) : '';
+			$output['uphance_synchronise_invoices_from']     = '' !== $input['uphance_synchronise_invoices_from'] ? absint( $input['uphance_synchronise_invoices_from'] ) : '';
+			$output['uphance_synchronise_credit_notes_from'] = '' !== $input['uphance_synchronise_credit_notes_from'] ? absint( $input['uphance_synchronise_credit_notes_from'] ) : '';
 
-            $output['snelstart_grootboekcode_debiteuren'] = $input['snelstart_grootboekcode_debiteuren'];
-			$output['snelstart_grootboekcode_btw_hoog'] = $input['snelstart_grootboekcode_btw_hoog'];
-			$output['snelstart_grootboekcode_btw_geen'] = $input['snelstart_grootboekcode_btw_geen'];
-            try {
-	            $output['snelstart_synchronise_payments_from_date'] = (new DateTime($input['snelstart_synchronise_payments_from_date']))->format('Y-m-d\TH:i:sP');
-            } catch (Exception $e) {
-	            $output['snelstart_synchronise_payments_from_date'] = (new DateTime("@0"))->format('Y-m-d\TH:i:sP');
-            }
+			$output['snelstart_grootboekcode_debiteuren'] = $input['snelstart_grootboekcode_debiteuren'];
+			$output['snelstart_grootboekcode_btw_hoog']   = $input['snelstart_grootboekcode_btw_hoog'];
+			$output['snelstart_grootboekcode_btw_geen']   = $input['snelstart_grootboekcode_btw_geen'];
+			try {
+				$output['snelstart_synchronise_payments_from_date'] = ( new DateTime( $input['snelstart_synchronise_payments_from_date'] ) )->format( 'Y-m-d\TH:i:sP' );
+			} catch ( Exception $e ) {
+				$output['snelstart_synchronise_payments_from_date'] = ( new DateTime( "@0" ) )->format( 'Y-m-d\TH:i:sP' );
+			}
 
-            $output['synchronize_invoices_to_snelstart'] = suc_sanitize_boolean_default_false( $input['synchronize_invoices_to_snelstart'] );
-            $output['synchronize_payments_to_uphance'] = suc_sanitize_boolean_default_false( $input['synchronize_payments_to_uphance'] );
+			$output['synchronize_invoices_to_snelstart']     = suc_sanitize_boolean_default_false( $input['synchronize_invoices_to_snelstart'] );
+			$output['synchronize_credit_notes_to_snelstart'] = suc_sanitize_boolean_default_false( $input['synchronize_credit_notes_to_snelstart'] );
+			$output['synchronize_payments_to_uphance']       = suc_sanitize_boolean_default_false( $input['synchronize_payments_to_uphance'] );
 
 			return $output;
 		}
-
-		/**
-		 * Render the global settings section title.
-		 */
-		public function global_settings_callback() {
-			echo esc_html( __( 'Global settings', 'snelstart-uphance-coupling' ) );
-		}
-
-		/**
-		 * Render max invoices to synchronize setting.
-		 */
-		public function max_invoices_to_synchronize_callback() {
-			$options = get_option( 'suc_settings' ); ?>
-			<p><?php echo esc_html( __( 'Maximum amount of invoices to synchronize per run (leave empty for all)', 'snelstart-uphance-coupling' ) ); ?></p>
-			<input type='number' name='suc_settings[max_invoices_to_synchronize]'
-				   value="<?php echo esc_attr( $options['max_invoices_to_synchronize'] ); ?>">
-			<?php
-		}
-
-		/**
-		 * Render max payments to synchronize setting.
-		 */
-		public function max_payments_to_synchronize_callback() {
-			$options = get_option( 'suc_settings' ); ?>
-            <p><?php echo esc_html( __( 'Maximum amount of payments to synchronize per run (leave empty for all)', 'snelstart-uphance-coupling' ) ); ?></p>
-            <input type='number' name='suc_settings[max_payments_to_synchronize]'
-                   value="<?php echo esc_attr( $options['max_payments_to_synchronize'] ); ?>">
-			<?php
-		}
-
-		/**
-		 * Render invoices to snelstart setting.
-		 */
-		public function synchronize_invoices_to_snelstart_callback() {
-			$options = get_option( 'suc_settings' ); ?>
-            <input type='checkbox' name='suc_settings[synchronize_invoices_to_snelstart]' <?php checked( $options['synchronize_invoices_to_snelstart'], 1 ); ?> value='1'>
-			<?php
-		}
-
-		/**
-		 * Render payments to uphance setting.
-		 */
-        public function synchronize_payments_to_uphance_callback() {
-	        $options = get_option( 'suc_settings' ); ?>
-            <input type='checkbox' name='suc_settings[synchronize_payments_to_uphance]' <?php checked( $options['synchronize_payments_to_uphance'], 1 ); ?> value='1'>
-	        <?php
-        }
 
 		/**
 		 * Render the Snelstart settings section title
@@ -365,9 +404,9 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		public function snelstart_client_key_renderer() {
 			$options = get_option( 'suc_settings' );
 			?>
-			<p><?php echo esc_html( __( 'The snelstart API client key', 'snelstart-uphance-coupling' ) ); ?></p>
-			<input type='text' name='suc_settings[snelstart_client_key]'
-				   value="<?php echo esc_attr( $options['snelstart_client_key'] ); ?>">
+            <p><?php echo esc_html( __( 'The snelstart API client key', 'snelstart-uphance-coupling' ) ); ?></p>
+            <input type='text' name='suc_settings[snelstart_client_key]'
+                   value="<?php echo esc_attr( $options['snelstart_client_key'] ); ?>">
 			<?php
 		}
 
@@ -377,9 +416,9 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		public function snelstart_subscription_key_renderer() {
 			$options = get_option( 'suc_settings' );
 			?>
-			<p><?php echo esc_html( __( 'The snelstart API subscription key', 'snelstart-uphance-coupling' ) ); ?></p>
-			<input type='text' name='suc_settings[snelstart_subscription_key]'
-				   value="<?php echo esc_attr( $options['snelstart_subscription_key'] ); ?>">
+            <p><?php echo esc_html( __( 'The snelstart API subscription key', 'snelstart-uphance-coupling' ) ); ?></p>
+            <input type='text' name='suc_settings[snelstart_subscription_key]'
+                   value="<?php echo esc_attr( $options['snelstart_subscription_key'] ); ?>">
 			<?php
 		}
 
@@ -396,9 +435,9 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		public function uphance_username_renderer() {
 			$options = get_option( 'suc_settings' );
 			?>
-			<p><?php echo esc_html( __( 'Uphance username (e-mail address)', 'snelstart-uphance-coupling' ) ); ?></p>
-			<input type='text' name='suc_settings[uphance_username]'
-				   value="<?php echo esc_attr( $options['uphance_username'] ); ?>">
+            <p><?php echo esc_html( __( 'Uphance username (e-mail address)', 'snelstart-uphance-coupling' ) ); ?></p>
+            <input type='text' name='suc_settings[uphance_username]'
+                   value="<?php echo esc_attr( $options['uphance_username'] ); ?>">
 			<?php
 		}
 
@@ -408,9 +447,9 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		public function uphance_password_renderer() {
 			$options = get_option( 'suc_settings' );
 			?>
-			<p><?php echo esc_html( __( 'Uphance password', 'snelstart-uphance-coupling' ) ); ?></p>
-			<input type='password' name='suc_settings[uphance_password]'
-				   value="<?php echo esc_attr( $options['uphance_password'] ); ?>">
+            <p><?php echo esc_html( __( 'Uphance password', 'snelstart-uphance-coupling' ) ); ?></p>
+            <input type='password' name='suc_settings[uphance_password]'
+                   value="<?php echo esc_attr( $options['uphance_password'] ); ?>">
 			<?php
 		}
 
@@ -419,38 +458,39 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		 */
 		public function uphance_organisation_renderer() {
 			?>
-			<p><?php echo esc_html( __( 'Uphance organisation', 'snelstart-uphance-coupling' ) ); ?></p>
+            <p><?php echo esc_html( __( 'Uphance organisation', 'snelstart-uphance-coupling' ) ); ?></p>
 			<?php
-			$options = get_option( 'suc_settings' );
+			$options        = get_option( 'suc_settings' );
 			$selected_value = isset( $options['uphance_organisation'] ) && '' != $options['uphance_organisation'] ? $options['uphance_organisation'] : null;
 			$uphance_client = SUCUphanceClient::instance();
 			try {
 				$selections = $uphance_client->organisations();
 			} catch ( SUCAPIException $e ) {
 				?>
-				 <p class="notice notice-error"><?php echo esc_html( __( 'There was a problem rendering the organisations, please make sure your uphance username and password are correct.', 'snelstart-uphance-coupling' ) ); ?></p>
+                <p class="notice notice-error"><?php echo esc_html( __( 'There was a problem rendering the organisations, please make sure your uphance username and password are correct.', 'snelstart-uphance-coupling' ) ); ?></p>
 				<?php
 				return;
 			}
 
 			$selected_value_in_set = false;
 			?>
-			<select name="suc_settings[uphance_organisation]">
-				<option value="">----------</option>
+            <select name="suc_settings[uphance_organisation]">
+                <option value="">----------</option>
 				<?php foreach ( $selections['organisations'] as $selection ) : ?>
-				<option value="<?php echo esc_html( $selection['id'] ); ?>" 
-										  <?php
-											if ( $selection['id'] == $selected_value ) {
-												$selected_value_in_set = true;
-												?>
-					 selected <?php } ?>>
-					<?php echo esc_html( $selection['name'] ); ?>
-				</option>
+                    <option value="<?php echo esc_html( $selection['id'] ); ?>"
+						<?php
+						if ( $selection['id'] == $selected_value ) {
+							$selected_value_in_set = true;
+							?>
+                            selected <?php } ?>>
+						<?php echo esc_html( $selection['name'] ); ?>
+                    </option>
 				<?php endforeach; ?>
 				<?php if ( ! $selected_value_in_set && isset( $selected_value ) ) : ?>
-				<option selected value="<?php echo esc_html( $selected_value ); ?>"><?php echo esc_html( sprintf( __( 'Currently set organisation with ID %s (not in Uphance anymore)', 'snelstart-uphance-coupling' ), $selected_value ) ); ?></option>
+                    <option selected
+                            value="<?php echo esc_html( $selected_value ); ?>"><?php echo esc_html( sprintf( __( 'Currently set organisation with ID %s (not in Uphance anymore)', 'snelstart-uphance-coupling' ), $selected_value ) ); ?></option>
 				<?php endif; ?>
-			</select>
+            </select>
 			<?php
 		}
 
@@ -459,36 +499,76 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		 */
 		public function uphance_synchronise_invoices_from_renderer() {
 			?>
-			<p><?php echo esc_html( __( 'Uphance Synchronise invoices from this invoice number onward.', 'snelstart-uphance-coupling' ) ); ?></p>
+            <p><?php echo esc_html( __( 'Uphance Synchronise invoices from this invoice number onward.', 'snelstart-uphance-coupling' ) ); ?></p>
 			<?php
-			$options = get_option( 'suc_settings' );
+			$options        = get_option( 'suc_settings' );
 			$selected_value = isset( $options['uphance_synchronise_invoices_from'] ) && '' != $options['uphance_synchronise_invoices_from'] ? $options['uphance_synchronise_invoices_from'] : null;
-			$selections = $this->get_invoices();
+			$selections     = $this->get_invoices();
 			if ( ! isset( $selections ) ) {
 				?>
-				 <p class="notice notice-error"><?php echo esc_html( __( 'There was a problem rendering the invoices, please make sure your uphance username and password are correct.', 'snelstart-uphance-coupling' ) ); ?></p>
+                <p class="notice notice-error"><?php echo esc_html( __( 'There was a problem rendering the invoices, please make sure your uphance username and password are correct.', 'snelstart-uphance-coupling' ) ); ?></p>
 				<?php
 				return;
 			}
 
 			$selected_value_in_set = false;
 			?>
-			<select name="suc_settings[uphance_synchronise_invoices_from]">
-				<option value="">----------</option>
+            <select name="suc_settings[uphance_synchronise_invoices_from]">
+                <option value="">----------</option>
 				<?php foreach ( $selections['invoices'] as $selection ) : ?>
-					<option value="<?php echo esc_html( $selection['id'] ); ?>" 
-											  <?php
-												if ( $selection['id'] == $selected_value ) {
-													$selected_value_in_set = true;
-													?>
-						 selected <?php } ?>>
+                    <option value="<?php echo esc_html( $selection['id'] ); ?>"
+						<?php
+						if ( $selection['id'] == $selected_value ) {
+							$selected_value_in_set = true;
+							?>
+                            selected <?php } ?>>
 						<?php echo esc_html( $selection['invoice_number'] ); ?>
-					</option>
+                    </option>
 				<?php endforeach; ?>
 				<?php if ( ! $selected_value_in_set && isset( $selected_value ) ) : ?>
-					<option selected value="<?php echo esc_html( $selected_value ); ?>"><?php echo esc_html( sprintf( __( 'Currently set invoice with ID %s (not in Uphance anymore)', 'snelstart-uphance-coupling' ), $selected_value ) ); ?></option>
+                    <option selected
+                            value="<?php echo esc_html( $selected_value ); ?>"><?php echo esc_html( sprintf( __( 'Currently set invoice with ID %s (not in Uphance anymore)', 'snelstart-uphance-coupling' ), $selected_value ) ); ?></option>
 				<?php endif; ?>
-			</select>
+            </select>
+			<?php
+		}
+
+		/**
+		 * Render Uphance synchronise credit notes from setting.
+		 */
+		public function uphance_synchronise_credit_notes_from_renderer() {
+			?>
+            <p><?php echo esc_html( __( 'Uphance Synchronise credit notes from this number onward.', 'snelstart-uphance-coupling' ) ); ?></p>
+			<?php
+			$options        = get_option( 'suc_settings' );
+			$selected_value = isset( $options['uphance_synchronise_credit_notes_from'] ) && '' != $options['uphance_synchronise_credit_notes_from'] ? $options['uphance_synchronise_credit_notes_from'] : null;
+			$selections     = $this->get_credit_notes();
+			if ( ! isset( $selections ) ) {
+				?>
+                <p class="notice notice-error"><?php echo esc_html( __( 'There was a problem rendering the credit notes, please make sure your uphance username and password are correct.', 'snelstart-uphance-coupling' ) ); ?></p>
+				<?php
+				return;
+			}
+
+			$selected_value_in_set = false;
+			?>
+            <select name="suc_settings[uphance_synchronise_credit_notes_from]">
+                <option value="">----------</option>
+				<?php foreach ( $selections['credit_notes'] as $selection ) : ?>
+                    <option value="<?php echo esc_html( $selection['id'] ); ?>"
+						<?php
+						if ( $selection['id'] == $selected_value ) {
+							$selected_value_in_set = true;
+							?>
+                            selected <?php } ?>>
+						<?php echo esc_html( $selection['credit_note_number'] ); ?>
+                    </option>
+				<?php endforeach; ?>
+				<?php if ( ! $selected_value_in_set && isset( $selected_value ) ) : ?>
+                    <option selected
+                            value="<?php echo esc_html( $selected_value ); ?>"><?php echo esc_html( sprintf( __( 'Currently set credit note with ID %s (not in Uphance anymore)', 'snelstart-uphance-coupling' ), $selected_value ) ); ?></option>
+				<?php endif; ?>
+            </select>
 			<?php
 		}
 
@@ -497,36 +577,37 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		 */
 		public function snelstart_grootboekcode_btw_hoog_renderer() {
 			?>
-			<p><?php echo esc_html( __( 'Snelstart Ledger code for BTW hoog.', 'snelstart-uphance-coupling' ) ); ?></p>
+            <p><?php echo esc_html( __( 'Snelstart Ledger code for BTW hoog.', 'snelstart-uphance-coupling' ) ); ?></p>
 			<?php
-			$options = get_option( 'suc_settings' );
+			$options        = get_option( 'suc_settings' );
 			$selected_value = isset( $options['snelstart_grootboekcode_btw_hoog'] ) && '' != $options['snelstart_grootboekcode_btw_hoog'] ? $options['snelstart_grootboekcode_btw_hoog'] : null;
-			$selections = $this->get_grootboeken();
+			$selections     = $this->get_grootboeken();
 			if ( ! isset( $selections ) ) {
 				?>
-				 <p class="notice notice-error"><?php echo esc_html( __( 'There was a problem rendering the Ledger codes, please make sure your snelstart key settings are correct.', 'snelstart-uphance-coupling' ) ); ?></p>
+                <p class="notice notice-error"><?php echo esc_html( __( 'There was a problem rendering the Ledger codes, please make sure your snelstart key settings are correct.', 'snelstart-uphance-coupling' ) ); ?></p>
 				<?php
 				return;
 			}
 
 			$selected_value_in_set = false;
 			?>
-			<select name="suc_settings[snelstart_grootboekcode_btw_hoog]">
-				<option value="">----------</option>
+            <select name="suc_settings[snelstart_grootboekcode_btw_hoog]">
+                <option value="">----------</option>
 				<?php foreach ( $selections as $selection ) : ?>
-					<option value="<?php echo esc_html( $selection['id'] ); ?>" 
-											  <?php
-												if ( $selection['id'] == $selected_value ) {
-													$selected_value_in_set = true;
-													?>
-						 selected <?php } ?>>
+                    <option value="<?php echo esc_html( $selection['id'] ); ?>"
+						<?php
+						if ( $selection['id'] == $selected_value ) {
+							$selected_value_in_set = true;
+							?>
+                            selected <?php } ?>>
 						<?php echo esc_html( $selection['nummer'] . ' (' . $selection['omschrijving'] . ', ' . $selection['rekeningCode'] . ')' ); ?>
-					</option>
+                    </option>
 				<?php endforeach; ?>
 				<?php if ( ! $selected_value_in_set && isset( $selected_value ) ) : ?>
-					<option selected value="<?php echo esc_html( $selected_value ); ?>"><?php echo esc_html( sprintf( __( 'Currently set ledger code with ID %s (not in Snelstart anymore)', 'snelstart-uphance-coupling' ), $selected_value ) ); ?></option>
+                    <option selected
+                            value="<?php echo esc_html( $selected_value ); ?>"><?php echo esc_html( sprintf( __( 'Currently set ledger code with ID %s (not in Snelstart anymore)', 'snelstart-uphance-coupling' ), $selected_value ) ); ?></option>
 				<?php endif; ?>
-			</select>
+            </select>
 			<?php
 		}
 
@@ -537,9 +618,9 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 			?>
             <p><?php echo esc_html( __( 'Snelstart Ledger code for Debiteuren.', 'snelstart-uphance-coupling' ) ); ?></p>
 			<?php
-			$options = get_option( 'suc_settings' );
+			$options        = get_option( 'suc_settings' );
 			$selected_value = isset( $options['snelstart_grootboekcode_debiteuren'] ) && '' != $options['snelstart_grootboekcode_debiteuren'] ? $options['snelstart_grootboekcode_debiteuren'] : null;
-			$selections = $this->get_grootboeken();
+			$selections     = $this->get_grootboeken();
 			if ( ! isset( $selections ) ) {
 				?>
                 <p class="notice notice-error"><?php echo esc_html( __( 'There was a problem rendering the Ledger codes, please make sure your snelstart key settings are correct.', 'snelstart-uphance-coupling' ) ); ?></p>
@@ -562,7 +643,8 @@ if ( ! class_exists( 'SUCSettings' ) ) {
                     </option>
 				<?php endforeach; ?>
 				<?php if ( ! $selected_value_in_set && isset( $selected_value ) ) : ?>
-                    <option selected value="<?php echo esc_html( $selected_value ); ?>"><?php echo esc_html( sprintf( __( 'Currently set ledger code with ID %s (not in Snelstart anymore)', 'snelstart-uphance-coupling' ), $selected_value ) ); ?></option>
+                    <option selected
+                            value="<?php echo esc_html( $selected_value ); ?>"><?php echo esc_html( sprintf( __( 'Currently set ledger code with ID %s (not in Snelstart anymore)', 'snelstart-uphance-coupling' ), $selected_value ) ); ?></option>
 				<?php endif; ?>
             </select>
 			<?php
@@ -573,56 +655,58 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		 */
 		public function snelstart_grootboekcode_btw_geen_renderer() {
 			?>
-			<p><?php echo esc_html( __( 'Snelstart Ledger code for BTW geen.', 'snelstart-uphance-coupling' ) ); ?></p>
+            <p><?php echo esc_html( __( 'Snelstart Ledger code for BTW geen.', 'snelstart-uphance-coupling' ) ); ?></p>
 			<?php
-			$options = get_option( 'suc_settings' );
+			$options        = get_option( 'suc_settings' );
 			$selected_value = isset( $options['snelstart_grootboekcode_btw_geen'] ) && '' != $options['snelstart_grootboekcode_btw_geen'] ? $options['snelstart_grootboekcode_btw_geen'] : null;
-			$selections = $this->get_grootboeken();
+			$selections     = $this->get_grootboeken();
 			if ( ! isset( $selections ) ) {
 				?>
-				 <p class="notice notice-error"><?php echo esc_html( __( 'There was a problem rendering the Ledger codes, please make sure your snelstart key settings are correct.', 'snelstart-uphance-coupling' ) ); ?></p>
+                <p class="notice notice-error"><?php echo esc_html( __( 'There was a problem rendering the Ledger codes, please make sure your snelstart key settings are correct.', 'snelstart-uphance-coupling' ) ); ?></p>
 				<?php
 				return;
 			}
 
 			$selected_value_in_set = false;
 			?>
-			<select name="suc_settings[snelstart_grootboekcode_btw_geen]">
-				<option value="">----------</option>
+            <select name="suc_settings[snelstart_grootboekcode_btw_geen]">
+                <option value="">----------</option>
 				<?php foreach ( $selections as $selection ) : ?>
-					<option value="<?php echo esc_html( $selection['id'] ); ?>" 
-											  <?php
-												if ( $selection['id'] == $selected_value ) {
-													$selected_value_in_set = true;
-													?>
-						 selected <?php } ?>>
+                    <option value="<?php echo esc_html( $selection['id'] ); ?>"
+						<?php
+						if ( $selection['id'] == $selected_value ) {
+							$selected_value_in_set = true;
+							?>
+                            selected <?php } ?>>
 						<?php echo esc_html( $selection['nummer'] . ' (' . $selection['omschrijving'] . ', ' . $selection['rekeningCode'] . ')' ); ?>
-					</option>
+                    </option>
 				<?php endforeach; ?>
 				<?php if ( ! $selected_value_in_set && isset( $selected_value ) ) : ?>
-					<option selected value="<?php echo esc_html( $selected_value ); ?>"><?php echo esc_html( sprintf( __( 'Currently set ledger code with ID %s (not in Snelstart anymore)', 'snelstart-uphance-coupling' ), $selected_value ) ); ?></option>
+                    <option selected
+                            value="<?php echo esc_html( $selected_value ); ?>"><?php echo esc_html( sprintf( __( 'Currently set ledger code with ID %s (not in Snelstart anymore)', 'snelstart-uphance-coupling' ), $selected_value ) ); ?></option>
 				<?php endif; ?>
-			</select>
+            </select>
 			<?php
 		}
 
 		/**
 		 * Render Snelstart Synchronise payments from date.
 		 */
-        public function snelstart_synchronise_payments_from_date_renderer() {
-	        ?>
+		public function snelstart_synchronise_payments_from_date_renderer() {
+			?>
             <p><?php echo esc_html( __( 'Snelstart Synchronise payments from this modified at date onward.', 'snelstart-uphance-coupling' ) ); ?></p>
-	        <?php
-	        $options = get_option( 'suc_settings' );
-            try {
-	            $date = isset( $options['snelstart_synchronise_payments_from_date'] ) && '' != $options['snelstart_synchronise_payments_from_date'] ? new DateTime( $options['snelstart_synchronise_payments_from_date'] ) : null;
-            } catch (Exception $e) {
-                $date = null;
-            }
-	        ?>
-                <input name="suc_settings[snelstart_synchronise_payments_from_date]" type="datetime-local" value="<?php echo is_null( $date ) ? (new DateTime('@1'))->format('Y-m-d\TH:i') : $date->format('Y-m-d\TH:i'); ?>"/>
-	        <?php
-        }
+			<?php
+			$options = get_option( 'suc_settings' );
+			try {
+				$date = isset( $options['snelstart_synchronise_payments_from_date'] ) && '' != $options['snelstart_synchronise_payments_from_date'] ? new DateTime( $options['snelstart_synchronise_payments_from_date'] ) : null;
+			} catch ( Exception $e ) {
+				$date = null;
+			}
+			?>
+            <input name="suc_settings[snelstart_synchronise_payments_from_date]" type="datetime-local"
+                   value="<?php echo is_null( $date ) ? ( new DateTime( '@1' ) )->format( 'Y-m-d\TH:i' ) : $date->format( 'Y-m-d\TH:i' ); ?>"/>
+			<?php
+		}
 
 		/**
 		 * Admin menu dashboard callback.
@@ -648,13 +732,16 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 				if ( isset( $snelstart_client ) ) {
 					try {
 						$this->cached_grootboeken = $snelstart_client->grootboeken();
+
 						return $this->cached_grootboeken;
 					} catch ( SUCAPIException $e ) {
 						$this->cached_grootboeken = false;
+
 						return null;
 					}
 				} else {
 					$this->cached_grootboeken = false;
+
 					return null;
 				}
 			}
@@ -677,13 +764,48 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 				if ( isset( $uphance_client ) ) {
 					try {
 						$this->cached_invoices = $uphance_client->invoices()->result;
+
 						return $this->cached_invoices;
 					} catch ( SUCAPIException $e ) {
 						$this->cached_invoices = false;
+
 						return null;
 					}
 				} else {
 					$this->cached_invoices = false;
+
+					return null;
+				}
+			}
+		}
+
+		/**
+		 * Get invoices and set cache.
+		 *
+		 * @return array|null the invoices (array) if succeeded, null otherwise.
+		 */
+		private function get_credit_notes(): ?array {
+			if ( isset( $this->cached_credit_notes ) ) {
+				if ( false === $this->cached_credit_notes ) {
+					return null;
+				} else {
+					return $this->cached_credit_notes;
+				}
+			} else {
+				$uphance_client = SUCUphanceClient::instance();
+				if ( isset( $uphance_client ) ) {
+					try {
+						$this->cached_credit_notes = $uphance_client->credit_notes()->result;
+
+						return $this->cached_credit_notes;
+					} catch ( SUCAPIException $e ) {
+						$this->cached_credit_notes = false;
+
+						return null;
+					}
+				} else {
+					$this->cached_credit_notes = false;
+
 					return null;
 				}
 			}

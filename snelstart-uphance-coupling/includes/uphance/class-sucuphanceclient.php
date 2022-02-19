@@ -120,6 +120,56 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 		}
 
 		/**
+		 * Get an order.
+		 *
+		 * @param int $order_id the order ID of the order to get.
+		 *
+		 * @return array the order
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		public function order( int $order_id ): array {
+			$url = "sales_orders/$order_id";
+			return $this->_get( $url, null, null );
+		}
+
+		/**
+		 * Get an order by order number.
+		 *
+		 * @param ?int $order_number the order number of the order to get.
+		 *
+		 * @return SUCAPIPaginatedResult the orders
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		public function orders( ?int $order_number ): SUCAPIPaginatedResult {
+			$url = "sales_orders/";
+			$queries = array(
+				'by_order_number' => $order_number,
+			);
+			$url = $url . $this->create_querystring( $queries );
+			$response = $this->_get( $url, null, null );
+			return new SUCAPIPaginatedResult( $response );
+		}
+
+		/**
+		 * Get all credit notes.
+		 *
+		 * @param int|null $since_id optional ID of credit note, when set only credit notes from this ID will be requested.
+		 *
+		 * @return SUCAPIPaginatedResult the result with invoices.
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		public function credit_notes( ?int $since_id = null, int $page = 1 ): SUCAPIPaginatedResult {
+			$url = 'credit_notes/';
+			$queries = array(
+				'since_id' => $since_id,
+				'page' => $page,
+			);
+			$url = $url . $this->create_querystring( $queries );
+			$response = $this->_get( $url, null, null );
+			return new SUCAPIPaginatedResult( $response );
+		}
+
+		/**
 		 * Get Customer by ID.
 		 *
 		 * @param int $customer_id the customer ID to get.
