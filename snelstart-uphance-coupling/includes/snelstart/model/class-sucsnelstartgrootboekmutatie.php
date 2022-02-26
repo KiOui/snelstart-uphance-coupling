@@ -21,21 +21,21 @@ if ( ! class_exists( 'SUCSnelstartGrootboekmutatie' ) ) {
 		public string $uri;
 
 		/**
-		 * @param array $grootboek
-		 * @param array $kostenplaats
+		 * @param array    $grootboek
+		 * @param array    $kostenplaats
 		 * @param DateTime $datum
 		 * @param DateTime $modifiedOn
-		 * @param array $dagboek
-		 * @param string $omschrijving
-		 * @param float $debet
-		 * @param float $credit
-		 * @param float $saldo
-		 * @param array $documents
-		 * @param ?string $boekstuk
-		 * @param ?string $factuurNummer
-		 * @param ?array $relatiePublicIdentifier
-		 * @param string $id
-		 * @param string $uri
+		 * @param array    $dagboek
+		 * @param string   $omschrijving
+		 * @param float    $debet
+		 * @param float    $credit
+		 * @param float    $saldo
+		 * @param array    $documents
+		 * @param ?string  $boekstuk
+		 * @param ?string  $factuurNummer
+		 * @param ?array   $relatiePublicIdentifier
+		 * @param string   $id
+		 * @param string   $uri
 		 */
 		public function __construct( array $grootboek, array $kostenplaats, DateTime $datum, DateTime $modifiedOn, array $dagboek, string $omschrijving, float $debet, float $credit, float $saldo, array $documents, ?string $boekstuk, ?string $factuurNummer, ?array $relatiePublicIdentifier, string $id, string $uri ) {
 			$this->grootboek               = $grootboek;
@@ -62,10 +62,10 @@ if ( ! class_exists( 'SUCSnelstartGrootboekmutatie' ) ) {
 			return new SUCSnelstartGrootboekmutatie(
 				$from_snelstart['grootboek'],
 				is_null( $from_snelstart['kostenplaats'] ) ? array() : $from_snelstart['kostenplaats'],
-				new DateTime($from_snelstart['datum']),
-				new DateTime($from_snelstart['modifiedOn']),
+				new DateTime( $from_snelstart['datum'] ),
+				new DateTime( $from_snelstart['modifiedOn'] ),
 				$from_snelstart['dagboek'],
-				is_null ( $from_snelstart['omschrijving'] ) ? '' : $from_snelstart['omschrijving'],
+				is_null( $from_snelstart['omschrijving'] ) ? '' : $from_snelstart['omschrijving'],
 				floatval( $from_snelstart['debet'] ),
 				floatval( $from_snelstart['credit'] ),
 				floatval( $from_snelstart['saldo'] ),
@@ -79,7 +79,7 @@ if ( ! class_exists( 'SUCSnelstartGrootboekmutatie' ) ) {
 		}
 
 		public function __toString() {
-			return sprintf( "Snelstart Grootboekmutatie %s (invoice: %s)", $this->id, $this->factuurNummer );
+			return sprintf( 'Snelstart Grootboekmutatie %s (invoice: %s)', $this->id, $this->factuurNummer );
 		}
 	}
 }

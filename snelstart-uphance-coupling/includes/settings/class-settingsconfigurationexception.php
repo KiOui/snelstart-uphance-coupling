@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! class_exists( "SettingsConfigurationException" ) ) {
+if ( ! class_exists( 'SettingsConfigurationException' ) ) {
 	/**
 	 * Settings Configuration Exception.
 	 *

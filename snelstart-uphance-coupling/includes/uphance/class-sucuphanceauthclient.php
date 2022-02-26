@@ -107,7 +107,7 @@ if ( ! class_exists( 'SUCUphanceAuthClient' ) ) {
 					throw new SUCAPIException(
 						wp_remote_retrieve_response_code( $response ),
 						-1,
-						"Access token request returned null",
+						'Access token request returned null',
 						null,
 						wp_remote_retrieve_headers( $response )->getAll(),
 					);

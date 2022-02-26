@@ -99,8 +99,9 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 		 * @return array|null An array with the relatie if succeeded, null if the relatie does not exist or multiple relaties were returned.
 		 */
 		public function get_or_create_relatie_with_name( string $naam ): ?array {
+			$naam_escaped = str_replace( "'", "''", $naam );
 			try {
-				$relaties = $this->client->relaties( null, null, "Naam eq '$naam'" );
+				$relaties = $this->client->relaties( null, null, "Naam eq '$naam_escaped'" );
 			} catch ( SUCAPIException $e ) {
 				SUCLogging::instance()->write( $e );
 				SUCLogging::instance()->write( sprintf( __( 'An exception occurred while getting relatie with name %s.', 'snelstart-uphance-coupling' ), $naam ) );
@@ -251,17 +252,17 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 				);
 				$tax_name = $this->convert_btw_amount_to_name( $tax_level );
 				if ( key_exists( $tax_name, $btw_items ) ) {
-					$btw_items[ $tax_name ]['btwBedrag'] = $btw_items[ $tax_name ]['btwBedrag'] + $price * $amount * $tax_level/100;
+					$btw_items[ $tax_name ]['btwBedrag'] = $btw_items[ $tax_name ]['btwBedrag'] + $price * $amount * $tax_level / 100;
 				} else {
 					$btw_items[ $tax_name ] = array(
 						'btwSoort' => $tax_name,
-						'btwBedrag' => $price * $amount * $tax_level/100,
+						'btwBedrag' => $price * $amount * $tax_level / 100,
 					);
 				}
 			}
 			// Format all btw items such that they have a maximum of two decimals
 			foreach ( array_keys( $btw_items ) as $btw_items_key ) {
-				$btw_items[$btw_items_key]['btwBedrag'] = self::format_number($btw_items[$btw_items_key]['btwBedrag']);
+				$btw_items[ $btw_items_key ]['btwBedrag'] = self::format_number( $btw_items[ $btw_items_key ]['btwBedrag'] );
 			}
 			return array_values( $btw_items );
 		}

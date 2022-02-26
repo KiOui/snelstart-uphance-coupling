@@ -8,17 +8,17 @@ if ( ! class_exists( 'SUCUphanceInvoiceSearcher' ) ) {
 		private int $current_page = 1;
 		private bool $no_results_fetchable = false;
 
-		public function __construct(SUCUphanceClient $uphance_client) {
+		public function __construct( SUCUphanceClient $uphance_client ) {
 			$this->uphance_client = $uphance_client;
 		}
 
 		private function more_invoices(): bool {
-			if ( !$this->no_results_fetchable ) {
+			if ( ! $this->no_results_fetchable ) {
 				try {
 					$results = $this->uphance_client->invoices( null, $this->current_page )->result;
-				} catch (SUCAPIException $e) {
-					SUCLogging::instance()->write("The following exception occurred while retrieving invoice data from Uphance:");
-					SUCLogging::instance()->write($e);
+				} catch ( SUCAPIException $e ) {
+					SUCLogging::instance()->write( 'The following exception occurred while retrieving invoice data from Uphance:' );
+					SUCLogging::instance()->write( $e );
 					$this->no_results_fetchable = true;
 					return false;
 				}
@@ -51,8 +51,8 @@ if ( ! class_exists( 'SUCUphanceInvoiceSearcher' ) ) {
 						$i = $i - 1;
 					}
 				} else {
-					if ( $this->invoices[$i]['invoice_number'] === $invoice_number_to_search ) {
-						return $this->invoices[$i];
+					if ( $this->invoices[ $i ]['invoice_number'] === $invoice_number_to_search ) {
+						return $this->invoices[ $i ];
 					}
 				}
 			}

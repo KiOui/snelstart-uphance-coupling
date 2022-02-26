@@ -100,12 +100,12 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 			}
 		}
 
-		public function get_all(callable $function, $maximum=null, ...$args): array {
+		public function get_all( callable $function, $maximum = null, ...$args ): array {
 			$results = array();
 			do {
-				$result = $function( $skip=sizeof( $results ), $top=(is_null( $maximum ) ? null : min($maximum - sizeof( $results ), SUCSnelstartClient::$MAXIMUM_RESULTS)), ...$args );
-				$results = array_merge($results, $result);
-			} while ( sizeof( $result ) !== 0 && ($maximum === null || sizeof( $results ) < $maximum ) );
+				$result = $function( $skip = sizeof( $results ), $top = ( is_null( $maximum ) ? null : min( $maximum - sizeof( $results ), self::$MAXIMUM_RESULTS ) ), ...$args );
+				$results = array_merge( $results, $result );
+			} while ( sizeof( $result ) !== 0 && ( $maximum === null || sizeof( $results ) < $maximum ) );
 			return $results;
 		}
 
@@ -155,7 +155,7 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		 *
 		 * @throws SUCAPIException On exception with API request.
 		 */
-		public function grootboekmutaties(int $skip = null, int $top = null, string $filter = null, string $expand = null): array {
+		public function grootboekmutaties( int $skip = null, int $top = null, string $filter = null, string $expand = null ): array {
 			$queries = array(
 				'$skip' => $skip,
 				'$top' => $top,

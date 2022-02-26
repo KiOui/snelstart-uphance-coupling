@@ -87,16 +87,16 @@ abstract class SUCAPIAuthClient {
 
 		$token_info = $this->request_access_token();
 		if ( isset( $token_info['error'] ) ) {
-			throw new SUCAPIException( 200, 200, $token_info['error'], null, null);
+			throw new SUCAPIException( 200, 200, $token_info['error'], null, null );
 		}
 
-		if ( isset( $token_info['access_token']) ) {
+		if ( isset( $token_info['access_token'] ) ) {
 			$token_info = $this->add_custom_values_to_token_info( $token_info );
 			$this->token_info = $token_info;
 			$this->_save_token_info( $token_info );
 			return $this->token_info['access_token'];
 		} else {
-			throw new Exception("Access token is not defined");
+			throw new Exception( 'Access token is not defined' );
 		}
 	}
 
@@ -130,7 +130,7 @@ abstract class SUCAPIAuthClient {
 	 * @return void
 	 */
 	public function reset_token() {
-		$this->_save_token_info(null);
+		$this->_save_token_info( null );
 	}
 }
 
