@@ -218,14 +218,14 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 					SUCLogging::instance()->write( sprintf( __( 'Failed to get the grootboekcode for tax level %.2F.', 'snelstart-uphance-coupling' ), $tax_level ) );
 					return null;
 				}
-				$tax_name   = $tax_type['btw_soort'];
+				$tax_name   = $tax_type['btwSoort'];
 				$to_order[] = array(
 					'omschrijving' => "$amount x $product_id $product_name",
 					'grootboek'    => array(
 						'id' => $grootboekcode,
 					),
 					'bedrag'       => self::format_number( $price * $amount ),
-					'btw_soort'     => $tax_name,
+					'btwSoort'     => $tax_name,
 				);
 			}
 			return $to_order;
@@ -255,7 +255,7 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 					$btw_items[ $tax_name ]['btwBedrag'] = $btw_items[ $tax_name ]['btwBedrag'] + $price * $amount * $tax_level / 100;
 				} else {
 					$btw_items[ $tax_name ] = array(
-						'btw_soort' => $tax_name,
+						'btwSoort' => $tax_name,
 						'btwBedrag' => $price * $amount * $tax_level / 100,
 					);
 				}
@@ -308,12 +308,12 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 					}
 
 					if ( ! isset( $betalingstermijn ) ) {
-						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %1$s because invoice due date could not be converted.', 'snelstart-uphance-coupling' ), $invoice_id, $name ) );
+						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %1$s because invoice due date could not be converted.', 'snelstart-uphance-coupling' ), $invoice_id ) );
 						return false;
 					}
 
 					try {
-						$this->client->add_verkoopboeking( $invoice['invoice_number'], $snelstart_relatie_for_order['id'], self::format_number( $invoice['grand_total'] ), $betalingstermijn, $grootboek_regels, $btw_regels );
+						$this->client->add_verkoopboeking( $invoice['invoice_number'], $snelstart_relatie_for_order['id'], self::format_number( $invoice['items_total'] ), $betalingstermijn, $grootboek_regels, $btw_regels );
 					} catch ( SUCAPIException $e ) {
 						SUCLogging::instance()->write( $e );
 						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %s because of an exception.', 'snelstart-uphance-coupling' ), $invoice_id ) );

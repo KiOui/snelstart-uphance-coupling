@@ -52,7 +52,7 @@ if ( ! function_exists( 'suc_get_current_btw_soorten' ) ) {
 					$from_date = new DateTime( $btw_soort['datumVanaf'] );
 					$to_date   = new DateTime( $btw_soort['datumTotEnMet'] );
 				} catch ( Exception $e ) {
-					SUCLogging::instance()->write( sprintf( __( 'Failed to create date objects for BTW soort %1$s the following Exception occurred: %2$s', 'snelstart-uphance-coupling' ), $btw_soort['btw_soort'], $e ) );
+					SUCLogging::instance()->write( sprintf( __( 'Failed to create date objects for BTW soort %1$s the following Exception occurred: %2$s', 'snelstart-uphance-coupling' ), $btw_soort['btwSoort'], $e ) );
 					return false;
 				}
 				return $from_date < $now && $now <= $to_date;
