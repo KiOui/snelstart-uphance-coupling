@@ -77,7 +77,7 @@ if ( ! class_exists( 'DateTimeField' ) ) {
 		public function render( string $setting_name, array $options ): void {
 			$value        = $this->get_value( $options );
 			$setting_id   = $this->get_setting_name( $setting_name ); ?>
-			<label><?php echo esc_html( $this->rendered_hint() ); ?>
+			<label><p><?php echo esc_html( $this->rendered_hint() ); ?></p>
 				<input type="datetime-local" name="<?php echo esc_attr( $setting_id ); ?>"
 					   value="<?php echo esc_attr( $value->format( 'Y-m-d\TH:i' ) ); ?>"
 					<?php if ( ! $this->can_be_null ) : ?>

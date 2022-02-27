@@ -302,7 +302,7 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 			}
 			$retvalue = array();
 			foreach ( $grootboeken as $grootboek ) {
-				$retvalue[ strval( $grootboek['id'] ) ] = $grootboek['nummer'] . ' (' . $grootboek['omschrijving'] . ', ' . $grootboek['rekening_code'] . ')';
+				$retvalue[ strval( $grootboek['id'] ) ] = $grootboek['nummer'] . ' (' . $grootboek['omschrijving'] . ', ' . $grootboek['rekeningCode'] . ')';
 			}
 
 			return $retvalue;
@@ -517,7 +517,6 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 						return $this->cached_organisations;
 					} catch ( SUCAPIException $e ) {
 						$this->cached_organisations = false;
-
 						return null;
 					}
 				} else {

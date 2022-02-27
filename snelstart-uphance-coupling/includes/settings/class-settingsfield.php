@@ -152,7 +152,7 @@ if ( ! class_exists( 'SettingsField' ) ) {
 		public function rendered_hint(): string {
 			ob_start();
 			?>
-			<p><?php echo esc_html( $this->hint ); ?></p>
+			<?php echo esc_html( $this->hint ); ?>
 			<?php
 			return ob_get_clean();
 		}

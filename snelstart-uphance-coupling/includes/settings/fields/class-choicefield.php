@@ -153,7 +153,7 @@ if ( ! class_exists( 'ChoiceField' ) ) {
 			$setting_id   = $this->get_setting_name( $setting_name );
 			$setting_selected = false;
 			$choices = $this->get_choices() ?>
-			<label><?php echo esc_html( $this->rendered_hint() ); ?>
+			<label><p><?php echo esc_html( $this->rendered_hint() ); ?></p>
 				<select name="<?php echo esc_attr( $setting_id ); ?>">
 					<?php if ( $this->can_be_null ) : ?>
 						<option value="">----------</option>
