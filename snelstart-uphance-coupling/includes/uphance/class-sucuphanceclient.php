@@ -108,14 +108,63 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 		 * @return SUCAPIPaginatedResult the result with invoices.
 		 * @throws SUCAPIException On exception with API request.
 		 */
-		public function invoices( ?int $since_id = null ): SUCAPIPaginatedResult {
-			$url = 'invoices';
-			if ( isset( $since_id ) ) {
-				$queries = array(
-					'since_id' => $since_id,
-				);
-				$url = $url . $this->create_querystring( $queries );
-			}
+		public function invoices( ?int $since_id = null, int $page = 1 ): SUCAPIPaginatedResult {
+			$url = 'invoices/';
+			$queries = array(
+				'since_id' => $since_id,
+				'page' => $page,
+			);
+			$url = $url . $this->create_querystring( $queries );
+			$response = $this->_get( $url, null, null );
+			return new SUCAPIPaginatedResult( $response );
+		}
+
+		/**
+		 * Get an order.
+		 *
+		 * @param int $order_id the order ID of the order to get.
+		 *
+		 * @return array the order
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		public function order( int $order_id ): array {
+			$url = "sales_orders/$order_id";
+			return $this->_get( $url, null, null );
+		}
+
+		/**
+		 * Get an order by order number.
+		 *
+		 * @param ?int $order_number the order number of the order to get.
+		 *
+		 * @return SUCAPIPaginatedResult the orders
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		public function orders( ?int $order_number ): SUCAPIPaginatedResult {
+			$url = 'sales_orders/';
+			$queries = array(
+				'by_order_number' => $order_number,
+			);
+			$url = $url . $this->create_querystring( $queries );
+			$response = $this->_get( $url, null, null );
+			return new SUCAPIPaginatedResult( $response );
+		}
+
+		/**
+		 * Get all credit notes.
+		 *
+		 * @param int|null $since_id optional ID of credit note, when set only credit notes from this ID will be requested.
+		 *
+		 * @return SUCAPIPaginatedResult the result with invoices.
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		public function credit_notes( ?int $since_id = null, int $page = 1 ): SUCAPIPaginatedResult {
+			$url = 'credit_notes/';
+			$queries = array(
+				'since_id' => $since_id,
+				'page' => $page,
+			);
+			$url = $url . $this->create_querystring( $queries );
 			$response = $this->_get( $url, null, null );
 			return new SUCAPIPaginatedResult( $response );
 		}
@@ -130,6 +179,37 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 		 */
 		public function customer_by_id( int $customer_id ): array {
 			return $this->_get( 'customers/' . $customer_id, null, null );
+		}
+
+		/**
+		 * Add a payment to Uphance.
+		 *
+		 * @param float       $amount the amount to add for the payment.
+		 * @param string|null $reference the reference of the payment.
+		 * @param DateTime    $date the date of the payment.
+		 * @param int         $sale_id the sale ID of the payment.
+		 * @param int         $company_id the company ID for which to add the payment.
+		 * @param int         $invoice_id the invoice ID for the payment.
+		 * @param string      $source the source of the payment (e.g. cash).
+		 *
+		 * @return array the payment as an array.
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		public function add_payment( float $amount, ?string $reference, DateTime $date, int $sale_id, int $company_id, int $invoice_id, string $source ): array {
+			return $this->_post(
+				'payments/',
+				null,
+				array(
+					'amount' => number_format( $amount, 2, '.', '' ),
+					'reference' => $reference,
+					'created_at' => $date->format( 'c' ),
+					'date' => $date->format( 'Y-m-d' ),
+					'sale_id' => $sale_id,
+					'company_id' => $company_id,
+					'invoice_id' => $invoice_id,
+					'source' => $source,
+				)
+			);
 		}
 	}
 }

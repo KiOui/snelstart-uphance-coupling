@@ -65,13 +65,13 @@ if ( ! class_exists( 'SUCLogging' ) ) {
 		 *
 		 * @param string|SUCAPIException $message the message to add.
 		 */
-		public function write( string|SUCAPIException $message ) {
+		public function write( $message ) {
 			if ( gettype( $message ) !== 'string' ) {
 				$message = $message->__toString();
 			}
 			if ( isset( $this->log_id ) ) {
-				$log_messages = get_post_meta( $this->log_id, 'suc_log_messages_json', true );
-				array_push( $log_messages, $message );
+				$log_messages   = get_post_meta( $this->log_id, 'suc_log_messages_json', true );
+				$log_messages[] = $message;
 				update_post_meta( $this->log_id, 'suc_log_messages_json', $log_messages );
 			} else {
 				$date         = new DateTime( 'now' );
@@ -97,7 +97,7 @@ if ( ! class_exists( 'SUCLogging' ) ) {
 
 			$set_type = null;
 
-			if ( empty( $typenow ) ) {
+			if ( empty( $typenow ) && array_key_exists( 'post', $_GET ) ) {
 				$post_id = empty( absint( wp_unslash( $_GET['post'] ) ) ) ? null : absint( wp_unslash( $_GET['post'] ) );
 				if ( isset( $post_id ) ) {
 					$post    = get_post( $post_id );

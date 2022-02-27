@@ -61,7 +61,6 @@ if ( ! class_exists( 'SUCSnelstartAuthClient' ) ) {
 			);
 
 			$body = 'grant_type=clientkey&clientkey=' . $this->client_key;
-
 			$response = wp_remote_post(
 				$this->_token_url,
 				array(
@@ -72,7 +71,7 @@ if ( ! class_exists( 'SUCSnelstartAuthClient' ) ) {
 			if ( is_wp_error( $response ) ) {
 				$msg = SUCAPIClient::get_error_message( wp_remote_retrieve_body( $response ) );
 				throw new SUCAPIException(
-					wp_remote_retrieve_response_code( $response ),
+					intval( wp_remote_retrieve_response_code( $response ) ),
 					-1,
 					$this->_token_url . ":\n " . $msg,
 					null,

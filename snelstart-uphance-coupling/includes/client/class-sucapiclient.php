@@ -52,6 +52,15 @@ abstract class SUCAPIClient {
 	}
 
 	/**
+	 * Reset Auth token info.
+	 *
+	 * @return void
+	 */
+	public function reset_auth_token() {
+		$this->auth_manager->reset_token();
+	}
+
+	/**
 	 * Get Authentication headers for requests.
 	 *
 	 * @return array the authentication headers.
@@ -101,7 +110,8 @@ abstract class SUCAPIClient {
 	 *
 	 * @return SUCAPIException the created exception.
 	 */
-	protected function make_exception( array|WP_Error $response, string $url ): SUCAPIException {
+	protected function make_exception( $response, string $url ): SUCAPIException {
+		// TODO: Include body in error message.
 		$msg = self::get_error_message( wp_remote_retrieve_body( $response ) );
 		return new SUCAPIException(
 			wp_remote_retrieve_response_code( $response ),
@@ -130,7 +140,7 @@ abstract class SUCAPIClient {
 			$return_str = '';
 			$prepend = '?';
 			foreach ( $queries as $query => $value ) {
-				$return_str = $return_str . $prepend . $query . '=' . $value;
+				$return_str = $return_str . $prepend . urlencode( $query ) . '=' . urlencode( $value );
 				if ( '?' === $prepend ) {
 					$prepend = '&';
 				}
@@ -175,7 +185,6 @@ abstract class SUCAPIClient {
 		$args['method'] = $method;
 
 		$response = wp_remote_get( $url, $args );
-
 		if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) < 200 || wp_remote_retrieve_response_code( $response ) > 300 ) {
 			throw $this->make_exception( $response, $url );
 		} else {

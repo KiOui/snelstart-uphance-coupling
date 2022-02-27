@@ -42,6 +42,13 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		protected static ?SUCSnelstartClient $_instance = null;
 
 		/**
+		 * Maximum amount of results to get per request.
+		 *
+		 * @var int
+		 */
+		protected static int $maximum_results = 500;
+
+		/**
 		 * Snelstart instance.
 		 *
 		 * Uses the Singleton pattern to load 1 instance of this class at maximum
@@ -99,6 +106,26 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		}
 
 		/**
+		 * Get all results for a given endpoint.
+		 *
+		 * @param callable $function a function that requests resources at an endpoint.
+		 * @param ?int     $maximum the maximum amount of results to get.
+		 * @param mixed    ...$args other arguments for the $function.
+		 *
+		 * @return array an array of results.
+		 */
+		public function get_all( callable $function, ?int $maximum = null, ...$args ): array {
+			$results = array();
+			do {
+				$result = $function( count( $results ), ( is_null( $maximum ) ? null : min( $maximum - count( $results ), self::$maximum_results ) ), ...$args );
+				$results = array_merge( $results, $result );
+				$amount_of_results = count( $result );
+				$amount_of_results_total = count( $results );
+			} while ( 0 !== $amount_of_results && ( is_null( $maximum ) || $amount_of_results_total < $maximum ) );
+			return $results;
+		}
+
+		/**
 		 * Get Bankboekingen.
 		 *
 		 * @throws SUCAPIException On exception with API request.
@@ -112,7 +139,7 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		 *
 		 * @throws SUCAPIException On exception with API request.
 		 */
-		public function add_verkoopboeking( string $factuurnummer, string $klant, float|string $factuurbedrag, array $boekingsregels, array $btw_regels ): array {
+		public function add_verkoopboeking( string $factuurnummer, string $klant, $factuurbedrag, int $betalingstermijn, array $boekingsregels, array $btw_regels ): array {
 			return $this->_post(
 				'verkoopboekingen',
 				null,
@@ -123,7 +150,8 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 					),
 					'boekingsregels' => $boekingsregels,
 					'factuurbedrag' => $factuurbedrag,
-					'factuurdatum' => gmdate( 'Y-m-d H:i:s' ),
+					'betalingstermijn' => $betalingstermijn,
+					'factuurdatum' => gmdate( 'Y-m-d H:i:s' ), // TODO: Change this to a date.
 					'btw' => $btw_regels,
 				)
 			);
@@ -139,15 +167,32 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		}
 
 		/**
-		 * Get relaties.
+		 * Get grootboekmutaties.
 		 *
 		 * @throws SUCAPIException On exception with API request.
 		 */
-		public function relaties( int $skip = null, int $top = null, string $filter = null ): array {
+		public function grootboekmutaties( int $skip = null, int $top = null, string $filter = null, string $expand = null ): array {
 			$queries = array(
 				'$skip' => $skip,
 				'$top' => $top,
 				'$filter' => $filter,
+				'$expand' => $expand,
+			);
+			$querystring = $this->create_querystring( $queries );
+			return $this->_get( 'grootboekmutaties' . $querystring, null, null );
+		}
+
+		/**
+		 * Get relaties.
+		 *
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		public function relaties( int $skip = null, int $top = null, string $filter = null, string $expand = null ): array {
+			$queries = array(
+				'$skip' => $skip,
+				'$top' => $top,
+				'$filter' => $filter,
+				'$expand' => $expand,
 			);
 			$querystring = $this->create_querystring( $queries );
 			return $this->_get( 'relaties' . $querystring, null, null );
