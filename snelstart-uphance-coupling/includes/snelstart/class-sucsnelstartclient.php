@@ -41,7 +41,12 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		 */
 		protected static ?SUCSnelstartClient $_instance = null;
 
-		protected static int $MAXIMUM_RESULTS = 500;
+		/**
+		 * Maximum amount of results to get per request.
+		 *
+		 * @var int
+		 */
+		protected static int $maximum_results = 500;
 
 		/**
 		 * Snelstart instance.
@@ -100,12 +105,23 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 			}
 		}
 
-		public function get_all( callable $function, $maximum = null, ...$args ): array {
+		/**
+		 * Get all results for a given endpoint.
+		 *
+		 * @param callable $function a function that requests resources at an endpoint.
+		 * @param ?int     $maximum the maximum amount of results to get.
+		 * @param mixed    ...$args other arguments for the $function.
+		 *
+		 * @return array an array of results.
+		 */
+		public function get_all( callable $function, ?int $maximum = null, ...$args ): array {
 			$results = array();
 			do {
-				$result = $function( $skip = sizeof( $results ), $top = ( is_null( $maximum ) ? null : min( $maximum - sizeof( $results ), self::$MAXIMUM_RESULTS ) ), ...$args );
+				$result = $function( count( $results ), ( is_null( $maximum ) ? null : min( $maximum - count( $results ), self::$maximum_results ) ), ...$args );
 				$results = array_merge( $results, $result );
-			} while ( sizeof( $result ) !== 0 && ( $maximum === null || sizeof( $results ) < $maximum ) );
+				$amount_of_results = count( $result );
+				$amount_of_results_total = count( $results );
+			} while ( 0 !== $amount_of_results && ( is_null( $maximum ) || $amount_of_results_total < $maximum ) );
 			return $results;
 		}
 
@@ -123,7 +139,7 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		 *
 		 * @throws SUCAPIException On exception with API request.
 		 */
-		public function add_verkoopboeking( string $factuurnummer, string $klant, float|string $factuurbedrag, int $betalingstermijn, array $boekingsregels, array $btw_regels ): array {
+		public function add_verkoopboeking( string $factuurnummer, string $klant, $factuurbedrag, int $betalingstermijn, array $boekingsregels, array $btw_regels ): array {
 			return $this->_post(
 				'verkoopboekingen',
 				null,
@@ -135,7 +151,7 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 					'boekingsregels' => $boekingsregels,
 					'factuurbedrag' => $factuurbedrag,
 					'betalingstermijn' => $betalingstermijn,
-					'factuurdatum' => gmdate( 'Y-m-d H:i:s' ), // TODO: Change this to a date
+					'factuurdatum' => gmdate( 'Y-m-d H:i:s' ), // TODO: Change this to a date.
 					'btw' => $btw_regels,
 				)
 			);

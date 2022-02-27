@@ -181,7 +181,21 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 			return $this->_get( 'customers/' . $customer_id, null, null );
 		}
 
-		public function add_payment( float $amount, ?string $reference, DateTime $date, int $sale_id, int $company_id, int $invoice_id, string $source ) {
+		/**
+		 * Add a payment to Uphance.
+		 *
+		 * @param float       $amount the amount to add for the payment.
+		 * @param string|null $reference the reference of the payment.
+		 * @param DateTime    $date the date of the payment.
+		 * @param int         $sale_id the sale ID of the payment.
+		 * @param int         $company_id the company ID for which to add the payment.
+		 * @param int         $invoice_id the invoice ID for the payment.
+		 * @param string      $source the source of the payment (e.g. cash).
+		 *
+		 * @return array the payment as an array.
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		public function add_payment( float $amount, ?string $reference, DateTime $date, int $sale_id, int $company_id, int $invoice_id, string $source ): array {
 			return $this->_post(
 				'payments/',
 				null,

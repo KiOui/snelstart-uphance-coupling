@@ -26,7 +26,7 @@ if ( ! class_exists( 'TextField' ) ) {
 		 * @param string        $id the slug-like ID of the setting.
 		 * @param string        $name the name of the setting.
 		 * @param callable|null $renderer the custom renderer of the SettingsField.
-		 * @param string|null         $default the default value of the setting.
+		 * @param string|null   $default the default value of the setting.
 		 * @param bool          $can_be_null whether the setting can be null.
 		 * @param string        $hint the hint to display next to the setting.
 		 *
@@ -39,9 +39,9 @@ if ( ! class_exists( 'TextField' ) ) {
 		/**
 		 * Validate a string value.
 		 *
-		 * @param mixed    $to_validate the value to validate.
+		 * @param mixed       $to_validate the value to validate.
 		 * @param string|null $default the default value.
-		 * @param bool     $can_be_null whether the value to validate can be null.
+		 * @param bool        $can_be_null whether the value to validate can be null.
 		 *
 		 * @return string|null the validated value.
 		 */

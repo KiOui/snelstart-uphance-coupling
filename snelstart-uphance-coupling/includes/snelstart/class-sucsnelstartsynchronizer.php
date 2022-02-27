@@ -218,14 +218,14 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 					SUCLogging::instance()->write( sprintf( __( 'Failed to get the grootboekcode for tax level %.2F.', 'snelstart-uphance-coupling' ), $tax_level ) );
 					return null;
 				}
-				$tax_name   = $tax_type['btwSoort'];
+				$tax_name   = $tax_type['btw_soort'];
 				$to_order[] = array(
 					'omschrijving' => "$amount x $product_id $product_name",
 					'grootboek'    => array(
 						'id' => $grootboekcode,
 					),
 					'bedrag'       => self::format_number( $price * $amount ),
-					'btwSoort'     => $tax_name,
+					'btw_soort'     => $tax_name,
 				);
 			}
 			return $to_order;
@@ -255,12 +255,12 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 					$btw_items[ $tax_name ]['btwBedrag'] = $btw_items[ $tax_name ]['btwBedrag'] + $price * $amount * $tax_level / 100;
 				} else {
 					$btw_items[ $tax_name ] = array(
-						'btwSoort' => $tax_name,
+						'btw_soort' => $tax_name,
 						'btwBedrag' => $price * $amount * $tax_level / 100,
 					);
 				}
 			}
-			// Format all btw items such that they have a maximum of two decimals
+			// Format all btw items such that they have a maximum of two decimals.
 			foreach ( array_keys( $btw_items ) as $btw_items_key ) {
 				$btw_items[ $btw_items_key ]['btwBedrag'] = self::format_number( $btw_items[ $btw_items_key ]['btwBedrag'] );
 			}

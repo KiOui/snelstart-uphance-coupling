@@ -16,11 +16,11 @@ if ( ! function_exists( 'suc_convert_date_to_amount_of_days_until' ) ) {
 	/**
 	 * Convert a date as string to days until that date.
 	 *
-	 * @param string $date date as string (00-00-0000)
+	 * @param string $date date as string (00-00-0000).
 	 *
-	 * @return bool|int false on failure, a positive integer when date is in the future, 0 when date is in the past
+	 * @return bool|int false on failure, a positive integer when date is in the future, 0 when date is in the past.
 	 */
-	function suc_convert_date_to_amount_of_days_until( string $date ): bool|int {
+	function suc_convert_date_to_amount_of_days_until( string $date ) {
 		try {
 			$date_obj = new DateTime( $date );
 			$now = new DateTime();
@@ -52,7 +52,7 @@ if ( ! function_exists( 'suc_get_current_btw_soorten' ) ) {
 					$from_date = new DateTime( $btw_soort['datumVanaf'] );
 					$to_date   = new DateTime( $btw_soort['datumTotEnMet'] );
 				} catch ( Exception $e ) {
-					SUCLogging::instance()->write( sprintf( __( 'Failed to create date objects for BTW soort %1$s the following Exception occurred: %2$s', 'snelstart-uphance-coupling' ), $btw_soort['btwSoort'], $e ) );
+					SUCLogging::instance()->write( sprintf( __( 'Failed to create date objects for BTW soort %1$s the following Exception occurred: %2$s', 'snelstart-uphance-coupling' ), $btw_soort['btw_soort'], $e ) );
 					return false;
 				}
 				return $from_date < $now && $now <= $to_date;
@@ -81,11 +81,16 @@ if ( ! function_exists( 'suc_sanitize_boolean_default_false' ) ) {
 if ( ! function_exists( 'convert_snelstart_payment_to_payment' ) ) {
 
 	/**
-	 * @throws Exception on conversion error
+	 * Convert an array to a SUCPayment.
+	 *
+	 * @param array $snelstart_payment a key => value array to be converted to an SUCPayment.
+	 *
+	 * @return SUCPayment an SUCPayment converted from the array.
+	 * @throws Exception On conversion error.
 	 */
 	function convert_snelstart_payment_to_payment( array $snelstart_payment ): SUCPayment {
 		include_once SUC_ABSPATH . 'includes/model/class-sucpayment.php';
-		return new SUCPayment( 'snelstart_' . $snelstart_payment['id'], floatval( $snelstart_payment['saldo'] ), $snelstart_payment['factuurNummer'], $snelstart_payment['omschrijving'], new DateTime( $snelstart_payment['datum'] ), new DateTime( $snelstart_payment['datum'] ) );
+		return new SUCPayment( 'snelstart_' . $snelstart_payment['id'], floatval( $snelstart_payment['saldo'] ), $snelstart_payment['factuur_nummer'], $snelstart_payment['omschrijving'], new DateTime( $snelstart_payment['datum'] ), new DateTime( $snelstart_payment['datum'] ) );
 	}
 }
 
@@ -93,10 +98,10 @@ if ( ! function_exists( 'sync_invoices' ) ) {
 	/**
 	 * Synchronize invoices to Snelstart.
 	 *
-	 * @param SUCUphanceClient   $uphance_client the Uphance client
-	 * @param SUCSnelstartClient $snelstart_client the Snelstart client
+	 * @param SUCUphanceClient   $uphance_client the Uphance client.
+	 * @param SUCSnelstartClient $snelstart_client the Snelstart client.
 	 *
-	 * @return bool false when invoice synchronisation failed, true when it succeeded
+	 * @return bool false when invoice synchronisation failed, true when it succeeded.
 	 */
 	function sync_invoices( SUCUphanceClient $uphance_client, SUCSnelstartClient $snelstart_client ): bool {
 		$settings = get_option( 'suc_settings' );
@@ -126,7 +131,7 @@ if ( ! function_exists( 'sync_invoices' ) ) {
 
 		$invoices = $invoices['invoices'];
 
-		if ( isset( $max_to_sync ) && $max_to_sync === 0 ) {
+		if ( isset( $max_to_sync ) && 0 === $max_to_sync ) {
 			SUCLogging::instance()->write( __( 'Maximum amount of invoices to synchronize is 0, skipping invoice synchronization.', 'snelstart-uphance-coupling' ) );
 		} else if ( count( $invoices ) > 0 ) {
 			if ( isset( $max_to_sync ) && '' !== $max_to_sync ) {
@@ -168,10 +173,10 @@ if ( ! function_exists( 'sync_credit_notes' ) ) {
 	/**
 	 * Synchronize credit notes to Snelstart.
 	 *
-	 * @param SUCUphanceClient   $uphance_client the Uphance client
-	 * @param SUCSnelstartClient $snelstart_client the Snelstart client
+	 * @param SUCUphanceClient   $uphance_client the Uphance client.
+	 * @param SUCSnelstartClient $snelstart_client the Snelstart client.
 	 *
-	 * @return bool false when credit note synchronisation failed, true when it succeeded
+	 * @return bool false when credit note synchronisation failed, true when it succeeded.
 	 */
 	function sync_credit_notes( SUCUphanceClient $uphance_client, SUCSnelstartClient $snelstart_client ): bool {
 		$settings = get_option( 'suc_settings' );
@@ -202,7 +207,7 @@ if ( ! function_exists( 'sync_credit_notes' ) ) {
 
 		$credit_notes = $credit_notes['credit_notes'];
 
-		if ( isset( $max_to_sync ) && $max_to_sync === 0 ) {
+		if ( isset( $max_to_sync ) && 0 === $max_to_sync ) {
 			SUCLogging::instance()->write( __( 'Maximum amount of credit notes to synchronize is 0, skipping credit notes synchronization.', 'snelstart-uphance-coupling' ) );
 		} else if ( count( $credit_notes ) > 0 ) {
 
@@ -230,7 +235,8 @@ if ( ! function_exists( 'sync_credit_notes' ) ) {
 				$credit_notes[ $i ]['subtotal'] = $credit_notes[ $i ]['subtotal'] * -1;
 				$credit_notes[ $i ]['total_tax'] = $credit_notes[ $i ]['total_tax'] * -1;
 				$credit_notes[ $i ]['grand_total'] = $credit_notes[ $i ]['grand_total'] * -1;
-				for ( $line_item_index = 0; $line_item_index < sizeof( $credit_notes[ $i ]['line_items'] ); $line_item_index++ ) {
+				$amount_of_line_items = count( $credit_notes[ $i ]['line_items'] );
+				for ( $line_item_index = 0; $line_item_index < $amount_of_line_items; $line_item_index++ ) {
 					$credit_notes[ $i ]['line_items'][ $line_item_index ]['unit_tax'] = $credit_notes[ $i ]['line_items'][ $line_item_index ]['unit_tax'] * -1;
 					$credit_notes[ $i ]['line_items'][ $line_item_index ]['unit_price'] = $credit_notes[ $i ]['line_items'][ $line_item_index ]['unit_price'] * -1;
 					$credit_notes[ $i ]['line_items'][ $line_item_index ]['original_price'] = $credit_notes[ $i ]['line_items'][ $line_item_index ]['original_price'] * -1;
@@ -259,6 +265,14 @@ if ( ! function_exists( 'sync_credit_notes' ) ) {
 }
 
 if ( ! function_exists( 'sync_payments' ) ) {
+	/**
+	 * Synchronize Payments from Snelstart to Uphance.
+	 *
+	 * @param SUCUphanceClient   $uphance_client the Uphance client.
+	 * @param SUCSnelstartClient $snelstart_client the Snelstart client.
+	 *
+	 * @return bool whether synchronisation succeeded.
+	 */
 	function sync_payments( SUCUphanceClient $uphance_client, SUCSnelstartClient $snelstart_client ): bool {
 		include_once SUC_ABSPATH . 'includes/snelstart/model/class-sucsnelstartgrootboekmutatie.php';
 		$settings = get_option( 'suc_settings' );
@@ -288,18 +302,30 @@ if ( ! function_exists( 'sync_payments' ) ) {
 
 		$grootboekmutaties = array_map(
 			function ( $grootboekmutatie ) {
-				return SUCSnelstartGrootboekmutatie::from_snelstart( $grootboekmutatie );
+				try {
+					return SUCSnelstartGrootboekmutatie::from_snelstart( $grootboekmutatie );
+				} catch ( Exception $e ) {
+					SUCLogging::instance()->write( __( 'Convertion of grootboekmutatie to object failed with exception.', 'snelstart-uphance-coupling' ) );
+					SUCLogging::instance()->write( $e );
+					return null;
+				}
 			},
 			$grootboekmutaties
+		);
+		$grootboekmutaties = array_filter(
+			$grootboekmutaties,
+			function ( $grootboekmutatie ) {
+				return ! is_null( $grootboekmutatie );
+			}
 		);
 		usort(
 			$grootboekmutaties,
 			function ( SUCSnelstartGrootboekmutatie $obj1, SUCSnelstartGrootboekmutatie $obj2 ) {
-				return $obj1->modifiedOn > $obj2->modifiedOn;
+				return $obj1->modified_on > $obj2->modified_on;
 			}
 		);
 
-		if ( isset( $max_payments_to_sync ) && $max_payments_to_sync === 0 ) {
+		if ( isset( $max_payments_to_sync ) && 0 === $max_payments_to_sync ) {
 			SUCLogging::instance()->write( __( 'Maximum amount of payments to synchronize is 0, skipping payment synchronization.', 'snelstart-uphance-coupling' ) );
 			return true;
 		} else if ( isset( $max_payments_to_sync ) ) {
@@ -310,8 +336,8 @@ if ( ! function_exists( 'sync_payments' ) ) {
 		$company_id = $settings['uphance_organisation'];
 
 		foreach ( $grootboekmutaties as $grootboekmutatie ) {
-			if ( isset( $grootboekmutatie->factuurNummer ) ) {
-				$invoice = $invoice_searcher->search_invoice( intval( $grootboekmutatie->factuurNummer ) );
+			if ( isset( $grootboekmutatie->factuur_nummer ) ) {
+				$invoice = $invoice_searcher->search_invoice( intval( $grootboekmutatie->factuur_nummer ) );
 				if ( ! is_null( $invoice ) ) {
 					try {
 						$uphance_client->add_payment( $grootboekmutatie->saldo * -1, 'snelstart_' . $grootboekmutatie->id, $grootboekmutatie->datum, $invoice['sale_id'], $company_id, $invoice['id'], 'API Payment' );
@@ -320,14 +346,14 @@ if ( ! function_exists( 'sync_payments' ) ) {
 						SUCLogging::instance()->write( $e );
 					}
 				} else {
-					SUCLogging::instance()->write( sprintf( __( 'Skipping grootboekmutatie %1$s because its invoice number (%2$s) could not be found in Uphance.', 'snelstart-uphance-coupling' ), $grootboekmutatie->id, $grootboekmutatie->factuurNummer ) );
+					SUCLogging::instance()->write( sprintf( __( 'Skipping grootboekmutatie %1$s because its invoice number (%2$s) could not be found in Uphance.', 'snelstart-uphance-coupling' ), $grootboekmutatie->id, $grootboekmutatie->factuur_nummer ) );
 				}
 			} else {
 				SUCLogging::instance()->write( sprintf( __( 'Skipping grootboekmutatie %s because it does not have an invoice number.', 'snelstart-uphance-coupling' ), $grootboekmutatie->id ) );
 			}
 		}
 		$latest_payment                                = $grootboekmutaties[ count( $grootboekmutaties ) - 1 ];
-		$settings['snelstart_synchronise_payments_from_date'] = $latest_payment->modifiedOn->format( 'Y-m-d\TH:i:sP' );
+		$settings['snelstart_synchronise_payments_from_date'] = $latest_payment->modified_on->format( 'Y-m-d\TH:i:sP' );
 		update_option( 'suc_settings', $settings );
 		return true;
 	}
@@ -376,8 +402,8 @@ if ( ! function_exists( 'cron_runner_sync_all' ) ) {
 			}
 		}
 
-		if ( $settings['synchronize_invoices_to_snelstart'] == 1 ) {
-			// Invoice synchronization
+		if ( 1 == $settings['synchronize_invoices_to_snelstart'] ) {
+			// Invoice synchronization.
 			if ( ! ( sync_invoices( $uphance_client, $snelstart_client ) ) ) {
 				SUCLogging::instance()->write( __( 'Invoice synchronisation returned an error.', 'snelstart-uphance-coupling' ) );
 			} else {
@@ -387,8 +413,8 @@ if ( ! function_exists( 'cron_runner_sync_all' ) ) {
 			SUCLogging::instance()->write( __( 'Skipped invoice synchronization from Snelstart to Uphance because it is disabled in settings.', 'snelstart-uphance-coupling' ) );
 		}
 
-		if ( $settings['synchronize_credit_notes_to_snelstart'] == 1 ) {
-			// Credit notes synchronization
+		if ( 1 == $settings['synchronize_credit_notes_to_snelstart'] ) {
+			// Credit notes synchronization.
 			if ( ! ( sync_credit_notes( $uphance_client, $snelstart_client ) ) ) {
 				SUCLogging::instance()->write( __( 'Credit notes synchronisation returned an error.', 'snelstart-uphance-coupling' ) );
 			} else {
@@ -398,8 +424,8 @@ if ( ! function_exists( 'cron_runner_sync_all' ) ) {
 			SUCLogging::instance()->write( __( 'Skipped credit notes synchronization from Snelstart to Uphance because it is disabled in settings.', 'snelstart-uphance-coupling' ) );
 		}
 
-		if ( $settings['synchronize_payments_to_uphance'] == 1 ) {
-			// Payments synchronization
+		if ( 1 == $settings['synchronize_payments_to_uphance'] ) {
+			// Payments synchronization.
 			sync_payments( $uphance_client, $snelstart_client );
 		} else {
 			SUCLogging::instance()->write( __( 'Skipped payments synchronization from Uphance to Snelstart because it is disabled in settings.', 'snelstart-uphance-coupling' ) );

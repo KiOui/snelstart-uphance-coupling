@@ -71,7 +71,7 @@ abstract class SUCAPIAuthClient {
 	 *
 	 * @return string the access token.
 	 * @throws SUCAPIException On API error or authentication fault.
-	 * @throws Exception
+	 * @throws Exception When te access token is not defined.
 	 */
 	public function get_access_token( bool $check_cache = true ): string {
 		if ( $check_cache ) {

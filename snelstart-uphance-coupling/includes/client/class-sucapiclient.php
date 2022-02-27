@@ -110,8 +110,8 @@ abstract class SUCAPIClient {
 	 *
 	 * @return SUCAPIException the created exception.
 	 */
-	protected function make_exception( array|WP_Error $response, string $url ): SUCAPIException {
-		// TODO: Include body in error message
+	protected function make_exception( $response, string $url ): SUCAPIException {
+		// TODO: Include body in error message.
 		$msg = self::get_error_message( wp_remote_retrieve_body( $response ) );
 		return new SUCAPIException(
 			wp_remote_retrieve_response_code( $response ),

@@ -33,36 +33,36 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		 *
 		 * Null when not retrieved yet, array if this variable holds valid grootboeken, false if retrieving failed.
 		 *
-		 * @var mixed
+		 * @var ?mixed
 		 */
-		private mixed $cached_grootboeken = null;
+		private $cached_grootboeken = null;
 
 		/**
 		 * Variable for storing invoices.
 		 *
 		 * Null when not retrieved yet, array if this variable holds valid invoices, false if retrieving failed.
 		 *
-		 * @var mixed
+		 * @var ?mixed
 		 */
-		private mixed $cached_invoices = null;
+		private $cached_invoices = null;
 
 		/**
 		 * Variable for storing credit notes.
 		 *
 		 * Null when not retrieved yet, array if this variable holds valid credit notes, false if retrieving failed.
 		 *
-		 * @var mixed
+		 * @var ?mixed
 		 */
-		private mixed $cached_credit_notes = null;
+		private $cached_credit_notes = null;
 
 		/**
 		 * Variable for storing organisations.
 		 *
 		 * Null when not retrieved yet, array if this variable holds valid credit notes, false if retrieving failed.
 		 *
-		 * @var mixed
+		 * @var ?mixed
 		 */
-		private mixed $cached_organisations = null;
+		private $cached_organisations = null;
 
 		/**
 		 * Variable for storing the settings manager.
@@ -290,22 +290,32 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		}
 
 
-		public function grootboekcodes_choices(): array|false {
+		/**
+		 * Get (cached) Grootboek codes.
+		 *
+		 * @return array|false false when loading failed, an array of Grootboek codes otherwise.
+		 */
+		public function grootboekcodes_choices() {
 			$grootboeken = $this->get_grootboeken();
-			if ( $grootboeken === false ) {
+			if ( false === $grootboeken ) {
 				return false;
 			}
 			$retvalue = array();
 			foreach ( $grootboeken as $grootboek ) {
-				$retvalue[ strval( $grootboek['id'] ) ] = $grootboek['nummer'] . ' (' . $grootboek['omschrijving'] . ', ' . $grootboek['rekeningCode'] . ')';
+				$retvalue[ strval( $grootboek['id'] ) ] = $grootboek['nummer'] . ' (' . $grootboek['omschrijving'] . ', ' . $grootboek['rekening_code'] . ')';
 			}
 
 			return $retvalue;
 		}
 
-		public function organisations_choices(): array|false {
+		/**
+		 * Get (cached) Organisations.
+		 *
+		 * @return array|false false when loading failed, an array of Organisations otherwise.
+		 */
+		public function organisations_choices() {
 			$organisations = $this->get_organisations();
-			if ( $organisations === false ) {
+			if ( false === $organisations ) {
 				return false;
 			}
 			$retvalue = array();
@@ -316,9 +326,14 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 			return $retvalue;
 		}
 
-		public function credit_notes_choices(): array|false {
+		/**
+		 * Get (cached) Credit notes.
+		 *
+		 * @return array|false false when loading failed, an array of Credit notes otherwise.
+		 */
+		public function credit_notes_choices() {
 			$credit_notes = $this->get_credit_notes();
-			if ( $credit_notes === false ) {
+			if ( false === $credit_notes ) {
 				return false;
 			}
 			$retvalue = array();
@@ -329,9 +344,14 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 			return $retvalue;
 		}
 
-		public function invoices_choices(): array|false {
+		/**
+		 * Get (cached) Invoices.
+		 *
+		 * @return array|false false when loading failed, an array of Invoices otherwise.
+		 */
+		public function invoices_choices() {
 			$invoices = $this->get_invoices();
-			if ( $invoices === false ) {
+			if ( false === $invoices ) {
 				return false;
 			}
 			$retvalue = array();
