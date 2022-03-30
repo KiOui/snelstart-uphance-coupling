@@ -110,6 +110,8 @@ if ( ! class_exists( 'ChoiceField' ) ) {
 		 * @return string|null the validated value.
 		 */
 		public static function validate_choice( $to_validate, array $choices, ?string $default, bool $can_be_null ): ?string {
+			// TODO: Fix this.
+			return $to_validate;
 			if ( ! isset( $to_validate ) && isset( $default ) ) {
 				return $default;
 			}
