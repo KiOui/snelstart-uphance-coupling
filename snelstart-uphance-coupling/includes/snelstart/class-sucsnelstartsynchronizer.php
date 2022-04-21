@@ -314,7 +314,14 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 					}
 
 					try {
-						$this->client->add_verkoopboeking( $invoice['invoice_number'], $snelstart_relatie_for_order['id'], self::format_number( $invoice['items_total'] + $invoice['items_tax'] ), $betalingstermijn, $grootboek_regels, $btw_regels );
+						$invoice_date = new DateTime( $invoice['created_at'] );
+					} catch ( Exception $e ) {
+						SUCLogging::instance()->write( sprintf( __( 'Failed to get date for %1$s, using datetime now.', 'snelstart-uphance-coupling' ), $invoice_id ) );
+						$invoice_date = new DateTime( 'now' );
+					}
+
+					try {
+						$this->client->add_verkoopboeking( $invoice['invoice_number'], $snelstart_relatie_for_order['id'], self::format_number( $invoice['items_total'] + $invoice['items_tax'] ), $betalingstermijn, $grootboek_regels, $btw_regels, $invoice_date );
 					} catch ( SUCAPIException $e ) {
 						SUCLogging::instance()->write( $e );
 						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %s because of an exception.', 'snelstart-uphance-coupling' ), $invoice_id ) );
@@ -361,15 +368,15 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 					}
 
 					try {
-						$this->client->add_verkoopboeking( $credit_note['credit_note_number'], $snelstart_relatie_for_order['id'], self::format_number( $credit_note['grand_total'] ), 0, $grootboek_regels, $btw_regels );
+						$credit_note_date = new DateTime( $credit_note['created_at'] );
+					} catch ( Exception $e ) {
+						SUCLogging::instance()->write( sprintf( __( 'Failed to get date for %1$s, using datetime now.', 'snelstart-uphance-coupling' ), $credit_note_id ) );
+						$credit_note_date = new DateTime( 'now' );
+					}
+
+					try {
+						$this->client->add_verkoopboeking( $credit_note['credit_note_number'], $snelstart_relatie_for_order['id'], self::format_number( $credit_note['grand_total'] ), 0, $grootboek_regels, $btw_regels, $credit_note_date );
 					} catch ( SUCAPIException $e ) {
-						echo '<pre>';
-						print_r( $grootboek_regels );
-						print_r( $btw_regels );
-						print_r( self::format_number( $credit_note['grand_total'] ) );
-						print_r( $e );
-						echo '</pre>';
-						exit;
 						SUCLogging::instance()->write( $e );
 						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %s because of an exception.', 'snelstart-uphance-coupling' ), $credit_note_id ) );
 						return false;
