@@ -180,11 +180,12 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 		 * Format a number to two decimals maximum.
 		 *
 		 * @param float $number the number to format.
+		 * @param int   $decimals the amount of decimals to format to.
 		 *
 		 * @return string a string of the formatted number.
 		 */
-		public static function format_number( float $number ): string {
-			return number_format( $number, 2, '.', '' );
+		public static function format_number( float $number, int $decimals = 2 ): string {
+			return number_format( $number, $decimals, '.', '' );
 		}
 
 		/**
@@ -313,7 +314,14 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 					}
 
 					try {
-						$this->client->add_verkoopboeking( $invoice['invoice_number'], $snelstart_relatie_for_order['id'], self::format_number( $invoice['items_total'] ), $betalingstermijn, $grootboek_regels, $btw_regels );
+						$invoice_date = new DateTime( $invoice['created_at'] );
+					} catch ( Exception $e ) {
+						SUCLogging::instance()->write( sprintf( __( 'Failed to get date for %1$s, using datetime now.', 'snelstart-uphance-coupling' ), $invoice_id ) );
+						$invoice_date = new DateTime( 'now' );
+					}
+
+					try {
+						$this->client->add_verkoopboeking( $invoice['invoice_number'], $snelstart_relatie_for_order['id'], self::format_number( $invoice['items_total'] + $invoice['items_tax'] ), $betalingstermijn, $grootboek_regels, $btw_regels, $invoice_date );
 					} catch ( SUCAPIException $e ) {
 						SUCLogging::instance()->write( $e );
 						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %s because of an exception.', 'snelstart-uphance-coupling' ), $invoice_id ) );
@@ -360,7 +368,14 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 					}
 
 					try {
-						$this->client->add_verkoopboeking( $credit_note['credit_note_number'], $snelstart_relatie_for_order['id'], self::format_number( $credit_note['grand_total'] ), 0, $grootboek_regels, $btw_regels );
+						$credit_note_date = new DateTime( $credit_note['created_at'] );
+					} catch ( Exception $e ) {
+						SUCLogging::instance()->write( sprintf( __( 'Failed to get date for %1$s, using datetime now.', 'snelstart-uphance-coupling' ), $credit_note_id ) );
+						$credit_note_date = new DateTime( 'now' );
+					}
+
+					try {
+						$this->client->add_verkoopboeking( $credit_note['credit_note_number'], $snelstart_relatie_for_order['id'], self::format_number( $credit_note['grand_total'] ), 0, $grootboek_regels, $btw_regels, $credit_note_date );
 					} catch ( SUCAPIException $e ) {
 						SUCLogging::instance()->write( $e );
 						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %s because of an exception.', 'snelstart-uphance-coupling' ), $credit_note_id ) );
@@ -375,7 +390,6 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 				return false;
 			}
 			SUCLogging::instance()->write( sprintf( __( 'Synchronization of credit note %s succeeded.', 'snelstart-uphance-coupling' ), $credit_note_id ) );
-			exit;
 			return true;
 		}
 

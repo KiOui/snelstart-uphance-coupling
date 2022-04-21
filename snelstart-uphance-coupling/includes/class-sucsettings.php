@@ -267,20 +267,18 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 							'choices'     => array( $this, 'organisations_choices' ),
 						),
 						array(
-							'type'        => 'choice',
+							'type'        => 'positive_int',
 							'id'          => 'uphance_synchronise_invoices_from',
 							'name'        => __( 'Uphance Synchronise invoices from', 'snelstart-uphance-coupling' ),
 							'can_be_null' => true,
 							'hint'        => __( 'Uphance Synchronise invoices from this invoice number onward.', 'snelstart-uphance-coupling' ),
-							'choices'     => array( $this, 'invoices_choices' ),
 						),
 						array(
-							'type'        => 'choice',
+							'type'        => 'positive_int',
 							'id'          => 'uphance_synchronise_credit_notes_from',
 							'name'        => __( 'Uphance Synchronise credit notes from', 'snelstart-uphance-coupling' ),
 							'can_be_null' => true,
 							'hint'        => __( 'Uphance Synchronise credit notes from this credit note number onward.', 'snelstart-uphance-coupling' ),
-							'choices'     => array( $this, 'credit_notes_choices' ),
 						),
 					)
 				);

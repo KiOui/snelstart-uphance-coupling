@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 include_once SUC_ABSPATH . 'includes/snelstart/class-sucsnelstartsynchronizer.php';
 include_once SUC_ABSPATH . 'includes/uphance/class-sucuphanceinvoicesearcher.php';
+include_once SUC_ABSPATH . 'includes/uphance/class-sucuphancecreditnoteretriever.php';
 
 if ( ! function_exists( 'suc_convert_date_to_amount_of_days_until' ) ) {
 	/**
@@ -194,7 +195,12 @@ if ( ! function_exists( 'sync_credit_notes' ) ) {
 
 		try {
 			if ( isset( $credit_note_from ) && '' !== $credit_note_from ) {
-				$credit_notes = $uphance_client->credit_notes( $credit_note_from )->result;
+				// $credit_notes = $uphance_client->credit_notes( $credit_note_from )->result;
+				// Workaround because Uphance does not support getting from a certain credit note number.
+				$credit_note_retriever = new SUCUphanceCreditNoteRetriever( $uphance_client );
+				$credit_notes = array(
+					'credit_notes' => $credit_note_retriever->get_next_credit_notes( $credit_note_from, $max_to_sync ),
+				);
 			} else {
 				$credit_notes = $uphance_client->credit_notes()->result;
 			}
@@ -240,6 +246,23 @@ if ( ! function_exists( 'sync_credit_notes' ) ) {
 					$credit_notes[ $i ]['line_items'][ $line_item_index ]['unit_tax'] = $credit_notes[ $i ]['line_items'][ $line_item_index ]['unit_tax'] * -1;
 					$credit_notes[ $i ]['line_items'][ $line_item_index ]['unit_price'] = $credit_notes[ $i ]['line_items'][ $line_item_index ]['unit_price'] * -1;
 					$credit_notes[ $i ]['line_items'][ $line_item_index ]['original_price'] = $credit_notes[ $i ]['line_items'][ $line_item_index ]['original_price'] * -1;
+				}
+				if ( isset( $credit_notes[ $i ]['freeform_amount'] ) && 0 != $credit_notes[ $i ]['freeform_amount'] ) {
+					// Add a fake line item for the freeform amount.
+					$computed_tax_level = $credit_notes[ $i ]['freeform_tax'] / ( $credit_notes[ $i ]['freeform_amount'] / 100 );
+					$credit_notes[ $i ]['line_items'][] = array(
+						'id' => -1,
+						'product_id' => -1,
+						'product_name' => $credit_notes[ $i ]['freeform_description'],
+						'tax_level' => SUCSnelstartSynchronizer::format_number( $computed_tax_level, 1 ),
+						'unit_price' => $credit_notes[ $i ]['freeform_amount'] * -1,
+						// Fake line_quantities to make the synchronizer pick up.
+						'line_quantities' => array(
+							array(
+								'quantity' => 1,
+							),
+						),
+					);
 				}
 			}
 

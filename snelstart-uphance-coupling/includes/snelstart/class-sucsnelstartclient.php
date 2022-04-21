@@ -139,7 +139,7 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		 *
 		 * @throws SUCAPIException On exception with API request.
 		 */
-		public function add_verkoopboeking( string $factuurnummer, string $klant, $factuurbedrag, int $betalingstermijn, array $boekingsregels, array $btw_regels ): array {
+		public function add_verkoopboeking( string $factuurnummer, string $klant, $factuurbedrag, int $betalingstermijn, array $boekingsregels, array $btw_regels, DateTime $date ): array {
 			return $this->_post(
 				'verkoopboekingen',
 				null,
@@ -151,7 +151,7 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 					'boekingsregels' => $boekingsregels,
 					'factuurbedrag' => $factuurbedrag,
 					'betalingstermijn' => $betalingstermijn,
-					'factuurdatum' => gmdate( 'Y-m-d H:i:s' ), // TODO: Change this to a date.
+					'factuurdatum' => $date->format( 'Y-m-d H:i:s' ),
 					'btw' => $btw_regels,
 				)
 			);
