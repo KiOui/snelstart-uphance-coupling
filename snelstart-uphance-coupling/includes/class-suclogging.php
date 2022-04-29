@@ -113,7 +113,6 @@ if ( ! class_exists( 'SUCLogging' ) ) {
 
 				add_filter( 'views_edit-suc_log_messages', array( $this, 'admin_views_edit' ) );
 				add_filter( 'pre_get_posts', array( $this, 'filter_on_custom_metadata' ) );
-				add_filter( 'posts_where', array( $this, 'filter_posts_where' ), 10, 2 );
 
 				if ( is_admin() ) {
 					add_filter( 'gettext', array( $this, 'admin_get_text' ), 10, 3 );
@@ -124,7 +123,7 @@ if ( ! class_exists( 'SUCLogging' ) ) {
 		/**
 		 * Filter on custom metadata.
 		 */
-		public function filter_on_custom_metadata( WP_Query $query ) {
+		public function filter_on_custom_metadata( $query ) {
 			if ( ! is_admin() || ! current_user_can( 'manage_options' ) || 'edit' !== get_current_screen()->base ) {
 				return;
 			}
