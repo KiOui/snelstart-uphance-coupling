@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-include_once SUC_ABSPATH . 'includes/synchronizers/class-synchronizer.php';
+include_once SUC_ABSPATH . 'includes/synchronizers/class-sucsynchronizer.php';
 include_once SUC_ABSPATH . 'includes/synchronizers/class-succreditnotesynchronizer.php';
 include_once SUC_ABSPATH . 'includes/synchronizers/class-sucinvoicesynchronizer.php';
 

@@ -9,9 +9,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-include_once SUC_ABSPATH . 'includes/uphance/class-sucuphanceinvoicesearcher.php';
-include_once SUC_ABSPATH . 'includes/uphance/class-sucuphancecreditnoteretriever.php';
-
 if ( ! function_exists( 'suc_convert_date_to_amount_of_days_until' ) ) {
 	/**
 	 * Convert a date as string to days until that date.
@@ -101,7 +98,7 @@ if ( ! function_exists( 'cron_runner_sync_all' ) ) {
 	 */
 	function cron_runner_sync_all(): void {
 		include_once SUC_ABSPATH . 'includes/synchronizers/synchronizer-init.php';
-		include_once SUC_ABSPATH . 'includes/synchronizers/class-synchronizer.php';
+		include_once SUC_ABSPATH . 'includes/synchronizers/class-sucsynchronizer.php';
 
 		$uphance_client   = SUCUphanceClient::instance();
 		$snelstart_client = SUCSnelstartClient::instance();
@@ -187,6 +184,7 @@ if ( ! function_exists( 'suc_construct_btw_line_items' ) ) {
 	 * @return array an array with BTW line items, null if constructing the BTW line items failed.
 	 */
 	function suc_construct_btw_line_items( array $items ): array {
+		include_once SUC_ABSPATH . 'includes/snelstart/class-sucbtw.php';
 		$btw_items = array();
 		foreach ( $items as $item ) {
 			$price = $item['unit_price'];
@@ -198,7 +196,7 @@ if ( ! function_exists( 'suc_construct_btw_line_items' ) ) {
 				},
 				0
 			);
-			$tax_name = SUCSnelstartSynchronizer::convert_btw_amount_to_name( $tax_level );
+			$tax_name = SUCBTW::convert_btw_amount_to_name( $tax_level );
 			if ( key_exists( $tax_name, $btw_items ) ) {
 				$btw_items[ $tax_name ]['btwBedrag'] = $btw_items[ $tax_name ]['btwBedrag'] + $price * $amount * $tax_level / 100;
 			} else {
