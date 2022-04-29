@@ -287,6 +287,15 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 			$this->actions_and_filters();
 		}
 
+		/**
+		 * Get the SettingsManager.
+		 *
+		 * @return SettingsManager
+		 */
+		public function get_manager(): SettingsManager {
+			return $this->manager;
+		}
+
 
 		/**
 		 * Get (cached) Grootboek codes.

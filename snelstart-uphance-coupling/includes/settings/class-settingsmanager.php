@@ -96,6 +96,34 @@ if ( ! class_exists( 'SettingsManager' ) ) {
 			);
 		}
 
+		private function get_raw_setting_array(): array {
+			$setting_array = get_option( $this->setting_name );
+			if ( isset( $setting_array ) && is_array( $setting_array ) ) {
+				return $setting_array;
+			} else {
+				return array();
+			}
+		}
+
+		public function get_value_by_setting_id( string $setting_id ) {
+			$setting_array = $this->get_raw_setting_array();
+			$setting = $this->get_setting_with_id( $setting_id );
+			if ( isset( $setting ) ) {
+				return $setting->get_value( $setting_array );
+			} else {
+				return null;
+			}
+		}
+
+		public function set_value_by_setting_id( string $setting_id, $value ) {
+			$setting_array = $this->get_raw_setting_array();
+			$setting = $this->get_setting_with_id( $setting_id );
+			if ( isset( $setting ) ) {
+				$setting_array[$setting_id] = $setting->validate( $value );
+				update_option( $this->setting_name, $setting_array );
+			}
+		}
+
 		/**
 		 * Get a SettingsSection by the section ID.
 		 *

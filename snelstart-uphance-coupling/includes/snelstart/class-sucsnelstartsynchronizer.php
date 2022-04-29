@@ -92,41 +92,6 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 		}
 
 		/**
-		 * Get or create relatie with specific name.
-		 *
-		 * @param string $naam the name to get the relatie for.
-		 *
-		 * @return array|null An array with the relatie if succeeded, null if the relatie does not exist or multiple relaties were returned.
-		 */
-		public function get_or_create_relatie_with_name( string $naam ): ?array {
-			$naam_escaped = str_replace( "'", "''", $naam );
-			try {
-				$relaties = $this->client->relaties( null, null, "Naam eq '$naam_escaped'" );
-			} catch ( SUCAPIException $e ) {
-				SUCLogging::instance()->write( $e );
-				SUCLogging::instance()->write( sprintf( __( 'An exception occurred while getting relatie with name %s.', 'snelstart-uphance-coupling' ), $naam ) );
-				return null;
-			}
-
-			if ( count( $relaties ) === 1 ) {
-				return $relaties[0];
-			} else if ( count( $relaties ) > 1 ) {
-				SUCLogging::instance()->write( sprintf( __( 'Multiple relaties found in Snelstart with name %s.', 'snelstart-uphance-coupling' ), $naam ) );
-				return null;
-			}
-
-			SUCLogging::instance()->write( sprintf( __( 'Relatie with name %s not found, trying to create now.', 'snelstart-uphance-coupling' ), $naam ) );
-
-			try {
-				return $this->client->add_relatie( array( 'Klant' ), $naam );
-			} catch ( SUCAPIException $e ) {
-				SUCLogging::instance()->write( $e );
-				SUCLogging::instance()->write( sprintf( __( 'Could not create relatie with name %s in Snelstart', 'snelstart-uphance-coupling' ), $naam ) );
-			}
-			return null;
-		}
-
-		/**
 		 * Convert a BTW amount to BTW name.
 		 *
 		 * @param float $btw_amount the BTW amount to convert.
@@ -177,18 +142,6 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 		}
 
 		/**
-		 * Format a number to two decimals maximum.
-		 *
-		 * @param float $number the number to format.
-		 * @param int   $decimals the amount of decimals to format to.
-		 *
-		 * @return string a string of the formatted number.
-		 */
-		public static function format_number( float $number, int $decimals = 2 ): string {
-			return number_format( $number, $decimals, '.', '' );
-		}
-
-		/**
 		 * Construct order line items for an invoice.
 		 *
 		 * @param array $items the item array.
@@ -225,7 +178,7 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 					'grootboek'    => array(
 						'id' => $grootboekcode,
 					),
-					'bedrag'       => self::format_number( $price * $amount ),
+					'bedrag'       => suc_format_number( $price * $amount ),
 					'btwSoort'     => $tax_name,
 				);
 			}
@@ -237,9 +190,9 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 		 *
 		 * @param array $items the item array.
 		 *
-		 * @return array|null an array with BTW line items, null if constructing the BTW line items failed.
+		 * @return array an array with BTW line items, null if constructing the BTW line items failed.
 		 */
-		private function construct_btw_line_items( array $items ): ?array {
+		private function construct_btw_line_items( array $items ): array {
 			$btw_items = array();
 			foreach ( $items as $item ) {
 				$price = $item['unit_price'];
@@ -263,7 +216,7 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 			}
 			// Format all btw items such that they have a maximum of two decimals.
 			foreach ( array_keys( $btw_items ) as $btw_items_key ) {
-				$btw_items[ $btw_items_key ]['btwBedrag'] = self::format_number( $btw_items[ $btw_items_key ]['btwBedrag'] );
+				$btw_items[ $btw_items_key ]['btwBedrag'] = suc_format_number( $btw_items[ $btw_items_key ]['btwBedrag'] );
 			}
 			return array_values( $btw_items );
 		}
@@ -295,7 +248,7 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 				if ( isset( $grootboek_regels ) ) {
 
 					$btw_regels                  = $this->construct_btw_line_items( $invoice['line_items'] );
-					$snelstart_relatie_for_order = $this->get_or_create_relatie_with_name( $customer['name'] );
+					$snelstart_relatie_for_order = get_or_create_relatie_with_name( $this->client, $customer['name'] );
 					$betalingstermijn            = suc_convert_date_to_amount_of_days_until( $invoice['due_date'] );
 					if ( ! isset( $btw_regels ) ) {
 						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %s because BTW regels could not be constructed.', 'snelstart-uphance-coupling' ), $invoice_id ) );
@@ -336,60 +289,6 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 				return false;
 			}
 			SUCLogging::instance()->write( sprintf( __( 'Synchronization of invoice %s succeeded.', 'snelstart-uphance-coupling' ), $invoice_id ) );
-			return true;
-		}
-
-		/**
-		 * Synchronize a credit note to Snelstart.
-		 *
-		 * @param array $credit_note the credit note to synchronize.
-		 *
-		 * @return bool true if synchonization succeeded, false otherwise.
-		 */
-		public function sync_credit_note_to_snelstart( array $credit_note ): bool {
-			$credit_note_id = $credit_note['id'];
-			SUCLogging::instance()->write( "Starting synchronization of credit note $credit_note_id." );
-			$customer = $credit_note['customer'];
-			if ( isset( $customer ) ) {
-				$grootboek_regels = $this->construct_grootboek_regels( $credit_note );
-				if ( isset( $grootboek_regels ) ) {
-
-					$btw_regels                  = $this->construct_btw_line_items( $credit_note['line_items'] );
-					$snelstart_relatie_for_order = $this->get_or_create_relatie_with_name( $customer['name'] );
-					if ( ! isset( $btw_regels ) ) {
-						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %s because BTW regels could not be constructed.', 'snelstart-uphance-coupling' ), $credit_note_id ) );
-						return false;
-					}
-
-					if ( ! isset( $snelstart_relatie_for_order ) ) {
-						$name = $customer['name'];
-						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %1$s because customer %2$s could not be found and created in Snelstart.', 'snelstart-uphance-coupling' ), $credit_note_id, $name ) );
-						return false;
-					}
-
-					try {
-						$credit_note_date = new DateTime( $credit_note['created_at'] );
-					} catch ( Exception $e ) {
-						SUCLogging::instance()->write( sprintf( __( 'Failed to get date for %1$s, using datetime now.', 'snelstart-uphance-coupling' ), $credit_note_id ) );
-						$credit_note_date = new DateTime( 'now' );
-					}
-
-					try {
-						$this->client->add_verkoopboeking( $credit_note['credit_note_number'], $snelstart_relatie_for_order['id'], self::format_number( $credit_note['grand_total'] ), 0, $grootboek_regels, $btw_regels, $credit_note_date );
-					} catch ( SUCAPIException $e ) {
-						SUCLogging::instance()->write( $e );
-						SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %s because of an exception.', 'snelstart-uphance-coupling' ), $credit_note_id ) );
-						return false;
-					}
-				} else {
-					SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %s because no grootboek regels could be created.', 'snelstart-uphance-coupling' ), $credit_note_id ) );
-					return false;
-				}
-			} else {
-				SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %s because no customer for credit note was set.', 'snelstart-uphance-coupling' ), $credit_note_id ) );
-				return false;
-			}
-			SUCLogging::instance()->write( sprintf( __( 'Synchronization of credit note %s succeeded.', 'snelstart-uphance-coupling' ), $credit_note_id ) );
 			return true;
 		}
 

@@ -53,7 +53,6 @@ if ( ! function_exists( 'suc_get_current_btw_soorten' ) ) {
 					$from_date = new DateTime( $btw_soort['datumVanaf'] );
 					$to_date   = new DateTime( $btw_soort['datumTotEnMet'] );
 				} catch ( Exception $e ) {
-					SUCLogging::instance()->write( sprintf( __( 'Failed to create date objects for BTW soort %1$s the following Exception occurred: %2$s', 'snelstart-uphance-coupling' ), $btw_soort['btwSoort'], $e ) );
 					return false;
 				}
 				return $from_date < $now && $now <= $to_date;
@@ -455,5 +454,128 @@ if ( ! function_exists( 'cron_runner_sync_all' ) ) {
 		}
 
 		return true;
+	}
+}
+
+if ( !function_exists( 'suc_format_number' ) ) {
+	/**
+	 * Format a number to two decimals maximum.
+	 *
+	 * @param float $number the number to format.
+	 * @param int   $decimals the amount of decimals to format to.
+	 *
+	 * @return string a string of the formatted number.
+	 */
+	function suc_format_number( float $number, int $decimals = 2 ): string {
+		return number_format( $number, $decimals, '.', '' );
+	}
+}
+
+if ( !function_exists( 'suc_get_or_create_relatie_with_name' ) ) {
+	/**
+	 * Get or create relatie with specific name.
+	 *
+	 * @param string $naam the name to get the relatie for.
+	 *
+	 * @return array|null An array with the relatie if succeeded, null if the relatie does not exist or multiple relaties were returned.
+	 * @throws Exception|SUCAPIException on Exception with API or when multiple relaties were found
+	 */
+	function get_or_create_relatie_with_name( SUCSnelstartClient $client, string $naam ): array {
+		$naam_escaped = str_replace( "'", "''", $naam );
+		$relaties = $client->relaties( null, null, "Naam eq '$naam_escaped'" );
+
+		if ( count( $relaties ) === 1 ) {
+			return $relaties[0];
+		} else if ( count( $relaties ) > 1 ) {
+			throw new Exception( sprintf( __( "Multiple relaties found with name %s", 'snelstart-uphance-coupling' ), $naam ) );
+		}
+
+		SUCLogging::instance()->write( sprintf( __( 'Relatie with name %s not found, trying to create now.', 'snelstart-uphance-coupling' ), $naam ) );
+
+		return $client->add_relatie( array( 'Klant' ), $naam );
+	}
+}
+
+if ( ! function_exists( 'suc_construct_btw_line_items' ) ) {
+	/**
+	 * Construct BTW line items for an invoice.
+	 *
+	 * @param array $items the item array.
+	 *
+	 * @return array an array with BTW line items, null if constructing the BTW line items failed.
+	 */
+	function suc_construct_btw_line_items( array $items ): array {
+		$btw_items = array();
+		foreach ( $items as $item ) {
+			$price = $item['unit_price'];
+			$tax_level = $item['tax_level'];
+			$amount = array_reduce(
+				$item['line_quantities'],
+				function( int $carry, array $item ) {
+					return $carry + $item['quantity'];
+				},
+				0
+			);
+			$tax_name = SUCSnelstartSynchronizer::convert_btw_amount_to_name( $tax_level );
+			if ( key_exists( $tax_name, $btw_items ) ) {
+				$btw_items[ $tax_name ]['btwBedrag'] = $btw_items[ $tax_name ]['btwBedrag'] + $price * $amount * $tax_level / 100;
+			} else {
+				$btw_items[ $tax_name ] = array(
+					'btwSoort' => $tax_name,
+					'btwBedrag' => $price * $amount * $tax_level / 100,
+				);
+			}
+		}
+		// Format all btw items such that they have a maximum of two decimals.
+		foreach ( array_keys( $btw_items ) as $btw_items_key ) {
+			$btw_items[ $btw_items_key ]['btwBedrag'] = suc_format_number( $btw_items[ $btw_items_key ]['btwBedrag'] );
+		}
+		return array_values( $btw_items );
+	}
+}
+
+if ( !function_exists( 'suc_construct_order_line_items' ) ) {
+	/**
+	 * Construct order line items for an invoice.
+	 *
+	 * @param array $items the item array.
+	 * @param SUCBTW $btw_converter the BTW converter.
+	 *
+	 * @return array|null an array with line items, null if constructing the line items failed.
+	 * @throws Exception
+	 */
+	function suc_construct_order_line_items( array $items, SUCBTW $btw_converter ): array {
+		$to_order = array();
+		foreach ( $items as $item ) {
+			$price = $item['unit_price'];
+			$product_id = $item['product_id'];
+			$product_name = $item['product_name'];
+			$tax_level = $item['tax_level'];
+			$amount = array_reduce(
+				$item['line_quantities'],
+				function( int $carry, array $item ) {
+					return $carry + $item['quantity'];
+				},
+				0
+			);
+			$grootboekcode = $btw_converter->get_grootboekcode_for_tax_amount( $tax_level );
+			$tax_type = $btw_converter->convert_btw_amount_to_type( $tax_level );
+			if ( ! isset( $tax_type ) ) {
+				throw new Exception( sprintf( __( 'Failed to get tax type for %.2F.', 'snelstart-uphance-coupling' ), $tax_level ) );
+			}
+			if ( ! isset( $grootboekcode ) ) {
+				throw new Exception( sprintf( __( 'Failed to get the grootboekcode for tax level %.2F.', 'snelstart-uphance-coupling' ), $tax_level ) );
+			}
+			$tax_name   = $tax_type['btwSoort'];
+			$to_order[] = array(
+				'omschrijving' => "$amount x $product_id $product_name",
+				'grootboek'    => array(
+					'id' => $grootboekcode,
+				),
+				'bedrag'       => suc_format_number( $price * $amount ),
+				'btwSoort'     => $tax_name,
+			);
+		}
+		return $to_order;
 	}
 }
