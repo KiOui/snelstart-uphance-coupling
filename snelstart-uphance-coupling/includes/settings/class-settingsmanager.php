@@ -96,6 +96,11 @@ if ( ! class_exists( 'SettingsManager' ) ) {
 			);
 		}
 
+		/**
+		 * Get the raw settings array.
+		 *
+		 * @return array the settings array, empty if it exists.
+		 */
 		private function get_raw_setting_array(): array {
 			$setting_array = get_option( $this->setting_name );
 			if ( isset( $setting_array ) && is_array( $setting_array ) ) {
@@ -105,6 +110,13 @@ if ( ! class_exists( 'SettingsManager' ) ) {
 			}
 		}
 
+		/**
+		 * Get the value of a setting by setting ID.
+		 *
+		 * @param string $setting_id the setting ID to get the value for.
+		 *
+		 * @return mixed|null the value of the setting as in the WordPress Database, null if the setting is not registered.
+		 */
 		public function get_value_by_setting_id( string $setting_id ) {
 			$setting_array = $this->get_raw_setting_array();
 			$setting = $this->get_setting_with_id( $setting_id );
@@ -115,11 +127,19 @@ if ( ! class_exists( 'SettingsManager' ) ) {
 			}
 		}
 
+		/**
+		 * Set a settings value by setting ID.
+		 *
+		 * @param string                       $setting_id the setting ID to set the value for.
+		 * @param $value mixed the value to set.
+		 *
+		 * @return void
+		 */
 		public function set_value_by_setting_id( string $setting_id, $value ) {
 			$setting_array = $this->get_raw_setting_array();
 			$setting = $this->get_setting_with_id( $setting_id );
 			if ( isset( $setting ) ) {
-				$setting_array[$setting_id] = $setting->validate( $value );
+				$setting_array[ $setting_id ] = $setting->validate( $value );
 				update_option( $this->setting_name, $setting_array );
 			}
 		}

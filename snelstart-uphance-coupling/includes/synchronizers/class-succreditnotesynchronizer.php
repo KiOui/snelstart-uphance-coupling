@@ -10,11 +10,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 include_once SUC_ABSPATH . 'includes/synchronizers/interface-sucsynchronisable.php';
-include_once SUC_ABSPATH . 'includes/uphance/class-sucuphancecreditnotetetrieve.php';
+include_once SUC_ABSPATH . 'includes/uphance/class-sucuphancecreditnoteretriever.php';
 include_once SUC_ABSPATH . 'includes/snelstart/class-sucbtw.php';
 
-if ( ! class_exists("SUCCreditNoteSynchronizer") ) {
-	class SUCCreditNoteSynchronizer extends Synchronisable {
+if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
+	/**
+	 * SUC Credit Note Synchronizer.
+	 *
+	 * @class SUCCreditNoteSynchronizer
+	 */
+	class SUCCreditNoteSynchronizer extends SUCSynchronisable {
+
+		/**
+		 * Type of this class.
+		 *
+		 * @var string
+		 */
+		public static string $type = 'credit-note';
 
 		/**
 		 * BTW Converter.
@@ -24,19 +36,16 @@ if ( ! class_exists("SUCCreditNoteSynchronizer") ) {
 		private ?SUCBTW $btw_converter = null;
 
 		/**
-		 * @throws SUCAPIException
+		 * Credit notes to synchronize.
+		 *
+		 * @var array
 		 */
-		private function get_btw_converter(): SUCBTW {
-			if ( is_null( $this->btw_converter ) ) {
-				$this->btw_converter = new SUCBTW( suc_get_current_btw_soorten( $this->snelstart_client ) );
-			}
-			return $this->btw_converter;
-		}
+		private array $credit_notes;
 
 		/**
 		 * Get the credit notes to sync.
 		 *
-		 * @throws SUCAPIException on Exception with the API.
+		 * @throws SUCAPIException On Exception with the API.
 		 */
 		private function get_credit_notes_to_sync( ?string $credit_note_from, ?int $max_to_sync ): array {
 			if ( isset( $credit_note_from ) ) {
@@ -50,61 +59,42 @@ if ( ! class_exists("SUCCreditNoteSynchronizer") ) {
 				$credit_notes = $this->uphance_client->credit_notes()->result;
 			}
 
+			$credit_notes = $credit_notes['credit_notes'];
+
 			if ( isset( $max_to_sync ) ) {
-				if ( $max_to_sync === 0 ) {
+				if ( 0 === $max_to_sync ) {
 					return array();
 				} else {
 					$credit_notes = array_slice( $credit_notes, 0, $max_to_sync );
 				}
 			}
 
-			return $credit_notes['credit_notes'];
+			return $credit_notes;
 		}
 
 		/**
-		 * 1. Get settings
-		 * 2. Get all credit notes
-		 * ---- for all credit notes
-		 * 1. Get the credit note customer from uphance
-		 * 2. Alter the line quantities
-		 * 3. Convert grootboek regels and BTW line items
-		 * 4. Get relatie in Snelstart
-		 * 5. Add a verkoopboeking
+		 * Synchronize credit notes to Snelstart.
 		 *
-		 *
-		 *
-		 * @throws SUCAPIException
+		 * @return void
 		 */
-		public function run(): bool {
-			$settings_manager = SUCSettings::instance()->get_manager();
+		public function run(): void {
+			$amount_of_credit_notes = count( $this->credit_notes );
 
-			$credit_note_from                 = $settings_manager->get_value_by_setting_id('uphance_synchronise_credit_notes_from');
-			$max_to_sync                      = $settings_manager->get_value_by_setting_id('max_credit_notes_to_synchronize');
-
-			$credit_note_synchronizer = new SUCSnelstartSynchronizer( $this->snelstart_client, $snelstart_grootboekcode_btw_hoog, $snelstart_grootboekcode_btw_geen );
-
-			$credit_notes = $this->get_credit_notes_to_sync( $credit_note_from, $max_to_sync );
-
-			if ( count( $credit_notes ) > 0 ) {
-
-				$amount_of_credit_notes = count( $credit_notes );
-
-				for ( $i = 0; $i < $amount_of_credit_notes; $i ++ ) {
-					try {
-						$credit_note_converted = $this->setup_credit_note_for_synchronisation( $credit_notes[ $i ] );
-					} catch (Exception $e) {
-						// Create error log
-					}
+			for ( $i = 0; $i < $amount_of_credit_notes; $i ++ ) {
+				try {
+					$credit_note_converted = $this->setup_credit_note_for_synchronisation( $this->credit_notes[ $i ] );
+					$this->sync_credit_note_to_snelstart( $credit_note_converted );
+				} catch ( Exception $e ) {
+					$error_log = new SUCErrorLogging();
+					$error_log->set_error( $e, 'synchronize-credit-note', self::$type, $this->credit_notes[ $i ]['id'] );
 				}
-				$credit_note_synchronizer->sync_credit_notes_to_snelstart( $credit_notes );
-				$latest_credit_note                                = $credit_notes[ count( $credit_notes ) - 1 ]['id'];
-				$settings_manager->set_value_by_setting_id('uphance_synchronise_credit_notes_from', $latest_credit_note);
 			}
-			return true;
 		}
 
 		/**
-		 * @throws SUCAPIException
+		 * Setup a credit note for synchronization to Snelstart.
+		 *
+		 * @throws SUCAPIException On Exception with the API.
 		 */
 		private function setup_credit_note_for_synchronisation( array $credit_note ): array {
 			$order = $this->uphance_client->orders( $credit_note['order_number'] )->result['sales_orders'][0];
@@ -145,37 +135,82 @@ if ( ! class_exists("SUCCreditNoteSynchronizer") ) {
 		 *
 		 * @param array $credit_note the credit note to synchronize.
 		 *
-		 * @return bool true if synchonization succeeded, false otherwise.
-		 * @throws SUCAPIException
-		 * @throws Exception
+		 * @return void
+		 * @throws SUCAPIException|Exception On Exception with the API or something else.
 		 */
-		public function sync_credit_note_to_snelstart( array $credit_note ): bool {
+		public function sync_credit_note_to_snelstart( array $credit_note ): void {
 			$credit_note_id = $credit_note['id'];
 			$customer = $credit_note['customer'];
-			$grootboek_regels = suc_construct_order_line_items( $credit_note['line_items'] );
+			$grootboek_regels = suc_construct_order_line_items( $credit_note['line_items'], $this->btw_converter );
 			$btw_regels                  = suc_construct_btw_line_items( $credit_note['line_items'] );
 			$snelstart_relatie_for_order = get_or_create_relatie_with_name( $this->snelstart_client, $customer['name'] );
 
 			if ( ! isset( $snelstart_relatie_for_order ) ) {
 				$name = $customer['name'];
-				SUCLogging::instance()->write( sprintf( __( 'Failed to synchronize %1$s because customer %2$s could not be found and created in Snelstart.', 'snelstart-uphance-coupling' ), $credit_note_id, $name ) );
-				return false;
+				throw new Exception( __( 'Failed to synchronize %1$s because customer %2$s could not be found and created in Snelstart.', 'snelstart-uphance-coupling' ), $credit_note_id, $name );
 			}
 
 			try {
 				$credit_note_date = new DateTime( $credit_note['created_at'] );
 			} catch ( Exception $e ) {
-				SUCLogging::instance()->write( sprintf( __( 'Failed to get date for %1$s, using datetime now.', 'snelstart-uphance-coupling' ), $credit_note_id ) );
 				$credit_note_date = new DateTime( 'now' );
 			}
 
 			$this->snelstart_client->add_verkoopboeking( $credit_note['credit_note_number'], $snelstart_relatie_for_order['id'], suc_format_number( $credit_note['grand_total'] ), 0, $grootboek_regels, $btw_regels, $credit_note_date );
-			SUCLogging::instance()->write( sprintf( __( 'Synchronization of credit note %s succeeded.', 'snelstart-uphance-coupling' ), $credit_note_id ) );
-			return true;
 		}
 
-		public function synchronize_one( string $id ) {
+		/**
+		 * Synchronize one credit note to Snelstart.
+		 *
+		 * @param string $id the ID of the credit note to synchronize.
+		 *
+		 * @return void
+		 */
+		public function synchronize_one( string $id ): void {
+			// TODO: implement this method.
+		}
 
+		/**
+		 * Setup this class.
+		 *
+		 * @throws SUCAPIException|Exception When settings are not configured or on Exception with the API.
+		 */
+		public function setup(): void {
+			$manager          = SUCSettings::instance()->get_manager();
+			$credit_note_from = $manager->get_value_by_setting_id( 'uphance_synchronise_credit_notes_from' );
+			$max_to_sync      = $manager->get_value_by_setting_id( 'max_credit_notes_to_synchronize' );
+			$grootboekcode_btw_hoog = $manager->get_value_by_setting_id( 'snelstart_grootboekcode_btw_hoog' );
+			$grootboekcode_btw_geen = $manager->get_value_by_setting_id( 'snelstart_grootboekcode_btw_geen' );
+			if ( ! isset( $grootboekcode_btw_hoog ) || ! isset( $grootboekcode_btw_geen ) ) {
+				throw new Exception( 'Grootboekcodes must be set in order to use Credit note synchronizer' );
+			}
+
+			$tax_types = $this->snelstart_client->btwtarieven();
+
+			$this->btw_converter = new SUCBTW( $grootboekcode_btw_hoog, $grootboekcode_btw_geen, $tax_types );
+			$this->credit_notes = $this->get_credit_notes_to_sync( $credit_note_from, $max_to_sync );
+		}
+
+		/**
+		 * Update the WordPress settings.
+		 *
+		 * @return void
+		 */
+		public function after_run(): void {
+			$latest_credit_note                                = $this->credit_notes[ count( $this->credit_notes ) - 1 ]['id'];
+
+			$settings_manager = SUCSettings::instance()->get_manager();
+			$settings_manager->set_value_by_setting_id( 'uphance_synchronise_credit_notes_from', $latest_credit_note );
+		}
+
+		/**
+		 * Whether this synchronizer is enabled.
+		 *
+		 * @return bool True when this synchronizer is enabled.
+		 */
+		public function enabled(): bool {
+			$manager          = SUCSettings::instance()->get_manager();
+			return $manager->get_value_by_setting_id( 'synchronize_credit_notes_to_snelstart' );
 		}
 	}
 }

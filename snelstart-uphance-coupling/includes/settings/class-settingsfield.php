@@ -134,14 +134,17 @@ if ( ! class_exists( 'SettingsField' ) ) {
 		}
 
 		/**
-		 * Get the value of this setting given an option array.
+		 * Get the raw value of this setting given an option array.
 		 *
 		 * @param array $options an option array.
 		 *
 		 * @return mixed the value of the key with $this->id in the $options array.
 		 */
 		public function get_value( array $options ) {
-			return $options[ $this->id ];
+			if ( isset( $options[ $this->id ] ) ) {
+				return $options[ $this->id ];
+			}
+			return null;
 		}
 
 		/**

@@ -9,9 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-include_once SUC_ABSPATH . 'includes/snelstart/class-sucsnelstartclient.php';
-
-if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
+if ( ! class_exists( 'SUCBTW' ) ) {
 	/**
 	 * Snelstart BTW
 	 *
@@ -27,7 +25,7 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 		public static float $btw_hoog = 21.0;
 
 		/**
-		 * Constanct for BTW None amount.
+		 * Constant for BTW None amount.
 		 *
 		 * @var float
 		 */
@@ -71,13 +69,14 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 		/**
 		 * Constructor.
 		 *
-		 * @param array $tax_types Tax type array.
+		 * @param string $grootboekcode_btw_hoog the grootboekcode for BTW hoog items.
+		 * @param string $grootboekcode_btw_geen the grootboekcode for BTW laag items.
+		 * @param array  $tax_types the tax types registered in Snelstart.
 		 */
-		public function __construct() {
-			$manager = SUCSettings::instance()->get_manager();
-			$this->grootboekcode_btw_hoog = $manager->get_value_by_setting_id('snelstart_grootboekcode_btw_hoog');
-			$this->grootboekcode_btw_geen = $manager->get_value_by_setting_id('snelstart_grootboekcode_btw_geen');
-			$this->tax_types = $tax_types;
+		public function __construct( string $grootboekcode_btw_hoog, string $grootboekcode_btw_geen, array $tax_types ) {
+			$this->grootboekcode_btw_hoog = $grootboekcode_btw_hoog;
+			$this->grootboekcode_btw_geen = $grootboekcode_btw_geen;
+			$this->tax_types              = $tax_types;
 		}
 
 		/**
@@ -104,11 +103,11 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 		 *
 		 * @return string|null the grootboekcode ID or null if it does not exist.
 		 */
-		private function get_grootboekcode_for_tax_amount( float $btw_amount, string $grootboekcode_btw_geen, string $grootboekcode_btw_hoog ): ?string {
+		public function get_grootboekcode_for_tax_amount( float $btw_amount ): ?string {
 			if ( self::$btw_none === $btw_amount ) {
-				return $grootboekcode_btw_geen;
+				return $this->grootboekcode_btw_geen;
 			} else if ( self::$btw_hoog === $btw_amount ) {
-				return $grootboekcode_btw_hoog;
+				return $this->grootboekcode_btw_hoog;
 			} else {
 				return null;
 			}
@@ -127,6 +126,8 @@ if ( ! class_exists( 'SUCSnelstartSynchronizer' ) ) {
 					return $tax_type;
 				}
 			}
+
 			return null;
 		}
+	}
 }

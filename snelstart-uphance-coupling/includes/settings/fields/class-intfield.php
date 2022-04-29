@@ -190,12 +190,12 @@ if ( ! class_exists( 'IntField' ) ) {
 			return new self(
 				$initial_values['id'],
 				$initial_values['name'],
-				$initial_values['renderer'],
-				$initial_values['default'],
+				isset( $initial_values['renderer'] ) ? $initial_values['renderer'] : null,
+				isset( $initial_values['default'] ) ? $initial_values['default'] : null,
 				$initial_values['can_be_null'],
 				$initial_values['hint'],
-				$initial_values['minimum'],
-				$initial_values['maximum'],
+				isset( $initial_values['minimum'] ) ? $initial_values['minimum'] : null,
+				isset( $initial_values['maximum'] ) ? $initial_values['maximum'] : null,
 			);
 		}
 	}

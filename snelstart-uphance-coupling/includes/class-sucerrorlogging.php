@@ -18,13 +18,13 @@ if ( ! class_exists( 'SUCErrorLogging' ) ) {
 	class SUCErrorLogging {
 
 		/**
-		 * Wordpress ID of the log.
+		 * Wordpress ID of the error.
 		 *
 		 * This variable is set after the first save.
 		 *
 		 * @var int|null
 		 */
-		protected ?int $log_id;
+		protected ?int $error_id;
 
 		/**
 		 * Type of the occurred error.
@@ -34,25 +34,64 @@ if ( ! class_exists( 'SUCErrorLogging' ) ) {
 		protected string $type;
 
 		/**
+		 * Key of the synchronizer that can potentially fix the error.
+		 *
+		 * @var ?string
+		 */
+		protected ?string $synchronizer;
+
+		/**
 		 * ID of the object that failed to synchronize.
 		 *
-		 * @var string
+		 * @var ?string
 		 */
-		protected string $object_id;
+		protected ?string $object_id;
 
 		/**
 		 * Constructor.
 		 *
-		 * @param int|null $log_id if set, this log id will be used to save log to, if not set a new Wordpress post will be created.
+		 * @param int|null $error_id if set, this error id will be used to save error to, if not set a new Wordpress post will be created.
 		 */
-		public function __construct( int $log_id = null ) {
-			$this->log_id = $log_id;
+		public function __construct( int $error_id = null ) {
+			$this->error_id = $error_id;
+		}
+
+		/**
+		 * Add error log.
+		 *
+		 * @param string|SUCAPIException|Exception $error the error that occurred.
+		 */
+		public function set_error( $error, string $error_type, ?string $synchronizer, ?string $object_id ) {
+			if ( gettype( $error ) !== 'string' ) {
+				$error = $error->__toString();
+			}
+			if ( isset( $this->error_id ) ) {
+				// TODO: Change this.
+				update_post_meta( $this->error_id, 'suc_error_type', $error_type );
+				update_post_meta( $this->error_id, 'suc_synchronizer', $synchronizer );
+				update_post_meta( $this->error_id, 'suc_object_id', $object_id );
+			} else {
+				$date         = new DateTime( 'now' );
+				$this->error_id = wp_insert_post(
+					array(
+						'post_type'  => 'suc_errors',
+						'post_title' => $date->format( 'Y-m-d H:i:s' ),
+						'post_status' => 'publish',
+						'post_content' => $error,
+						'meta_input' => array(
+							'suc_error_type' => $error_type,
+							'suc_synchronizer' => $synchronizer,
+							'suc_object_id' => $object_id,
+						),
+					)
+				);
+			}
 		}
 
 		/**
 		 * Remove some features from the custom post type (to disable adding logs by users).
 		 */
-		public function init() {
+		public static function init() {
 			global $typenow;
 
 			$set_type = null;
@@ -67,21 +106,49 @@ if ( ! class_exists( 'SUCErrorLogging' ) ) {
 
 			if ( ( isset( $set_type ) && 'suc_errors' == $set_type ) || ( ! isset( $set_type ) && 'suc_errors' == $typenow ) ) {
 				add_filter( 'display_post_states', '__return_false' );
-				add_filter( 'post_row_actions', array( $this, 'admin_post_row_actions' ), 10, 2 );
-				add_filter( 'bulk_actions-edit-suc_errors', array( $this, 'admin_bulk_actions_edit' ) );
+				add_filter( 'views_edit-suc_errors', array( 'SUCErrorLogging', 'admin_views_edit' ) );
+			}
 
-				add_filter( 'views_edit-suc_errors', array( $this, 'admin_views_edit' ) );
+			if ( is_admin() ) {
+				add_filter( 'manage_suc_errors_posts_columns', array( 'SUCErrorLogging', 'manage_post_columns' ) );
+				add_action( 'manage_suc_errors_posts_custom_column', array( 'SUCErrorLogging', 'error_logs_column_values' ), 10, 2 );
+			}
 
-				if ( is_admin() ) {
-					add_filter( 'gettext', array( $this, 'admin_get_text' ), 10, 3 );
-				}
+			self::add_meta_box_support();
+			self::register();
+		}
+
+		/**
+		 * Update the admin columns for suc_errors post type.
+		 *
+		 * @param array $columns the current admin columns.
+		 *
+		 * @return array the admin columns with the song price added.
+		 */
+		public static function manage_post_columns( array $columns ): array {
+			$columns['suc_error_log_message'] = __( 'Message', 'snelstart-uphance-coupling' );
+			return $columns;
+		}
+
+		/**
+		 * Output the column value for the requested_songs post type.
+		 *
+		 * @param string $column the column that is being rendered.
+		 * @param int    $post_id the post ID of the post.
+		 *
+		 * @return void
+		 */
+		public static function error_logs_column_values( $column, $post_id ) {
+			if ( 'suc_error_log_message' === $column ) {
+				$message = get_post( $post_id )->post_content;
+				echo esc_html( $message );
 			}
 		}
 
 		/**
 		 * Register Custom Post type.
 		 */
-		public function register() {
+		public static function register() {
 			register_post_type(
 				'suc_errors',
 				array(
@@ -140,34 +207,49 @@ if ( ! class_exists( 'SUCErrorLogging' ) ) {
 					'show_in_admin_bar'   => true,
 					'show_in_rest'        => false,
 					'menu_position'       => 56,
-					'menu_icon'           => 'dashicons-media-text',
+					'menu_icon'           => 'dashicons-welcome-comments',
 					'taxonomies'          => array(),
 					'has_archive'         => false,
 					'can_export'          => true,
 					'delete_with_user'    => false,
 				)
 			);
-			remove_post_type_support( 'suc_errors', 'editor' );
-			remove_post_type_support( 'suc_errors', 'title' );
 		}
 
 		/**
-		 * Change text on admin pages.
-		 *
-		 * @param string $translation translation.
-		 * @param string $text text.
-		 * @param string $domain domain.
-		 *
-		 * @return string the translation.
+		 * Add meta box support to Custom Post types.
 		 */
-		public function admin_get_text( string $translation, string $text, string $domain ): string {
-			if ( 'default' == $domain ) {
-				if ( 'Edit &#8220;%s&#8221;' == $text ) {
-					$translation = 'View &#8220;%s&#8221;';
-				}
-			}
-
-			return $translation;
+		public static function add_meta_box_support() {
+			include_once SUC_ABSPATH . '/includes/metaboxes/class-metabox.php';
+			new Metabox(
+				'suc_error_details',
+				array(
+					array(
+						'label' => __( 'Error type', 'snelstart-uphance-coupling' ),
+						'desc'  => __( 'The type of the error', 'snelstart-uphance-coupling' ),
+						'id'    => 'suc_error_type',
+						'type'  => 'text',
+						'required' => true,
+						'default' => 'default',
+					),
+					array(
+						'label' => __( 'Error synchronizer', 'snelstart-uphance-coupling' ),
+						'desc'  => __( 'The key of the synchronizer used to synchronize this error', 'snelstart-uphance-coupling' ),
+						'id'    => 'suc_synchronizer',
+						'type'  => 'text',
+						'required' => false,
+					),
+					array(
+						'label' => __( 'Object ID', 'snelstart-uphance-coupling' ),
+						'desc'  => __( 'The object id of the error', 'snelstart-uphance-coupling' ),
+						'id'    => 'suc_object_id',
+						'type'  => 'text',
+						'required' => false,
+					),
+				),
+				'suc_errors',
+				__( 'Error details' )
+			);
 		}
 
 		/**
@@ -177,49 +259,10 @@ if ( ! class_exists( 'SUCErrorLogging' ) ) {
 		 *
 		 * @return array views of the post list with publish and draft removed.
 		 */
-		public function admin_views_edit( array $views ): array {
-			unset( $views['publish'] );
+		public static function admin_views_edit( array $views ): array {
 			unset( $views['draft'] );
 
 			return $views;
 		}
-
-		/**
-		 * Remove unwanted actions from post list.
-		 *
-		 * @param array   $actions Actions.
-		 * @param WP_Post $post WordPress post.
-		 *
-		 * @return array actions with actions removed.
-		 */
-		public function admin_post_row_actions( array $actions, WP_Post $post ): array {
-			unset( $actions['inline hide-if-no-js'] );
-			unset( $actions['edit'] );
-
-			if ( $post && $post->ID ) {
-				$actions['view'] = sprintf(
-					'<a href="%s" title="%s">%s</a>',
-					get_edit_post_link( $post->ID ),
-					__( 'View', 'snelstart-uphance-coupling' ),
-					__( 'View', 'snelstart-uphance-coupling' )
-				);
-			}
-
-			return $actions;
-		}
-
-		/**
-		 * Change the list of available bulk actions.
-		 *
-		 * @param array $actions actions.
-		 *
-		 * @return array actions with edit removed.
-		 */
-		public function admin_bulk_actions_edit( array $actions ): array {
-			unset( $actions['edit'] );
-
-			return $actions;
-		}
-
 	}
 }

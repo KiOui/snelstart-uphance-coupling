@@ -136,15 +136,6 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 								'maximum'     => null,
 							),
 							array(
-								'type'        => 'positive_int',
-								'id'          => 'max_payments_to_synchronize',
-								'name'        => __( 'Maximum amount of payments to synchronize', 'snelstart-uphance-coupling' ),
-								'default'     => 5,
-								'can_be_null' => true,
-								'hint'        => __( 'Maximum amount of payments to synchronize per run (leave empty for all)', 'snelstart-uphance-coupling' ),
-								'maximum'     => null,
-							),
-							array(
 								'type'    => 'bool',
 								'id'      => 'synchronize_invoices_to_snelstart',
 								'name'    => __( 'Synchronize invoices to Snelstart', 'snelstart-uphance-coupling' ),
@@ -157,13 +148,6 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 								'name'    => __( 'Synchronize credit notes to Snelstart', 'snelstart-uphance-coupling' ),
 								'default' => false,
 								'hint'    => __( 'Whether to synchronize credit notes from Uphance to Snelstart', 'snelstart-uphance-coupling' ),
-							),
-							array(
-								'type'    => 'bool',
-								'id'      => 'synchronize_payments_to_uphance',
-								'name'    => __( 'Synchronize payments to Uphance', 'snelstart-uphance-coupling' ),
-								'default' => false,
-								'hint'    => __( 'Whether to synchronize payments from Snelstart to Uphance', 'snelstart-uphance-coupling' ),
 							),
 						),
 					),
@@ -240,14 +224,6 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 							'can_be_null' => true,
 							'hint'        => __( 'Snelstart Ledger code for BTW geen.', 'snelstart-uphance-coupling' ),
 							'choices'     => array( $this, 'grootboekcodes_choices' ),
-						),
-						array(
-							'type'        => 'datetime',
-							'id'          => 'snelstart_synchronise_payments_from_date',
-							'name'        => __( 'Snelstart Synchronise payments from modified at', 'snelstart-uphance-coupling' ),
-							'can_be_null' => true,
-							'hint'        => __( 'Snelstart Synchronise payments from this modified at date onward.', 'snelstart-uphance-coupling' ),
-							'default'     => new DateTime( '@0' ),
 						),
 					)
 				);
