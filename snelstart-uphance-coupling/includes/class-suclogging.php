@@ -112,11 +112,39 @@ if ( ! class_exists( 'SUCLogging' ) ) {
 				add_filter( 'bulk_actions-edit-suc_log_messages', array( $this, 'admin_bulk_actions_edit' ) );
 
 				add_filter( 'views_edit-suc_log_messages', array( $this, 'admin_views_edit' ) );
+				add_filter( 'pre_get_posts', array( $this, 'filter_on_custom_metadata' ) );
 
 				if ( is_admin() ) {
 					add_filter( 'gettext', array( $this, 'admin_get_text' ), 10, 3 );
 				}
 			}
+		}
+
+		/**
+		 * Filter on custom metadata.
+		 */
+		public function filter_on_custom_metadata( $query ) {
+			if ( ! is_admin() || ! current_user_can( 'manage_options' ) || 'edit' !== get_current_screen()->base ) {
+				return;
+			}
+
+			$search = filter_input( INPUT_GET, 's', FILTER_SANITIZE_STRING );
+			if ( empty( $search ) ) {
+				return;
+			}
+
+			$query->set(
+				'meta_query',
+				array(
+					'relation' => 'OR',
+					array(
+						'key'     => 'suc_log_messages_json',
+						'value'   => esc_sql( preg_replace( '/\s+?/', '%', $search ) ),
+						'compare' => 'LIKE',
+					),
+				)
+			);
+			$query->set( 's', '' );
 		}
 
 		/**
