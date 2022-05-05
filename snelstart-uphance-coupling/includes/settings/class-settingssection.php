@@ -138,7 +138,7 @@ if ( ! class_exists( 'SettingsSection' ) ) {
 			return new SettingsSection(
 				$section_array['id'],
 				$section_array['name'],
-				$section_array['renderer'],
+				isset( $section_array['renderer'] ) ? $section_array['renderer'] : null,
 				$section_array['settings'],
 			);
 		}

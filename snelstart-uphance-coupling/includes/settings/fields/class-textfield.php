@@ -114,8 +114,8 @@ if ( ! class_exists( 'TextField' ) ) {
 			return new self(
 				$initial_values['id'],
 				$initial_values['name'],
-				$initial_values['renderer'],
-				$initial_values['default'],
+				isset( $initial_values['renderer'] ) ? $initial_values['renderer'] : null,
+				isset( $initial_values['default'] ) ? $initial_values['default'] : null,
 				$initial_values['can_be_null'],
 				$initial_values['hint'],
 			);

@@ -104,7 +104,7 @@ if ( ! class_exists( 'BoolField' ) ) {
 			return new self(
 				$initial_values['id'],
 				$initial_values['name'],
-				$initial_values['renderer'],
+				isset( $initial_values['renderer'] ) ? $initial_values['renderer'] : null,
 				$initial_values['default'],
 				$initial_values['hint'],
 			);
