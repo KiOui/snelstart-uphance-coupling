@@ -10,7 +10,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 include_once SUC_ABSPATH . 'includes/synchronizers/class-sucsynchronisable.php';
-include_once SUC_ABSPATH . 'includes/uphance/class-sucuphancecreditnoteretriever.php';
 include_once SUC_ABSPATH . 'includes/snelstart/class-sucbtw.php';
 
 if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
@@ -49,12 +48,7 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 		 */
 		private function get_credit_notes_to_sync( ?string $credit_note_from, ?int $max_to_sync ): array {
 			if ( isset( $credit_note_from ) ) {
-				// $credit_notes = $uphance_client->credit_notes( $credit_note_from )->result;
-				// Workaround because Uphance does not support getting from a certain credit note number.
-				$credit_note_retriever = new SUCUphanceCreditNoteRetriever( $this->uphance_client );
-				$credit_notes = array(
-					'credit_notes' => $credit_note_retriever->get_next_credit_notes( $credit_note_from, $max_to_sync ),
-				);
+				$credit_notes = $this->uphance_client->credit_notes( $credit_note_from )->result;
 			} else {
 				$credit_notes = $this->uphance_client->credit_notes()->result;
 			}
@@ -143,7 +137,7 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 			$customer = $credit_note['customer'];
 			$grootboek_regels = suc_construct_order_line_items( $credit_note['line_items'], $this->btw_converter );
 			$btw_regels                  = suc_construct_btw_line_items( $credit_note['line_items'] );
-			$snelstart_relatie_for_order = get_or_create_relatie_with_name( $this->snelstart_client, $customer['name'] );
+			$snelstart_relatie_for_order = get_or_create_relatie_with_name( $this->snelstart_client, $customer );
 
 			if ( ! isset( $snelstart_relatie_for_order ) ) {
 				$name = $customer['name'];
@@ -197,10 +191,12 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 		 * @return void
 		 */
 		public function after_run(): void {
-			$latest_credit_note                                = $this->credit_notes[ count( $this->credit_notes ) - 1 ]['id'];
+			if ( count( $this->credit_notes ) > 0 ) {
+				$latest_credit_note = $this->credit_notes[ count( $this->credit_notes ) - 1 ]['id'];
 
-			$settings_manager = SUCSettings::instance()->get_manager();
-			$settings_manager->set_value_by_setting_id( 'uphance_synchronise_credit_notes_from', $latest_credit_note );
+				$settings_manager = SUCSettings::instance()->get_manager();
+				$settings_manager->set_value_by_setting_id( 'uphance_synchronise_credit_notes_from', $latest_credit_note );
+			}
 		}
 
 		/**

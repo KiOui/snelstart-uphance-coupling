@@ -21,7 +21,7 @@ if ( ! class_exists( 'SUCCore' ) ) {
 		 *
 		 * @var string
 		 */
-		public string $version = '0.0.2';
+		public string $version = '1.1.0';
 
 		/**
 		 * The single instance of the class.
@@ -121,11 +121,9 @@ if ( ! class_exists( 'SUCCore' ) ) {
 		 */
 		private function actions_and_filters() {
 			include_once SUC_ABSPATH . '/includes/class-sucsettings.php';
-			include_once SUC_ABSPATH . '/includes/class-suclogging.php';
 			include_once SUC_ABSPATH . '/includes/class-sucerrorlogging.php';
 			include_once SUC_ABSPATH . '/includes/suc-functions.php';
 			SUCSettings::instance();
-			SUCLogging::instance();
 			$uphance_client = SUCUphanceClient::instance();
 			$snelstart_client = SUCSnelstartClient::instance();
 			add_action( 'suc_sync_all', 'cron_runner_sync_all' );

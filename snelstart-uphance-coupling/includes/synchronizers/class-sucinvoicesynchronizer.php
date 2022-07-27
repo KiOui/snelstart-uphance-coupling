@@ -108,7 +108,7 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 			$customer = $invoice['customer'];
 			$grootboek_regels = suc_construct_order_line_items( $invoice['line_items'], $this->btw_converter );
 			$btw_regels                  = suc_construct_btw_line_items( $invoice['line_items'] );
-			$snelstart_relatie_for_order = get_or_create_relatie_with_name( $this->snelstart_client, $customer['name'] );
+			$snelstart_relatie_for_order = get_or_create_relatie_with_name( $this->snelstart_client, $customer );
 			$betalingstermijn            = suc_convert_date_to_amount_of_days_until( $invoice['due_date'] );
 
 			if ( ! isset( $snelstart_relatie_for_order ) ) {
@@ -167,10 +167,12 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		 * @return void
 		 */
 		public function after_run(): void {
-			$latest_invoice                                = $this->invoices[ count( $this->invoices ) - 1 ]['id'];
+			if ( count( $this->invoices ) > 0 ) {
+				$latest_invoice = $this->invoices[ count( $this->invoices ) - 1 ]['id'];
 
-			$settings_manager = SUCSettings::instance()->get_manager();
-			$settings_manager->set_value_by_setting_id( 'uphance_synchronise_invoices_from', $latest_invoice );
+				$settings_manager = SUCSettings::instance()->get_manager();
+				$settings_manager->set_value_by_setting_id( 'uphance_synchronise_invoices_from', $latest_invoice );
+			}
 		}
 
 		/**

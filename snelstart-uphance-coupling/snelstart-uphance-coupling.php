@@ -3,7 +3,7 @@
  * Plugin Name: Snelstart Uphance Coupling
  * Description: A utility to synchronize Snelstart and Uphance using API endpoints
  * Plugin URI: https://github.com/KiOui/snelstart-uphance-coupling
- * Version: 0.0.2
+ * Version: 1.1.0
  * Author: Lars van Rhijn
  * Author URI: https://larsvanrhijn.nl/
  * Text Domain: snelstart-uphance-coupling

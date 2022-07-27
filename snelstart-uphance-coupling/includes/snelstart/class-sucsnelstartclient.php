@@ -201,16 +201,15 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		/**
 		 * Add a relatie.
 		 *
-		 * $@throws SUCAPIException On exception with API request
+		 * @param array $parameters The parameters for the request.
+		 *
+		 * $@throws SUCAPIException On exception with API request.
 		 */
-		public function add_relatie( array $relatiesoorten, string $naam ): array {
+		public function add_relatie( array $parameters ): array {
 			return $this->_post(
 				'relaties',
 				null,
-				array(
-					'relatiesoort' => $relatiesoorten,
-					'naam' => $naam,
-				)
+				$parameters
 			);
 		}
 
@@ -221,6 +220,59 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		 */
 		public function btwtarieven(): array {
 			return $this->_get( 'btwtarieven', null, null );
+		}
+
+		/**
+		 * Add a document.
+		 *
+		 * @param string $type the document type (for in the URL).
+		 * @param string $content the document content in bytes.
+		 * @param string $parent_identifier the identifier of the parent to couple the document to.
+		 * @param string $file_name the file name of the file.
+		 * @param bool   $read_only whether the file should be read-only.
+		 *
+		 * @return array
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		private function add_document( string $type, string $content, string $parent_identifier, string $file_name, bool $read_only ) {
+			return $this->_post(
+				"documenten/$type",
+				null,
+				array(
+					'content' => $content,
+					'parentIdentifier' => $parent_identifier,
+					'fileName' => $file_name,
+					'readOnly' => $read_only,
+				)
+			);
+		}
+
+		/**
+		 * Add a verkoopboeking document.
+		 *
+		 * @param string $content the document content in bytes.
+		 * @param string $parent_identifier the identifier of the parent to couple the document to.
+		 * @param string $file_name the file name of the file.
+		 * @param bool   $read_only whether the file should be read-only.
+		 *
+		 * @return array
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		public function add_document_verkoopboeking( string $content, string $parent_identifier, string $file_name, bool $read_only ) {
+			return $this->add_document( 'Verkoopboekingen', $content, $parent_identifier, $file_name, $read_only );
+		}
+
+		/**
+		 * Get Landen.
+		 *
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		public function landen(): array {
+			return $this->_get(
+				'landen',
+				null,
+				null
+			);
 		}
 	}
 }

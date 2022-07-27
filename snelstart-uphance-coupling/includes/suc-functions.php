@@ -152,17 +152,79 @@ if ( ! function_exists( 'suc_format_number' ) ) {
 	}
 }
 
+if ( ! function_exists( 'suc_retrieve_address_information' ) ) {
+	/**
+	 * Get or create relatie with specific name.
+	 *
+	 * @param $customer array the Uphance customer.
+	 *
+	 * @return ?array An array with the relatie if succeeded, null if the relatie does not exist or multiple relaties were returned.
+	 */
+	function suc_retrieve_address_information( array $customer ): ?array {
+		if ( array_key_exists( 'addresses', $customer ) ) {
+			$addresses = $customer['addresses'];
+			foreach ( $addresses as $address ) {
+				if ( true === $address['default_for_shipping'] ) {
+					return $address;
+				}
+			}
+		}
+		return null;
+	}
+}
+
+if ( ! function_exists( 'suc_convert_address_information' ) ) {
+	/**
+	 * Convert Uphance address information to Snelstart Vestigingsadres information.
+	 *
+	 * @param $address array the Uphance address information.
+	 *
+	 * @return ?array An array with Snelstart Vestigingsadres information.
+	 */
+	function suc_convert_address_information( array $address ): ?array {
+		include_once SUC_ABSPATH . 'includes/snelstart/class-suclanden.php';
+		$snelstart_countries = SUCLanden::instance();
+		$snelstart_country_found = $snelstart_countries->get_country_id_from_country_code( $address['country'] );
+		if ( is_null( $snelstart_country_found ) ) {
+			return null;
+		}
+		return array(
+			'contactpersoon' => '',
+			'straat' => $address['line_1'],
+			'postcode' => $address['postcode'],
+			'plaats' => $address['city'],
+			'land' => array(
+				'id' => $snelstart_country_found->id,
+			),
+		);
+	}
+}
+
+if ( ! function_exists( 'suc_retrieve_vat_number' ) ) {
+	/**
+	 * Retrieve the VAT number from an Uphance Customer.
+	 *
+	 * @param $customer array the Uphance customer.
+	 *
+	 * @return ?string the VAT number.
+	 */
+	function suc_retrieve_vat_number( array $customer ): ?string {
+		return $customer['vat_number'];
+	}
+}
+
 if ( ! function_exists( 'suc_get_or_create_relatie_with_name' ) ) {
 	/**
 	 * Get or create relatie with specific name.
 	 *
 	 * @param $client SUCSnelstartClient the Snelstart client.
-	 * @param $naam string the name of the client to create or retrieve.
+	 * @param $customer array the customer from Uphance.
 	 *
-	 * @return array|null An array with the relatie if succeeded, null if the relatie does not exist or multiple relaties were returned.
+	 * @return array An array with the relatie if succeeded.
 	 * @throws Exception|SUCAPIException On Exception with API or when multiple relaties were found.
 	 */
-	function get_or_create_relatie_with_name( SUCSnelstartClient $client, string $naam ): array {
+	function get_or_create_relatie_with_name( SUCSnelstartClient $client, array $customer ): array {
+		$naam = $customer['name'];
 		$naam_escaped = str_replace( "'", "''", $naam );
 		$relaties = $client->relaties( null, null, "Naam eq '$naam_escaped'" );
 
@@ -171,7 +233,23 @@ if ( ! function_exists( 'suc_get_or_create_relatie_with_name' ) ) {
 		} else if ( count( $relaties ) > 1 ) {
 			throw new Exception( sprintf( __( 'Multiple relaties found with name %s', 'snelstart-uphance-coupling' ), $naam ) );
 		}
-		return $client->add_relatie( array( 'Klant' ), $naam );
+
+		$address = suc_retrieve_address_information( $customer );
+		if ( ! is_null( $address ) ) {
+			$address = suc_convert_address_information( $address );
+		}
+		$vat_number = suc_retrieve_vat_number( $customer );
+
+		return $client->add_relatie(
+			array(
+				'relatieSoort' => array(
+					'Klant',
+				),
+				'naam' => $naam,
+				'btwNummer' => $vat_number,
+				'vestigingsAdres' => $address,
+			)
+		);
 	}
 }
 
