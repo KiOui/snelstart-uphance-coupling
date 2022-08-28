@@ -209,7 +209,7 @@ if ( ! function_exists( 'suc_retrieve_vat_number' ) ) {
 	 * @return ?string the VAT number.
 	 */
 	function suc_retrieve_vat_number( array $customer ): ?string {
-		return $customer['vat_number'];
+		return \str_replace( ' ', '', $customer['vat_number'] );
 	}
 }
 
@@ -225,6 +225,10 @@ if ( ! function_exists( 'suc_get_or_create_relatie_with_name' ) ) {
 	 */
 	function get_or_create_relatie_with_name( SUCSnelstartClient $client, array $customer ): array {
 		$naam = $customer['name'];
+		// Snelstart relatie names can only be 50 characters long.
+		if ( 50 < \strlen( $naam ) ) {
+			$naam = \substr( $naam, 0, 50 );
+		}
 		$naam_escaped = str_replace( "'", "''", $naam );
 		$relaties = $client->relaties( null, null, "Naam eq '$naam_escaped'" );
 
