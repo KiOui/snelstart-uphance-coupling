@@ -55,34 +55,34 @@ if ( ! function_exists( 'suc_get_settings_config' ) ) {
 					'hint'        => __( 'The snelstart API subscription key', 'snelstart-uphance-coupling' ),
 				),
 				array(
-					'type'        => 'choice',
+					'type'        => 'callable_choice',
 					'id'          => 'snelstart_grootboekcode_debiteuren',
 					'name'        => __( 'Snelstart Ledger code', 'snelstart-uphance-coupling' ),
 					'can_be_null' => true,
 					'hint'        => __( 'Snelstart Ledger code for Debiteuren.', 'snelstart-uphance-coupling' ),
-					'choices'     => 'suc_get_grootboek_choices',
+					'callable'    => 'TODO',
 					'conditions'  => [
 						new FieldsSetSettingsCondition( [ 'snelstart_client_key', 'snelstart_subscription_key' ] ),
 					]
 				),
 				array(
-					'type'        => 'choice',
+					'type'        => 'callable_choice',
 					'id'          => 'snelstart_grootboekcode_btw_hoog',
 					'name'        => __( 'Snelstart Ledger code', 'snelstart-uphance-coupling' ),
 					'can_be_null' => true,
 					'hint'        => __( 'Snelstart Ledger code for BTW hoog.', 'snelstart-uphance-coupling' ),
-					'choices'     => 'suc_get_grootboek_choices',
+					'callable'    => 'TODO',
 					'conditions'  => [
 						new FieldsSetSettingsCondition( [ 'snelstart_client_key', 'snelstart_subscription_key' ] ),
 					]
 				),
 				array(
-					'type'        => 'choice',
+					'type'        => 'callable_choice',
 					'id'          => 'snelstart_grootboekcode_btw_geen',
 					'name'        => __( 'Snelstart Ledger code', 'snelstart-uphance-coupling' ),
 					'can_be_null' => true,
 					'hint'        => __( 'Snelstart Ledger code for BTW geen.', 'snelstart-uphance-coupling' ),
-					'choices'     => 'suc_get_grootboek_choices',
+					'callable'    => 'TODO',
 					'conditions'  => [
 						new FieldsSetSettingsCondition( [ 'snelstart_client_key', 'snelstart_subscription_key' ] ),
 					]
@@ -102,12 +102,12 @@ if ( ! function_exists( 'suc_get_settings_config' ) ) {
 					'hint'        => __( 'The Uphance password to connect to the Uphance API', 'snelstart-uphance-coupling' ),
 				),
 				array(
-					'type'        => 'choice',
+					'type'        => 'callable_choice',
 					'id'          => 'uphance_organisation',
 					'name'        => __( 'Uphance Organisation', 'snelstart-uphance-coupling' ),
 					'can_be_null' => true,
 					'hint'        => __( 'Uphance Organisation.', 'snelstart-uphance-coupling' ),
-					'choices'     => array(),
+					'callable'    => 'TODO',
 					'conditions'  => [
 						new FieldsSetSettingsCondition( [ 'uphance_username', 'uphance_password' ] ),
 					]

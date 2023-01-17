@@ -45,9 +45,8 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 		 */
 		public static function instance(): ?SUCUphanceClient {
 			if ( is_null( self::$_instance ) ) {
-				// TODO
-				$settings = null;
-				if ( ! isset( $settings ) ) {
+				$settings = get_option( 'suc_settings', null );
+				if ( empty( $settings ) || ! is_array( $settings ) ) {
 					return null;
 				}
 				$uphance_username = $settings['uphance_username'];

@@ -58,8 +58,8 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		 */
 		public static function instance(): ?SUCSnelstartClient {
 			if ( is_null( self::$_instance ) ) {
-				$settings = null;
-				if ( ! isset( $settings ) ) {
+				$settings = get_option( 'suc_settings', null );
+				if ( empty( $settings ) || ! is_array( $settings ) ) {
 					return null;
 				}
 				$snelstart_key = $settings['snelstart_client_key'];

@@ -17,6 +17,7 @@ include_once SUC_ABSPATH . 'includes/settings/fields/class-textfield.php';
 include_once SUC_ABSPATH . 'includes/settings/fields/class-choicefield.php';
 include_once SUC_ABSPATH . 'includes/settings/fields/class-passwordfield.php';
 include_once SUC_ABSPATH . 'includes/settings/fields/class-datetimefield.php';
+include_once SUC_ABSPATH . 'includes/settings/fields/class-callablechoicefield.php';
 
 if ( ! function_exists( 'initialize_settings_fields' ) ) {
 	/**
@@ -32,5 +33,6 @@ if ( ! function_exists( 'initialize_settings_fields' ) ) {
 		SettingsFactory::register_setting_type( 'choice', 'ChoiceField' );
 		SettingsFactory::register_setting_type( 'password', 'PasswordField' );
 		SettingsFactory::register_setting_type( 'datetime', 'DateTimeField' );
+		SettingsFactory::register_setting_type( 'callable_choice', 'CallableChoiceField' );
 	}
 }

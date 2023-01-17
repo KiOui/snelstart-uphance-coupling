@@ -20,6 +20,25 @@ if ( ! class_exists( 'PasswordField' ) ) {
 	class PasswordField extends TextField {
 
 		/**
+		 * Constructor of SettingsField.
+		 *
+		 * @param string        $id the slug-like ID of the setting.
+		 * @param string        $name the name of the setting.
+		 * @param string|null   $default the default value of the setting.
+		 * @param bool          $can_be_null whether the setting can be null.
+		 * @param string        $hint the hint to display next to the setting.
+		 *
+		 * @throws SettingsConfigurationException When $default is null and $can_be_null is false.
+		 */
+		public function __construct( string $id, string $name, ?string $default, ?callable $renderer = null, bool $can_be_null = false, string $hint = '', ?array $conditions = null ) {
+			if ( is_null( $conditions ) ) {
+				$conditions = array();
+			}
+
+			parent::__construct( $id, $name, $default, $renderer, $can_be_null, null, $hint, $conditions );
+		}
+
+		/**
 		 * Render this PasswordField.
 		 *
 		 * @return void

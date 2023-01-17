@@ -21,25 +21,18 @@ if ( ! class_exists( 'ChoiceField' ) ) {
 	class ChoiceField extends SettingsField {
 
 		/**
-		 * A callable to get the choice values.
-		 *
-		 * @var array|callable|null
-		 */
-		private $choices_callable = null;
-
-		/**
 		 * An array of choice values.
 		 *
-		 * @var array|null
+		 * @var array
 		 */
-		private ?array $choices;
+		private array $choices;
 
 		/**
 		 * Constructor of ChoiceField.
 		 *
 		 * @param string         $id the slug-like ID of the setting.
 		 * @param string         $name the name of the setting.
-		 * @param callable|array $choices either a callable or an array of choice values.
+		 * @param array $choices either a callable or an array of choice values.
 		 * @param ?string        $default the default value of the setting.
 		 * @param bool           $can_be_null whether the setting can be null.
 		 * @param string         $hint the hint to display next to the setting.
@@ -47,58 +40,30 @@ if ( ! class_exists( 'ChoiceField' ) ) {
 		 * @throws SettingsConfigurationException When $default is null and $can_be_null is false or when the choices
 		 * array is not a string => string array.
 		 */
-		public function __construct( string $id, string $name, $choices, ?string $default, ?callable $renderer, bool $can_be_null = false, string $hint = '', ?array $conditions = null ) {
+		public function __construct( string $id, string $name, array $choices, ?string $default, ?callable $renderer, bool $can_be_null = false, string $hint = '', ?array $conditions = null ) {
             if ( is_null( $conditions ) ) {
                 $conditions = array();
             }
 
-			if ( ! is_callable( $choices ) ) {
-				foreach ( $choices as $key => $choice_value ) {
-					if ( gettype( $key ) !== 'string' || gettype( $choice_value ) !== 'string' ) {
-						throw new SettingsConfigurationException( 'Choices array should have type string => string.' );
-					}
-				}
+            foreach ( $choices as $key => $choice_value ) {
+                if ( gettype( $key ) !== 'string' || gettype( $choice_value ) !== 'string' ) {
+                    throw new SettingsConfigurationException( 'Choices array should have type string => string.' );
+                }
+            }
 
-				if ( isset( $default ) && ! array_key_exists( $default, $choices ) ) {
-					throw new SettingsConfigurationException( 'Default choice value is not present in choices array.' );
-				}
-				parent::__construct( $id, $name, $default, $renderer, $can_be_null, $hint, $conditions );
-				$this->choices = $choices;
-			} else {
-				parent::__construct( $id, $name, $default, $renderer, $can_be_null, $hint, $conditions );
-				$this->choices = null;
-				$this->choices_callable = $choices;
-			}
-		}
-
-		/**
-		 * Get the value of a choice for a specific choice id.
-		 *
-		 * @param string $choice_id the choice id to get the value for.
-		 *
-		 * @return string|null the value of the choice with the choice id or null when the choice id was not found.
-		 * @throws ReflectionException When the choices_callable function could not be called.
-		 */
-		public function get_choice_value( string $choice_id ): ?string {
-			$choices = $this->get_choices();
-			if ( array_key_exists( $choice_id, $choices ) ) {
-				return $choices[ $choice_id ];
-			} else {
-				return null;
-			}
+            if ( isset( $default ) && ! array_key_exists( $default, $choices ) ) {
+                throw new SettingsConfigurationException( 'Default choice value is not present in choices array.' );
+            }
+            parent::__construct( $id, $name, $default, $renderer, $can_be_null, $hint, $conditions );
+            $this->choices = $choices;
 		}
 
 		/**
 		 * Get all choices.
 		 *
 		 * @return array the choices for this ChoiceField.
-		 * @throws ReflectionException When the choices_callable function was not callable.
 		 */
 		public function get_choices(): array {
-			if ( is_null( $this->choices ) ) {
-				$this->choices = call_user_func( $this->choices_callable );
-			}
-
 			return $this->choices;
 		}
 
@@ -106,7 +71,6 @@ if ( ! class_exists( 'ChoiceField' ) ) {
 		 * Render this ChoiceField.
 		 *
 		 * @return void
-		 * @throws ReflectionException When the choices_callable function was not callable.
 		 */
 		public function render( array $args ): void {
 			$current_value        = $this->get_value();

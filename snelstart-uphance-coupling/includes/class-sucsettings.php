@@ -190,8 +190,11 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 					cron_runner_sync_all();
 					wp_redirect( '/wp-admin/admin.php?page=suc_admin_menu' );
 					exit;
-				} else if ( isset( $_POST['do_save'] ) && 1 == $_POST['do_save'] && wp_verify_nonce( '_wpnonce' ) ) {
-
+				} else if ( isset( $_POST['option_page'] ) && isset( $_POST['action'] ) && 'update' == $_POST['action'] && 'suc_settings' === $_POST['option_page'] && wp_verify_nonce( $_POST['_wpnonce'], 'suc_settings-options' ) ) {
+					$this->settings->update_settings( $_POST );
+					$this->settings->save_settings();
+					wp_redirect( '/wp-admin/admin.php?page=suc_admin_menu' );
+					exit;
 				}
 			} else {
 				$uphance_client = SUCUphanceClient::instance();
