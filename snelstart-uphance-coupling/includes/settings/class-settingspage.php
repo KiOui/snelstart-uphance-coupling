@@ -1,6 +1,6 @@
 <?php
 /**
- * Settings Page.
+ * Settings Menu.
  *
  * @package snelstart-uphance-coupling
  */
@@ -9,9 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-include_once SUC_ABSPATH . 'includes/settings/class-settingsmenu.php';
-
-if ( ! class_exists( 'SettingsPage' ) ) {
+if ( ! class_exists( 'SettingsMenu' ) ) {
 	/**
 	 * Page for Settings.
 	 *
@@ -20,122 +18,105 @@ if ( ! class_exists( 'SettingsPage' ) ) {
 	class SettingsPage {
 
 		/**
-		 * Title of SettingsPage.
+		 * Page title of the SettingsPage.
 		 *
 		 * @var string
 		 */
 		private string $page_title;
 
 		/**
-		 * Menu title of SettingsPage.
+		 * Menu title of the SettingsPage.
 		 *
 		 * @var string
 		 */
 		private string $menu_title;
 
 		/**
-		 * Capability needed to access this SettingsPage.
+		 * Needed WordPress capability to access the menu.
 		 *
 		 * @var string
 		 */
 		private string $capability_needed;
 
 		/**
-		 * Slug of the SettingsPage.
+		 * Slug of the menu.
 		 *
 		 * @var string
 		 */
 		private string $menu_slug;
 
 		/**
-		 * WordPress' icon for the SettingsPage.
+		 * Renderer of the menu page.
 		 *
-		 * @var string
+		 * @var callable
 		 */
-		private string $icon;
+		private $renderer;
 
 		/**
-		 * Position of the SettingsPage.
+		 * @var SettingsSection[]
+		 */
+		private array $settings_sections;
+
+		/**
+		 * Position of the menu page to render.
 		 *
 		 * @var int
 		 */
 		private int $position;
 
 		/**
-		 * Array of SettingsMenu's.
+		 * Construct a SettingsMenu.
 		 *
-		 * @var array
+		 * @param string   $page_title page title of the SettingsMenu.
+		 * @param string   $menu_title menu title of the SettingsMenu.
+		 * @param string   $capability_needed WordPress' capability needed to access this menu.
+		 * @param string   $menu_slug the slug of the menu.
+		 * @param callable $renderer the renderer of the menu.
+		 * @param SettingsSection[]    $settings_sections the settings sections.
+		 * @param int      $position the position of the menu page.
 		 */
-		private array $menu_pages;
-
-		/**
-		 * Construct a SettingsPage.
-		 *
-		 * @param string $page_title the page title.
-		 * @param string $menu_title the menu title.
-		 * @param string $capability_needed WordPress' capability needed to access this SettingsPage.
-		 * @param string $menu_slug slug of the SettingsPage.
-		 * @param string $icon WordPress' icon of the SettingsPage.
-		 * @param int    $position the position to render this SettingsPage in.
-		 * @param array  $menu_pages an array of SettingsMenu's to register under this SettingsPage.
-		 */
-		public function __construct( string $page_title, string $menu_title, string $capability_needed, string $menu_slug, string $icon, int $position, array $menu_pages = array() ) {
+		public function __construct( string $page_title, string $menu_title, string $capability_needed, string $menu_slug, callable $renderer, array $settings_sections, int $position = 1 ) {
 			$this->page_title = $page_title;
 			$this->menu_title = $menu_title;
 			$this->capability_needed = $capability_needed;
 			$this->menu_slug = $menu_slug;
-			$this->icon = $icon;
+			$this->renderer = $renderer;
+			$this->settings_sections = $settings_sections;
 			$this->position = $position;
-			$this->menu_pages = $menu_pages;
 		}
 
 		/**
-		 * Add a SettingsMenu to this SettingsPage.
+		 * Register the menu in WordPress.
 		 *
-		 * @param SettingsMenu $menu the SettingsMenu to add.
+		 * @param string $parent_slug the slug of the parent to register this menu on.
 		 *
 		 * @return void
+		 * @throws SettingsConfigurationException
 		 */
-		public function add_menu_page( SettingsMenu $menu ) {
-			$this->menu_pages[] = $menu;
+		public function register( string $parent_slug, Settings $settings ) {
+			$this->register_self( $parent_slug );
+			$this->register_settings_sections( $settings );
 		}
 
-		/**
-		 * Get an array of SettingsMenu's registered under this SettingsPage.
-		 *
-		 * @return array array of SettingsMenu's.
-		 */
-		public function get_menu_pages(): array {
-			return $this->menu_pages;
-		}
-
-		/**
-		 * Register this SettingsPage and all SettingsMenu's registered in WordPress.
-		 *
-		 * @return void
-		 */
-		public function do_register() {
-			add_menu_page(
+		public function register_self( string $parent_slug ) {
+			add_submenu_page(
+				$parent_slug,
 				$this->page_title,
 				$this->menu_title,
 				$this->capability_needed,
 				$this->menu_slug,
-				null,
-				$this->icon,
+				$this->renderer,
 				$this->position,
 			);
-			foreach ( $this->menu_pages as $menu_page ) {
-				$menu_page->do_register( $this->menu_slug );
-			}
 		}
 
 		/**
-		 * Get the slug of the SettingsPage.
-		 *
-		 * @return string slug of the SettingsPage.
+		 * @throws SettingsConfigurationException
 		 */
-		public function get_menu_slug(): string {
-			return $this->menu_slug;
+		public function register_settings_sections( Settings $settings ) {
+			foreach( $this->settings_sections as $settings_section ) {
+				$settings_section->register( $this->menu_slug, $settings );
+			}
 		}
 	}
 }

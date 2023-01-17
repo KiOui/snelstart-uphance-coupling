@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-include_once SUC_ABSPATH . 'includes/settings/class-settingsfield.php';
+include_once SUC_ABSPATH . 'includes/settings/fields/class-settingsfield.php';
 include_once SUC_ABSPATH . 'includes/settings/class-settingsconfigurationexception.php';
 
 if ( ! class_exists( 'TextField' ) ) {
@@ -25,64 +25,52 @@ if ( ! class_exists( 'TextField' ) ) {
 		 *
 		 * @param string        $id the slug-like ID of the setting.
 		 * @param string        $name the name of the setting.
-		 * @param callable|null $renderer the custom renderer of the SettingsField.
 		 * @param string|null   $default the default value of the setting.
 		 * @param bool          $can_be_null whether the setting can be null.
 		 * @param string        $hint the hint to display next to the setting.
 		 *
 		 * @throws SettingsConfigurationException When $default is null and $can_be_null is false.
 		 */
-		public function __construct( string $id, string $name, ?callable $renderer, ?string $default, bool $can_be_null = false, string $hint = '' ) {
-			parent::__construct( $id, $name, $renderer, $default, $can_be_null, $hint );
+		public function __construct( string $id, string $name, ?string $default, ?callable $renderer = null, bool $can_be_null = false, string $hint = '', ?array $conditions = null ) {
+            if ( is_null( $conditions ) ) {
+                $conditions = array();
+            }
+
+			parent::__construct( $id, $name, $default, $renderer, $can_be_null, $hint, $conditions );
 		}
 
-		/**
-		 * Validate a string value.
-		 *
-		 * @param mixed       $to_validate the value to validate.
-		 * @param string|null $default the default value.
-		 * @param bool        $can_be_null whether the value to validate can be null.
-		 *
-		 * @return string|null the validated value.
-		 */
-		public static function validate_string( $to_validate, ?string $default, bool $can_be_null ): ?string {
-			if ( ! isset( $to_validate ) && isset( $default ) ) {
-				return $default;
-			}
-			$string_value = strval( $to_validate );
-			if ( '' === $string_value && $can_be_null ) {
-				return null;
-			} else {
-				return $string_value;
-			}
-		}
+        public function validate( $value_to_validate ): bool {
+	        if ( ! is_null( $value_to_validate ) && ! is_string( $value_to_validate ) ) {
+                return false;
+            }
 
-		/**
-		 * Get the value of this setting from an array of options.
-		 *
-		 * @param array $options the array of options.
-		 *
-		 * @return string|null a validated string value.
-		 */
-		public function get_value( array $options ): ?string {
-			$parent_value = parent::get_value( $options );
-			return self::validate_string( $parent_value, $this->default, $this->can_be_null );
-		}
+            if ( is_null( $value_to_validate ) ) {
+                return $this->can_be_null;
+            }
+
+            return true;
+        }
+
+        public function sanitize( $value_to_sanitize ): ?string {
+	        if ( is_null( $value_to_sanitize ) ) {
+                return null;
+            }
+
+            return strval( $value_to_sanitize );
+        }
 
 		/**
 		 * Render this TextField.
 		 *
 		 * @param string $setting_name the name of the setting to render this TextField for.
-		 * @param array  $options the array of options.
 		 *
 		 * @return void
 		 */
-		public function render( string $setting_name, array $options ): void {
-			$value        = $this->get_value( $options );
-			$setting_id   = $this->get_setting_name( $setting_name ); ?>
-			<label><p><?php echo esc_html( $this->rendered_hint() ); ?></p>
-				<input type="text" name="<?php echo esc_attr( $setting_id ); ?>"
-					   value="<?php echo esc_attr( $value ); ?>"
+		public function render( array $args ): void {
+			$value        = $this->get_value(); ?>
+			<label><?php echo esc_html( $this->rendered_hint() ); ?>
+				<input type="text" name="<?php echo esc_attr( $this->id ); ?>"
+				       value="<?php echo esc_attr( $value ); ?>"
 					<?php if ( ! $this->can_be_null ) : ?>
 						required
 					<?php endif; ?>
@@ -91,15 +79,12 @@ if ( ! class_exists( 'TextField' ) ) {
 			<?php
 		}
 
-		/**
-		 * Validate the value for this setting.
-		 *
-		 * @param mixed $value_to_validate the value to validate.
-		 *
-		 * @return ?string a validated string value.
-		 */
-		public function validate( $value_to_validate ): ?string {
-			return self::validate_string( $value_to_validate, $this->default, $this->can_be_null );
+		public function serialize(): ?string {
+			return $this->value;
+		}
+
+		public function deserialize( ?string $serialized_value ): ?string {
+			return $serialized_value;
 		}
 
 		/**
@@ -114,10 +99,11 @@ if ( ! class_exists( 'TextField' ) ) {
 			return new self(
 				$initial_values['id'],
 				$initial_values['name'],
-				isset( $initial_values['renderer'] ) ? $initial_values['renderer'] : null,
 				isset( $initial_values['default'] ) ? $initial_values['default'] : null,
-				$initial_values['can_be_null'],
-				$initial_values['hint'],
+				isset( $initial_values['renderer'] ) ? $initial_values['renderer'] : null,
+				isset( $initial_values['can_be_null'] ) ? $initial_values['can_be_null'] : false,
+				isset( $initial_values['hint'] ) ? $initial_values['hint'] : '',
+                isset( $initial_values['conditions'] ) ? $initial_values['conditions'] : null
 			);
 		}
 	}

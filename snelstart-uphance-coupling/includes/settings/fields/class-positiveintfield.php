@@ -25,7 +25,6 @@ if ( ! class_exists( 'PositiveIntField' ) ) {
 		 *
 		 * @param string        $id the slug-like ID of the setting.
 		 * @param string        $name the name of the setting.
-		 * @param callable|null $renderer the custom renderer of the SettingsField.
 		 * @param ?int          $default the default value of the setting.
 		 * @param bool          $can_be_null whether the setting can be null.
 		 * @param string        $hint the hint to display next to the setting.
@@ -35,7 +34,7 @@ if ( ! class_exists( 'PositiveIntField' ) ) {
 		 * @throws SettingsConfigurationException When $default is null and $can_be_null is false or when $minimum is
 		 * larger than $maximum or when $minimum is smaller than 0.
 		 */
-		public function __construct( string $id, string $name, ?callable $renderer, ?int $default, bool $can_be_null = false, string $hint = '', ?int $minimum = null, ?int $maximum = null ) {
+		public function __construct( string $id, string $name, ?int $default, ?callable $renderer = null, bool $can_be_null = false, string $hint = '', ?int $minimum = null, ?int $maximum = null, ?array $conditions = null ) {
 			if ( isset( $minimum ) && $minimum < 0 ) {
 				throw new SettingsConfigurationException( 'A positive integer field can not have a negative minimum.' );
 			}
@@ -44,28 +43,11 @@ if ( ! class_exists( 'PositiveIntField' ) ) {
 				$minimum = 0;
 			}
 
-			parent::__construct( $id, $name, $renderer, $default, $can_be_null, $hint, $minimum, $maximum );
-		}
+			if ( is_null( $conditions ) ) {
+				$conditions = array();
+			}
 
-		/**
-		 * Create a PositiveIntField from an array of values.
-		 *
-		 * @param array $initial_values values to pass to PositiveIntField constructor.
-		 *
-		 * @return PositiveIntField the created PositiveIntField.
-		 * @throws SettingsConfigurationException When PositiveIntField creation failed.
-		 */
-		public static function from_array( array $initial_values ): PositiveIntField {
-			return new self(
-				$initial_values['id'],
-				$initial_values['name'],
-				isset( $initial_values['renderer'] ) ? $initial_values['renderer'] : null,
-				isset( $initial_values['default'] ) ? $initial_values['default'] : null,
-				$initial_values['can_be_null'],
-				$initial_values['hint'],
-				isset( $initial_values['minimum'] ) ? $initial_values['minimum'] : null,
-				isset( $initial_values['maximum'] ) ? $initial_values['maximum'] : null,
-			);
+			parent::__construct( $id, $name, $default, $renderer, $can_be_null, $hint, $minimum, $maximum, $conditions );
 		}
 	}
 }

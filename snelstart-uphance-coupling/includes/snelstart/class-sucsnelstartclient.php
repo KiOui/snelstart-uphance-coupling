@@ -58,7 +58,7 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		 */
 		public static function instance(): ?SUCSnelstartClient {
 			if ( is_null( self::$_instance ) ) {
-				$settings = get_option( 'suc_settings', null );
+				$settings = null;
 				if ( ! isset( $settings ) ) {
 					return null;
 				}

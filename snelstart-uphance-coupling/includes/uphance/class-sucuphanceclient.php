@@ -45,7 +45,8 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 		 */
 		public static function instance(): ?SUCUphanceClient {
 			if ( is_null( self::$_instance ) ) {
-				$settings = get_option( 'suc_settings', null );
+				// TODO
+				$settings = null;
 				if ( ! isset( $settings ) ) {
 					return null;
 				}

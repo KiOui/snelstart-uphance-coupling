@@ -34,13 +34,6 @@ if ( ! class_exists( 'SettingsField' ) ) {
 		protected string $name;
 
 		/**
-		 * The custom renderer of the setting section. Defaults to the default renderer of this class.
-		 *
-		 * @var callable|null
-		 */
-		protected $renderer;
-
-		/**
 		 * Whether this setting can be null.
 		 *
 		 * @var bool
@@ -62,28 +55,50 @@ if ( ! class_exists( 'SettingsField' ) ) {
 		protected $default;
 
 		/**
+		 * The value of the setting.
+		 *
+		 * @var mixed
+		 */
+		protected $value;
+
+		/**
+		 * @var ?callable
+		 */
+		protected $renderer;
+
+		/**
+		 * The conditions whether to show this setting.
+		 */
+		protected array $conditions;
+
+		/**
 		 * Constructor of SettingsField.
 		 *
 		 * @param string        $id the slug-like ID of the setting.
 		 * @param string        $name the name of the setting.
-		 * @param callable|null $renderer the custom renderer of the SettingsField.
 		 * @param mixed         $default the default value of the setting.
 		 * @param bool          $can_be_null whether the setting can be null.
 		 * @param string        $hint the hint to display next to the setting.
 		 *
 		 * @throws SettingsConfigurationException When $default is null and $can_be_null is false.
 		 */
-		public function __construct( string $id, string $name, ?callable $renderer, $default, bool $can_be_null = false, string $hint = '' ) {
+		public function __construct( string $id, string $name, $default, ?callable $renderer = null, bool $can_be_null = false, string $hint = '', ?array $conditions = null ) {
 			if ( is_null( $default ) && ! $can_be_null ) {
 				throw new SettingsConfigurationException( "Error while registering setting $id, setting can not be null but no default is provided." );
 			}
 
+			if ( is_null( $conditions ) ) {
+				$conditions = array();
+			}
+
 			$this->id = $id;
 			$this->name = $name;
-			$this->renderer = $renderer;
 			$this->can_be_null = $can_be_null;
 			$this->hint = $hint;
 			$this->default = $default;
+			$this->conditions = $conditions;
+			$this->value = null;
+			$this->renderer = $renderer;
 		}
 
 		/**
@@ -95,15 +110,8 @@ if ( ! class_exists( 'SettingsField' ) ) {
 			return $this->id;
 		}
 
-		/**
-		 * Check whether the value of the parameter is empty.
-		 *
-		 * @param mixed $setting_value the value to check.
-		 *
-		 * @return bool true when the $setting_value is an empty string or null.
-		 */
-		public static function is_empty_setting( $setting_value ): bool {
-			return '' === $setting_value || is_null( $setting_value );
+		public function get_name(): string {
+			return $this->name;
 		}
 
 		/**
@@ -113,38 +121,6 @@ if ( ! class_exists( 'SettingsField' ) ) {
 		 */
 		public function get_renderer(): callable {
 			return $this->renderer ?? array( $this, 'render' );
-		}
-
-		/**
-		 * Register this SettingsField in WordPress.
-		 *
-		 * @param string $page the page to register this SettingsField on.
-		 * @param string $section_id the slug-like section ID to register this SettingsField on.
-		 *
-		 * @return void
-		 */
-		public function do_register( string $page, string $section_id ): void {
-			add_settings_field(
-				$this->id,
-				$this->name,
-				$this->get_renderer(),
-				$page,
-				$section_id,
-			);
-		}
-
-		/**
-		 * Get the raw value of this setting given an option array.
-		 *
-		 * @param array $options an option array.
-		 *
-		 * @return mixed the value of the key with $this->id in the $options array.
-		 */
-		public function get_value( array $options ) {
-			if ( isset( $options[ $this->id ] ) ) {
-				return $options[ $this->id ];
-			}
-			return null;
 		}
 
 		/**
@@ -161,34 +137,90 @@ if ( ! class_exists( 'SettingsField' ) ) {
 		}
 
 		/**
-		 * Get the name of the setting to be rendered inside a form input field name attribute.
-		 *
-		 * @param string $setting_name the setting name of the setting this SettingsField is registered on.
-		 *
-		 * @return string the value of the name attribute to render in an input tag.
-		 */
-		public function get_setting_name( string $setting_name ): string {
-			return $setting_name . '[' . $this->id . ']';
-		}
-
-		/**
 		 * Render this SettingsField.
-		 *
-		 * @param string $setting_name the setting name of the setting this SettingsField is registered on.
-		 * @param array  $options an options array.
 		 *
 		 * @return void
 		 */
-		abstract public function render( string $setting_name, array $options ): void;
+		abstract public function render( array $args ): void;
+
+		/**
+		 * Get the raw value of this setting given an option array.
+		 *
+		 * @return mixed the value of the key with $this->id in the $options array.
+		 */
+		public function get_value() {
+			if ( is_null( $this->value ) && ! $this->can_be_null ) {
+				return $this->default;
+			} else {
+				return $this->value;
+			}
+		}
+
+		/**
+		 * @return SettingsCondition[]
+		 */
+		public function get_conditions(): array {
+			return $this->conditions;
+		}
+
+		/**
+		 * Set the value of a setting.
+		 *
+		 * @param mixed $value The value of a setting.
+		 *
+		 * @return bool Whether the setting was overwritten.
+		 */
+		public function set_value( $value ): bool {
+			$sanitized_value = $this->sanitize( $value );
+			if ( $this->validate( $sanitized_value ) ) {
+				$this->value = $sanitized_value;
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		public function set_value_force( $value ) {
+			$this->value = $value;
+		}
+
+		public function is_set(): bool {
+			return $this->value !== null && $this->value !== '';
+		}
+
+		/**
+		 * Sanitize a value for this setting.
+		 *
+		 * @param $value_to_sanitize mixed the value to sanitize for this setting.
+		 *
+		 * @return mixed the sanitized value.
+		 */
+		abstract public function sanitize( $value_to_sanitize );
 
 		/**
 		 * Validate a value for this setting.
 		 *
 		 * @param $value_to_validate mixed the value to validate for this setting.
 		 *
-		 * @return mixed the validated value.
+		 * @return bool whether the value could be validated correctly.
 		 */
-		abstract public function validate( $value_to_validate );
+		abstract public function validate( $value_to_validate ): bool;
+
+		abstract public function serialize(): ?string;
+
+		public function set_default() {
+			$this->value = $this->default;
+		}
+
+		public function deserialize( ?string $serialized_value ) {
+			$sanitized_value = $this->sanitize( $serialized_value );
+
+			if ( $this->validate( $sanitized_value ) ) {
+				return $sanitized_value;
+			} else {
+				return $this->default;
+			}
+		}
 
 		/**
 		 * Convert an array to a SettingsField.
@@ -198,5 +230,14 @@ if ( ! class_exists( 'SettingsField' ) ) {
 		 * @return static a SettingsField.
 		 */
 		abstract public static function from_array( array $initial_values ): self;
+
+		public function should_be_shown( Settings $settings ): bool {
+			foreach( $this->conditions as $condition ) {
+				if ( ! $condition->holds( $settings ) ) {
+					return false;
+				}
+			}
+			return true;
+		}
 	}
 }
