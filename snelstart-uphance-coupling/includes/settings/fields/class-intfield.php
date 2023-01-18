@@ -37,13 +37,15 @@ if ( ! class_exists( 'IntField' ) ) {
 		/**
 		 * Constructor of IntField.
 		 *
-		 * @param string        $id the slug-like ID of the setting.
-		 * @param string        $name the name of the setting.
-		 * @param ?int          $default the default value of the setting.
-		 * @param bool          $can_be_null whether the setting can be null.
-		 * @param string        $hint the hint to display next to the setting.
-		 * @param int|null      $minimum the minimum value for the IntField, when null no minimum value is specified.
-		 * @param int|null      $maximum the maximum value for the IntField, when null no maximum value is specified.
+		 * @param string    $id the slug-like ID of the setting.
+		 * @param string    $name the name of the setting.
+		 * @param ?int      $default the default value of the setting.
+		 * @param ?callable $renderer an optional default renderer for the setting.
+		 * @param bool      $can_be_null whether the setting can be null.
+		 * @param string    $hint the hint to display next to the setting.
+		 * @param int|null  $minimum the minimum value for the IntField, when null no minimum value is specified.
+		 * @param int|null  $maximum the maximum value for the IntField, when null no maximum value is specified.
+		 * @param ?array    $conditions optional array of SettingsConditions that determine whether to display this setting.
 		 *
 		 * @throws SettingsConfigurationException When $default is null and $can_be_null is false or when $minimum is
 		 * larger than $maximum.
@@ -53,9 +55,9 @@ if ( ! class_exists( 'IntField' ) ) {
 				throw new SettingsConfigurationException( 'Minimum must be smaller than maximum.' );
 			}
 
-            if ( is_null( $conditions ) ) {
-                $conditions = array();
-            }
+			if ( is_null( $conditions ) ) {
+				$conditions = array();
+			}
 
 			parent::__construct( $id, $name, $default, $renderer, $can_be_null, $hint, $conditions );
 			$this->minimum = $minimum;
@@ -98,34 +100,50 @@ if ( ! class_exists( 'IntField' ) ) {
 			return $this->maximum;
 		}
 
+		/**
+		 * Sanitize a value for this setting.
+		 *
+		 * @param mixed $value_to_sanitize The value to sanitize.
+		 *
+		 * @return int|null The sanitized value.
+		 */
 		public function sanitize( $value_to_sanitize ): ?int {
-			if ( $value_to_sanitize === '' || is_null( $value_to_sanitize ) ) {
-                return null;
-            } else {
-                return intval( $value_to_sanitize );
-            }
+			if ( '' === $value_to_sanitize || is_null( $value_to_sanitize ) ) {
+				return null;
+			} else {
+				return intval( $value_to_sanitize );
+			}
 		}
 
-        public function validate( $value_to_validate ): bool {
-            if ( ! is_null( $value_to_validate ) && ! is_int( $value_to_validate ) ) {
-                return false;
-            }
+		/**
+		 * Validate a value for this setting.
+		 *
+		 * @param mixed $value_to_validate The value to validate.
+		 *
+		 * @return bool Whether the value can be set to the value for this setting (whether it was validated correctly).
+		 */
+		public function validate( $value_to_validate ): bool {
+			if ( ! is_null( $value_to_validate ) && ! is_int( $value_to_validate ) ) {
+				return false;
+			}
 
-            if ( is_null( $value_to_validate ) ) {
-                return $this->can_be_null;
-            }
+			if ( is_null( $value_to_validate ) ) {
+				return $this->can_be_null;
+			}
 
-	        if ( isset( $minimum ) && $value_to_validate < $minimum ) {
-		        return false;
-	        } else if ( isset( $maximum ) && $value_to_validate > $maximum ) {
-		        return false;
-	        } else {
-		        return true;
-	        }
-        }
+			if ( isset( $minimum ) && $value_to_validate < $minimum ) {
+				return false;
+			} else if ( isset( $maximum ) && $value_to_validate > $maximum ) {
+				return false;
+			} else {
+				return true;
+			}
+		}
 
 		/**
 		 * Render this IntField.
+		 *
+		 * @param array $args The arguments passed by WordPress to render this setting.
 		 *
 		 * @return void
 		 */
@@ -133,7 +151,7 @@ if ( ! class_exists( 'IntField' ) ) {
 			$value        = $this->get_value(); ?>
 			<label><?php echo esc_html( $this->rendered_hint() ); ?>
 				<input type="number" name="<?php echo esc_attr( $this->id ); ?>"
-				       value="<?php echo esc_attr( $value ); ?>"
+					   value="<?php echo esc_attr( $value ); ?>"
 					<?php if ( $this->has_minimum() ) : ?>
 						min="<?php echo esc_attr( $this->minimum ); ?>"
 					<?php endif; ?>
@@ -148,6 +166,11 @@ if ( ! class_exists( 'IntField' ) ) {
 			<?php
 		}
 
+		/**
+		 * Serialize this setting.
+		 *
+		 * @return string|null The serialized data, null when it is unset.
+		 */
 		public function serialize(): ?string {
 			if ( is_null( $this->value ) ) {
 				return null;
@@ -156,7 +179,14 @@ if ( ! class_exists( 'IntField' ) ) {
 			return strval( $this->value );
 		}
 
-		public function deserialize( ?string $serialized_value ) {
+		/**
+		 * Deserialize data from a serialized value.
+		 *
+		 * @param string|null $serialized_value The serialized value.
+		 *
+		 * @return int|null Deserialized version of the serialized data.
+		 */
+		public function deserialize( ?string $serialized_value ): ?int {
 			if ( is_null( $serialized_value ) ) {
 				return null;
 			}
@@ -177,12 +207,12 @@ if ( ! class_exists( 'IntField' ) ) {
 				$initial_values['id'],
 				$initial_values['name'],
 				isset( $initial_values['default'] ) ? $initial_values['default'] : null,
-                isset( $initial_values['renderer'] ) ? $initial_values[ 'renderer' ] : null,
+				isset( $initial_values['renderer'] ) ? $initial_values['renderer'] : null,
 				isset( $initial_values['can_be_null'] ) ? $initial_values['can_be_null'] : false,
 				isset( $initial_values['hint'] ) ? $initial_values['hint'] : '',
 				isset( $initial_values['minimum'] ) ? $initial_values['minimum'] : null,
 				isset( $initial_values['maximum'] ) ? $initial_values['maximum'] : null,
-                isset( $initial_values['conditions'] ) ? $initial_values['conditions'] : null,
+				isset( $initial_values['conditions'] ) ? $initial_values['conditions'] : null,
 			);
 		}
 	}

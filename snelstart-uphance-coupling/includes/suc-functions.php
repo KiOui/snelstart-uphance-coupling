@@ -344,6 +344,11 @@ if ( ! function_exists( 'suc_construct_order_line_items' ) ) {
 }
 
 if ( ! function_exists( 'suc_get_grootboek_choices' ) ) {
+	/**
+	 * Get choices for grootboek setting.
+	 *
+	 * @return array|null An array of string => string choices on succes, null on failure.
+	 */
 	function suc_get_grootboek_choices(): ?array {
 		include_once SUC_ABSPATH . 'includes/class-succache.php';
 		$grootboeken = SUCCache::instance()->get_grootboeken();
@@ -360,6 +365,11 @@ if ( ! function_exists( 'suc_get_grootboek_choices' ) ) {
 }
 
 if ( ! function_exists( 'suc_get_invoices_choices' ) ) {
+	/**
+	 * Get choices for invoice setting.
+	 *
+	 * @return array|null An array of string => string choices on succes, null on failure.
+	 */
 	function suc_get_invoices_choices(): ?array {
 		$invoices = SUCCache::instance()->get_invoices();
 		if ( false === $invoices ) {
@@ -375,6 +385,11 @@ if ( ! function_exists( 'suc_get_invoices_choices' ) ) {
 }
 
 if ( ! function_exists( 'suc_get_credit_notes_choices' ) ) {
+	/**
+	 * Get choices for credit note setting.
+	 *
+	 * @return array|null An array of string => string choices on succes, null on failure.
+	 */
 	function suc_get_credit_notes_choices(): ?array {
 		$credit_notes = SUCCache::instance()->get_credit_notes();
 		if ( false === $credit_notes ) {
@@ -390,6 +405,11 @@ if ( ! function_exists( 'suc_get_credit_notes_choices' ) ) {
 }
 
 if ( ! function_exists( 'suc_get_organisations_choices' ) ) {
+	/**
+	 * Get choices for organisations setting.
+	 *
+	 * @return array|null An array of string => string choices on succes, null on failure.
+	 */
 	function suc_get_organisations_choices(): ?array {
 		$organisations = SUCCache::instance()->get_organisations();
 		if ( false === $organisations ) {

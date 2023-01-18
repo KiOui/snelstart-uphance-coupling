@@ -75,13 +75,20 @@ if ( ! class_exists( 'SettingsSection' ) ) {
 		 * @param string $page the slug of the SettingsPage to register this SettingsSection under.
 		 *
 		 * @return void
-		 * @throws SettingsConfigurationException
+		 * @throws SettingsConfigurationException When a setting could not be found.
 		 */
 		public function register( string $page, Settings $settings ) {
 			$this->register_self( $page );
 			$this->register_settings( $page, $settings );
 		}
 
+		/**
+		 * Register this settings section in WordPress.
+		 *
+		 * @param string $page The page to register the section on.
+		 *
+		 * @return void
+		 */
 		public function register_self( string $page ) {
 			add_settings_section(
 				$this->id,
@@ -92,16 +99,21 @@ if ( ! class_exists( 'SettingsSection' ) ) {
 		}
 
 		/**
-		 * @throws SettingsConfigurationException
+		 * Register the settings in this settings section.
+		 *
+		 * @param string   $page The page to register the settings on.
+		 * @param Settings $settings The settings.
+		 *
+		 * @throws SettingsConfigurationException When a setting with the defined key does not exist in $settings.
 		 */
 		public function register_settings( string $page, Settings $settings ) {
-			foreach( $this->settings as $setting_key ) {
+			foreach ( $this->settings as $setting_key ) {
 				$setting_obj = $settings->get_field( $setting_key );
 				if ( is_null( $setting_obj ) ) {
 					throw new SettingsConfigurationException( "Setting with key $setting_key does not exist." );
 				}
 				$conditions_hold = true;
-				foreach( $setting_obj->get_conditions() as $condition ) {
+				foreach ( $setting_obj->get_conditions() as $condition ) {
 					if ( ! $condition->holds( $settings ) ) {
 						$conditions_hold = false;
 					}

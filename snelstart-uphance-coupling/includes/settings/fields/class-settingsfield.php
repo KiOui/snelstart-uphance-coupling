@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 include_once SUC_ABSPATH . 'includes/settings/class-settingsconfigurationexception.php';
+include_once SUC_ABSPATH . 'includes/settings/conditions/class-settingscondition.php';
 
 if ( ! class_exists( 'SettingsField' ) ) {
 	/**
@@ -62,23 +63,29 @@ if ( ! class_exists( 'SettingsField' ) ) {
 		protected $value;
 
 		/**
+		 * The optional renderer for this setting.
+		 *
 		 * @var ?callable
 		 */
 		protected $renderer;
 
 		/**
 		 * The conditions whether to show this setting.
+		 *
+		 * @var SettingsCondition[]
 		 */
 		protected array $conditions;
 
 		/**
 		 * Constructor of SettingsField.
 		 *
-		 * @param string        $id the slug-like ID of the setting.
-		 * @param string        $name the name of the setting.
-		 * @param mixed         $default the default value of the setting.
-		 * @param bool          $can_be_null whether the setting can be null.
-		 * @param string        $hint the hint to display next to the setting.
+		 * @param string    $id the slug-like ID of the setting.
+		 * @param string    $name the name of the setting.
+		 * @param mixed     $default the default value of the setting.
+		 * @param ?callable $renderer an optional default renderer for the setting.
+		 * @param bool      $can_be_null whether the setting can be null.
+		 * @param string    $hint the hint to display next to the setting.
+		 * @param ?array    $conditions optional array of SettingsConditions that determine whether to display this setting.
 		 *
 		 * @throws SettingsConfigurationException When $default is null and $can_be_null is false.
 		 */
@@ -110,6 +117,11 @@ if ( ! class_exists( 'SettingsField' ) ) {
 			return $this->id;
 		}
 
+		/**
+		 * Get the name of this setting.
+		 *
+		 * @return string The name of this setting.
+		 */
 		public function get_name(): string {
 			return $this->name;
 		}
@@ -139,6 +151,8 @@ if ( ! class_exists( 'SettingsField' ) ) {
 		/**
 		 * Render this SettingsField.
 		 *
+		 * @param array $args The arguments passed by WordPress to render this setting.
+		 *
 		 * @return void
 		 */
 		abstract public function render( array $args ): void;
@@ -157,7 +171,9 @@ if ( ! class_exists( 'SettingsField' ) ) {
 		}
 
 		/**
-		 * @return SettingsCondition[]
+		 * Get the conditions for this settings field.
+		 *
+		 * @return SettingsCondition[] The conditions for this settings field.
 		 */
 		public function get_conditions(): array {
 			return $this->conditions;
@@ -180,18 +196,30 @@ if ( ! class_exists( 'SettingsField' ) ) {
 			}
 		}
 
+		/**
+		 * Force-set value for this setting (do not sanitize or validate beforehand).
+		 *
+		 * @param mixed $value The value to set this setting to.
+		 *
+		 * @return void
+		 */
 		public function set_value_force( $value ) {
 			$this->value = $value;
 		}
 
+		/**
+		 * Whether this setting is set.
+		 *
+		 * @return bool True when this setting is set, false otherwise.
+		 */
 		public function is_set(): bool {
-			return $this->value !== null && $this->value !== '';
+			return null !== $this->value && '' !== $this->value;
 		}
 
 		/**
 		 * Sanitize a value for this setting.
 		 *
-		 * @param $value_to_sanitize mixed the value to sanitize for this setting.
+		 * @param mixed $value_to_sanitize the value to sanitize for this setting.
 		 *
 		 * @return mixed the sanitized value.
 		 */
@@ -206,12 +234,29 @@ if ( ! class_exists( 'SettingsField' ) ) {
 		 */
 		abstract public function validate( $value_to_validate ): bool;
 
+		/**
+		 * Serialize this setting.
+		 *
+		 * @return string|null The serialized data, null when it is unset.
+		 */
 		abstract public function serialize(): ?string;
 
+		/**
+		 * Set the default value of this setting.
+		 *
+		 * @return void
+		 */
 		public function set_default() {
 			$this->value = $this->default;
 		}
 
+		/**
+		 * Deserialize data from a serialized value.
+		 *
+		 * @param string|null $serialized_value The serialized value.
+		 *
+		 * @return string|null Deserialized version of the serialized data.
+		 */
 		public function deserialize( ?string $serialized_value ) {
 			$sanitized_value = $this->sanitize( $serialized_value );
 
@@ -231,8 +276,15 @@ if ( ! class_exists( 'SettingsField' ) ) {
 		 */
 		abstract public static function from_array( array $initial_values ): self;
 
+		/**
+		 * Whether this settings field should be shown.
+		 *
+		 * @param Settings $settings The other settings.
+		 *
+		 * @return bool True when the conditions all return true, false otherwise.
+		 */
 		public function should_be_shown( Settings $settings ): bool {
-			foreach( $this->conditions as $condition ) {
+			foreach ( $this->conditions as $condition ) {
 				if ( ! $condition->holds( $settings ) ) {
 					return false;
 				}

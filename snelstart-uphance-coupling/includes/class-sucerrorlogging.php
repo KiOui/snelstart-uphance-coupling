@@ -125,9 +125,9 @@ if ( ! class_exists( 'SUCErrorLogging' ) ) {
 		/**
 		 * Send an email when an error occurred.
 		 *
-		 * @param int $post_id The post id of the sub_errors post that was created.
+		 * @param int     $post_id The post id of the sub_errors post that was created.
 		 * @param WP_Post $post The post object of the suc_errors post that was created.
-		 * @param bool $update Whether the post updated or was newly created.
+		 * @param bool    $update Whether the post updated or was newly created.
 		 *
 		 * @return void
 		 */
@@ -136,7 +136,7 @@ if ( ! class_exists( 'SUCErrorLogging' ) ) {
 				return;
 			}
 
-			if ( $post->post_type !== 'suc_errors' ) {
+			if ( 'suc_errors' !== $post->post_type ) {
 				return;
 			}
 

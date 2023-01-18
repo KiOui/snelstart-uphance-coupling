@@ -1,6 +1,6 @@
 <?php
 /**
- * Settings Page.
+ * Settings Group.
  *
  * @package snelstart-uphance-coupling
  */
@@ -62,6 +62,8 @@ if ( ! class_exists( 'SettingsGroup' ) ) {
 		private int $position;
 
 		/**
+		 * The settings pages in this group.
+		 *
 		 * @var SettingsPage[]
 		 */
 		private array $settings_pages;
@@ -69,13 +71,13 @@ if ( ! class_exists( 'SettingsGroup' ) ) {
 		/**
 		 * Construct a SettingsGroup.
 		 *
-		 * @param string $page_title the page title.
-		 * @param string $menu_title the menu title.
-		 * @param string $capability_needed WordPress' capability needed to access this SettingsPage.
-		 * @param string $menu_slug slug of the SettingsPage.
-		 * @param string $icon WordPress' icon of the SettingsPage.
-		 * @param int    $position the position to render this SettingsPage in.
-		 * @param SettingsPage[]  $settings_pages an array of SettingsMenu's to register under this SettingsPage.
+		 * @param string         $page_title the page title.
+		 * @param string         $menu_title the menu title.
+		 * @param string         $capability_needed WordPress' capability needed to access this SettingsPage.
+		 * @param string         $menu_slug slug of the SettingsPage.
+		 * @param string         $icon WordPress' icon of the SettingsPage.
+		 * @param int            $position the position to render this SettingsPage in.
+		 * @param SettingsPage[] $settings_pages an array of SettingsMenu's to register under this SettingsPage.
 		 */
 		public function __construct( string $page_title, string $menu_title, string $capability_needed, string $menu_slug, string $icon, int $position, array $settings_pages = array() ) {
 			$this->page_title = $page_title;
@@ -97,6 +99,11 @@ if ( ! class_exists( 'SettingsGroup' ) ) {
 			$this->register_settings_pages( $settings );
 		}
 
+		/**
+		 * Register this group in WordPress.
+		 *
+		 * @return void
+		 */
 		public function register_self() {
 			add_menu_page(
 				$this->page_title,
@@ -109,8 +116,16 @@ if ( ! class_exists( 'SettingsGroup' ) ) {
 			);
 		}
 
+		/**
+		 * Register all settings pages in WordPress.
+		 *
+		 * @param Settings $settings The settings to register.
+		 *
+		 * @return void
+		 * @throws SettingsConfigurationException When a setting was not found in $settings.
+		 */
 		private function register_settings_pages( Settings $settings ) {
-			foreach( $this->settings_pages as $settings_page ) {
+			foreach ( $this->settings_pages as $settings_page ) {
 				$settings_page->register( $this->menu_slug, $settings );
 			}
 		}

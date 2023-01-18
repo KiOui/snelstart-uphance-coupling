@@ -23,13 +23,15 @@ if ( ! class_exists( 'PositiveIntField' ) ) {
 		/**
 		 * Constructor of PositiveIntField.
 		 *
-		 * @param string        $id the slug-like ID of the setting.
-		 * @param string        $name the name of the setting.
-		 * @param ?int          $default the default value of the setting.
-		 * @param bool          $can_be_null whether the setting can be null.
-		 * @param string        $hint the hint to display next to the setting.
-		 * @param int|null      $minimum the minimum value for the IntField, when null no minimum value is specified.
-		 * @param int|null      $maximum the maximum value for the IntField, when null no maximum value is specified.
+		 * @param string    $id the slug-like ID of the setting.
+		 * @param string    $name the name of the setting.
+		 * @param ?int      $default the default value of the setting.
+		 * @param ?callable $renderer an optional default renderer for the setting.
+		 * @param bool      $can_be_null whether the setting can be null.
+		 * @param string    $hint the hint to display next to the setting.
+		 * @param int|null  $minimum the minimum value for the IntField, when null no minimum value is specified.
+		 * @param int|null  $maximum the maximum value for the IntField, when null no maximum value is specified.
+		 * @param ?array    $conditions optional array of SettingsConditions that determine whether to display this setting.
 		 *
 		 * @throws SettingsConfigurationException When $default is null and $can_be_null is false or when $minimum is
 		 * larger than $maximum or when $minimum is smaller than 0.

@@ -37,20 +37,22 @@ if ( ! class_exists( 'CallableChoiceField' ) ) {
 		/**
 		 * Constructor of ChoiceField.
 		 *
-		 * @param string         $id the slug-like ID of the setting.
-		 * @param string         $name the name of the setting.
-		 * @param callable       $choices_callable either a callable or an array of choice values.
-		 * @param ?string        $default the default value of the setting.
-		 * @param bool           $can_be_null whether the setting can be null.
-		 * @param string         $hint the hint to display next to the setting.
+		 * @param string    $id the slug-like ID of the setting.
+		 * @param string    $name the name of the setting.
+		 * @param callable  $choices_callable either a callable or an array of choice values.
+		 * @param ?string   $default the default value of the setting.
+		 * @param ?callable $renderer an optional default renderer for the setting.
+		 * @param bool      $can_be_null whether the setting can be null.
+		 * @param string    $hint the hint to display next to the setting.
+		 * @param ?array    $conditions optional array of SettingsConditions that determine whether to display this setting.
 		 *
 		 * @throws SettingsConfigurationException When $default is null and $can_be_null is false or when the choices
 		 * array is not a string => string array.
 		 */
 		public function __construct( string $id, string $name, $choices_callable, ?string $default, ?callable $renderer, bool $can_be_null = false, string $hint = '', ?array $conditions = null ) {
-            if ( is_null( $conditions ) ) {
-                $conditions = array();
-            }
+			if ( is_null( $conditions ) ) {
+				$conditions = array();
+			}
 
 			parent::__construct( $id, $name, $default, $renderer, $can_be_null, $hint, $conditions );
 			$this->choices_callable = $choices_callable;
@@ -59,23 +61,25 @@ if ( ! class_exists( 'CallableChoiceField' ) ) {
 		/**
 		 * Get all choices.
 		 *
-		 * @return array|false the choices for this ChoiceField.
+		 * @return array|false the choices for this CallableChoiceField.
 		 * @throws ReflectionException When the choices_callable function was not callable.
 		 */
 		public function get_choices() {
 			if ( is_null( $this->choices ) ) {
 				$this->choices = call_user_func( $this->choices_callable );
-                if ( ! is_array( $this->choices ) ) {
-                    $this->choices = false;
-                }
+				if ( ! is_array( $this->choices ) ) {
+					$this->choices = false;
+				}
 			}
 
-            // At this point, choices is either false or an array of choice values.
+			// At this point, choices is either false or an array of choice values.
 			return $this->choices;
 		}
 
 		/**
-		 * Render this ChoiceField.
+		 * Render this CallableChoiceField.
+		 *
+		 * @param array $args The arguments passed by WordPress to render this setting.
 		 *
 		 * @return void
 		 * @throws ReflectionException When the choices_callable function was not callable.
@@ -84,37 +88,49 @@ if ( ! class_exists( 'CallableChoiceField' ) ) {
 			$current_value    = $this->get_value();
 			$setting_selected = false;
 			$choices = $this->get_choices();
-            if ( $choices === false ) {
-                parent::render( $args );
-            } else {
-	            ?>
-                <label for="<?php echo esc_attr( $this->id ); ?>"><?php echo esc_html( $this->rendered_hint() ); ?></label>
-                <select name="<?php echo esc_attr( $this->id ); ?>">
-                    <?php if ( $this->can_be_null ) : ?>
-                        <option value="">----------</option>
-                    <?php endif; ?>
-                    <?php foreach ( $choices as $key => $value ) : ?>
-                        <option
-                            <?php if ( $key == $current_value ) : ?>
-                                selected
-                                <?php $setting_selected = true; ?>
-                            <?php endif; ?>
-                                value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $value ); ?></option>
-                    <?php endforeach; ?>
-                    <?php if ( ! $setting_selected && isset( $current_value ) && '' !== $current_value ) : ?>
-                        <option selected value="<?php echo esc_attr( $current_value ); ?>">
-                            <?php echo esc_html( sprintf( __( 'Currently set value %s', 'snelstart-uphance-coupling' ), $current_value ) ); ?>
-                        </option>
-                    <?php endif; ?>
-                </select>
-	            <?php
-            }
+			if ( false === $choices ) {
+				parent::render( $args );
+			} else {
+				?>
+				<label for="<?php echo esc_attr( $this->id ); ?>"><?php echo esc_html( $this->rendered_hint() ); ?></label>
+				<select name="<?php echo esc_attr( $this->id ); ?>">
+					<?php if ( $this->can_be_null ) : ?>
+						<option value="">----------</option>
+					<?php endif; ?>
+					<?php foreach ( $choices as $key => $value ) : ?>
+						<option
+							<?php if ( $key == $current_value ) : ?>
+								selected
+								<?php $setting_selected = true; ?>
+							<?php endif; ?>
+								value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $value ); ?></option>
+					<?php endforeach; ?>
+					<?php if ( ! $setting_selected && isset( $current_value ) && '' !== $current_value ) : ?>
+						<option selected value="<?php echo esc_attr( $current_value ); ?>">
+							<?php echo esc_html( sprintf( __( 'Currently set value %s', 'snelstart-uphance-coupling' ), $current_value ) ); ?>
+						</option>
+					<?php endif; ?>
+				</select>
+				<?php
+			}
 		}
 
+		/**
+		 * Serialize this setting.
+		 *
+		 * @return string|null The serialized data, null when it is unset.
+		 */
 		public function serialize(): ?string {
 			return $this->value;
 		}
 
+		/**
+		 * Deserialize data from a serialized value.
+		 *
+		 * @param string|null $serialized_value The serialized value.
+		 *
+		 * @return string|null Deserialized version of the serialized data.
+		 */
 		public function deserialize( ?string $serialized_value ): ?string {
 			return $serialized_value;
 		}
@@ -132,10 +148,10 @@ if ( ! class_exists( 'CallableChoiceField' ) ) {
 				$initial_values['name'],
 				$initial_values['callable'],
 				isset( $initial_values['default'] ) ? $initial_values['default'] : null,
-                isset( $initial_values['renderer'] ) ? $initial_values['renderer'] : null,
+				isset( $initial_values['renderer'] ) ? $initial_values['renderer'] : null,
 				isset( $initial_values['can_be_null'] ) ? $initial_values['can_be_null'] : false,
 				isset( $initial_values['hint'] ) ? $initial_values['hint'] : '',
-                isset( $initial_values['conditions'] ) ? $initial_values['conditions'] : null,
+				isset( $initial_values['conditions'] ) ? $initial_values['conditions'] : null,
 			);
 		}
 	}

@@ -1,6 +1,6 @@
 <?php
 /**
- * Settings Menu.
+ * Settings Page.
  *
  * @package snelstart-uphance-coupling
  */
@@ -53,6 +53,8 @@ if ( ! class_exists( 'SettingsMenu' ) ) {
 		private $renderer;
 
 		/**
+		 * The settings sections.
+		 *
 		 * @var SettingsSection[]
 		 */
 		private array $settings_sections;
@@ -67,13 +69,13 @@ if ( ! class_exists( 'SettingsMenu' ) ) {
 		/**
 		 * Construct a SettingsMenu.
 		 *
-		 * @param string   $page_title page title of the SettingsMenu.
-		 * @param string   $menu_title menu title of the SettingsMenu.
-		 * @param string   $capability_needed WordPress' capability needed to access this menu.
-		 * @param string   $menu_slug the slug of the menu.
-		 * @param callable $renderer the renderer of the menu.
-		 * @param SettingsSection[]    $settings_sections the settings sections.
-		 * @param int      $position the position of the menu page.
+		 * @param string            $page_title page title of the SettingsMenu.
+		 * @param string            $menu_title menu title of the SettingsMenu.
+		 * @param string            $capability_needed WordPress' capability needed to access this menu.
+		 * @param string            $menu_slug the slug of the menu.
+		 * @param callable          $renderer the renderer of the menu.
+		 * @param SettingsSection[] $settings_sections the settings sections.
+		 * @param int               $position the position of the menu page.
 		 */
 		public function __construct( string $page_title, string $menu_title, string $capability_needed, string $menu_slug, callable $renderer, array $settings_sections, int $position = 1 ) {
 			$this->page_title = $page_title;
@@ -91,13 +93,20 @@ if ( ! class_exists( 'SettingsMenu' ) ) {
 		 * @param string $parent_slug the slug of the parent to register this menu on.
 		 *
 		 * @return void
-		 * @throws SettingsConfigurationException
+		 * @throws SettingsConfigurationException When a setting was not found.
 		 */
 		public function register( string $parent_slug, Settings $settings ) {
 			$this->register_self( $parent_slug );
 			$this->register_settings_sections( $settings );
 		}
 
+		/**
+		 * Register this settings page in WordPress.
+		 *
+		 * @param string $parent_slug The slug of the parent page.
+		 *
+		 * @return void
+		 */
 		public function register_self( string $parent_slug ) {
 			add_submenu_page(
 				$parent_slug,
@@ -111,10 +120,12 @@ if ( ! class_exists( 'SettingsMenu' ) ) {
 		}
 
 		/**
-		 * @throws SettingsConfigurationException
+		 * Register the settings sections belonging to this page in WordPress.
+		 *
+		 * @throws SettingsConfigurationException When a setting can not be found in the configuration.
 		 */
 		public function register_settings_sections( Settings $settings ) {
-			foreach( $this->settings_sections as $settings_section ) {
+			foreach ( $this->settings_sections as $settings_section ) {
 				$settings_section->register( $this->menu_slug, $settings );
 			}
 		}

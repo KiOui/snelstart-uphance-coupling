@@ -23,50 +23,66 @@ if ( ! class_exists( 'DateTimeField' ) ) {
 		/**
 		 * Constructor of DateTimeField.
 		 *
-		 * @param string        $id the slug-like ID of the setting.
-		 * @param string        $name the name of the setting.
-		 * @param ?DateTime     $default the default value of the setting.
-		 * @param bool          $can_be_null whether the setting can be null.
-		 * @param string        $hint the hint to display next to the setting.
+		 * @param string    $id the slug-like ID of the setting.
+		 * @param string    $name the name of the setting.
+		 * @param ?DateTime $default the default value of the setting.
+		 * @param ?callable $renderer an optional default renderer for the setting.
+		 * @param bool      $can_be_null whether the setting can be null.
+		 * @param string    $hint the hint to display next to the setting.
+		 * @param ?array    $conditions optional array of SettingsConditions that determine whether to display this setting.
 		 *
 		 * @throws SettingsConfigurationException When $default is null and $can_be_null is false.
 		 */
 		public function __construct( string $id, string $name, ?DateTime $default, ?callable $renderer = null, bool $can_be_null = false, string $hint = '', ?array $conditions = null ) {
-            if ( is_null( $conditions ) ) {
-                $conditions = array();
-            }
+			if ( is_null( $conditions ) ) {
+				$conditions = array();
+			}
 
 			parent::__construct( $id, $name, $default, $renderer, $can_be_null, $hint, $conditions );
 		}
 
-        public function sanitize( $value_to_sanitize ): ?DateTime {
-	        if ( $value_to_sanitize === '' || ! is_string( $value_to_sanitize ) ) {
-                return null;
-            }
+		/**
+		 * Sanitize a value for this setting.
+		 *
+		 * @param mixed $value_to_sanitize The value to sanitize.
+		 *
+		 * @return DateTime|null The sanitized value.
+		 */
+		public function sanitize( $value_to_sanitize ): ?DateTime {
+			if ( '' === $value_to_sanitize || ! is_string( $value_to_sanitize ) ) {
+				return null;
+			}
 
-	        try {
-		        return new DateTime( $value_to_sanitize );
-	        } catch ( Exception $e ) {
-		        return null;
-	        }
-        }
+			try {
+				return new DateTime( $value_to_sanitize );
+			} catch ( Exception $e ) {
+				return null;
+			}
+		}
 
+		/**
+		 * Validate a value for this setting.
+		 *
+		 * @param mixed $value_to_validate The value to validate.
+		 *
+		 * @return bool Whether the value can be set to the value for this setting (whether it was validated correctly).
+		 */
 		public function validate( $value_to_validate ): bool {
-            if ( ! is_null( $value_to_validate ) && get_class( $value_to_validate ) !== 'DateTime' ) {
-                return false;
-            }
+			if ( ! is_null( $value_to_validate ) && get_class( $value_to_validate ) !== 'DateTime' ) {
+				return false;
+			}
 
-            if ( is_null( $value_to_validate ) ) {
-                return $this->can_be_null;
-            }
+			if ( is_null( $value_to_validate ) ) {
+				return $this->can_be_null;
+			}
 
-            return true;
-        }
+			return true;
+		}
 
 		/**
 		 * Render this DateTimeField.
 		 *
-		 * @param string $setting_name the name of the setting to render this DateTimeField for.
+		 * @param array $args The arguments passed by WordPress to render this setting.
 		 *
 		 * @return void
 		 */
@@ -74,7 +90,7 @@ if ( ! class_exists( 'DateTimeField' ) ) {
 			$value        = $this->get_value(); ?>
 			<label><?php echo esc_html( $this->rendered_hint() ); ?>
 				<input type="datetime-local" name="<?php echo esc_attr( $this->id ); ?>"
-				       value="<?php echo esc_attr( $value->format( 'Y-m-d\TH:i' ) ); ?>"
+					   value="<?php echo esc_attr( $value->format( 'Y-m-d\TH:i' ) ); ?>"
 					<?php if ( ! $this->can_be_null ) : ?>
 						required
 					<?php endif; ?>
@@ -83,6 +99,11 @@ if ( ! class_exists( 'DateTimeField' ) ) {
 			<?php
 		}
 
+		/**
+		 * Serialize this setting.
+		 *
+		 * @return string|null The serialized data, null when it is unset.
+		 */
 		public function serialize(): ?string {
 			if ( is_null( $this->value ) ) {
 				return null;
@@ -91,6 +112,13 @@ if ( ! class_exists( 'DateTimeField' ) ) {
 			}
 		}
 
+		/**
+		 * Deserialize data from a serialized value.
+		 *
+		 * @param string|null $serialized_value The serialized value.
+		 *
+		 * @return DateTime|null Deserialized version of the serialized data.
+		 */
 		public function deserialize( ?string $serialized_value ): ?DateTime {
 			if ( is_null( $serialized_value ) ) {
 				return null;
@@ -116,10 +144,10 @@ if ( ! class_exists( 'DateTimeField' ) ) {
 				$initial_values['id'],
 				$initial_values['name'],
 				isset( $initial_values['default'] ) ? $initial_values['default'] : null,
-                isset( $initial_values['renderer'] ) ? $initial_values['renderer'] : null,
-                isset( $initial_values['can_be_null'] ) ? $initial_values['can_be_null'] : false,
+				isset( $initial_values['renderer'] ) ? $initial_values['renderer'] : null,
+				isset( $initial_values['can_be_null'] ) ? $initial_values['can_be_null'] : false,
 				isset( $initial_values['hint'] ) ? $initial_values['hint'] : '',
-                isset( $initial_values['conditions' ] ) ? $initial_values['conditions'] : null,
+				isset( $initial_values['conditions'] ) ? $initial_values['conditions'] : null,
 			);
 		}
 	}

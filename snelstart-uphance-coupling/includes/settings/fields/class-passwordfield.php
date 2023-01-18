@@ -22,11 +22,13 @@ if ( ! class_exists( 'PasswordField' ) ) {
 		/**
 		 * Constructor of SettingsField.
 		 *
-		 * @param string        $id the slug-like ID of the setting.
-		 * @param string        $name the name of the setting.
-		 * @param string|null   $default the default value of the setting.
-		 * @param bool          $can_be_null whether the setting can be null.
-		 * @param string        $hint the hint to display next to the setting.
+		 * @param string      $id the slug-like ID of the setting.
+		 * @param string      $name the name of the setting.
+		 * @param string|null $default the default value of the setting.
+		 * @param ?callable   $renderer an optional default renderer for the setting.
+		 * @param bool        $can_be_null whether the setting can be null.
+		 * @param string      $hint the hint to display next to the setting.
+		 * @param ?array      $conditions optional array of SettingsConditions that determine whether to display this setting.
 		 *
 		 * @throws SettingsConfigurationException When $default is null and $can_be_null is false.
 		 */
@@ -41,13 +43,15 @@ if ( ! class_exists( 'PasswordField' ) ) {
 		/**
 		 * Render this PasswordField.
 		 *
+		 * @param array $args The arguments passed by WordPress to render this setting.
+		 *
 		 * @return void
 		 */
 		public function render( array $args ): void {
 			$value        = $this->get_value(); ?>
 			<label><?php echo esc_html( $this->rendered_hint() ); ?>
 				<input type="password" name="<?php echo esc_attr( $this->id ); ?>"
-				       value="<?php echo esc_attr( $value ); ?>"
+					   value="<?php echo esc_attr( $value ); ?>"
 					<?php if ( ! $this->can_be_null ) : ?>
 						required
 					<?php endif; ?>

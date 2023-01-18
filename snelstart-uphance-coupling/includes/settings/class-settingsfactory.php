@@ -59,16 +59,19 @@ if ( ! class_exists( 'SettingsFactory' ) ) {
 			$settings_values = $settings_configuration['settings'];
 
 			$settings = array();
-			foreach( $settings_values as $settings_value ) {
-				$settings[ $settings_value['id'] ] = SettingsFactory::create_setting( $settings_value );
+			foreach ( $settings_values as $settings_value ) {
+				$settings[ $settings_value['id'] ] = self::create_setting( $settings_value );
 			}
 
 			return new Settings( $settings_name, $group_name, $settings );
 		}
 
 		/**
-		 * @throws ReflectionException
-		 * @throws SettingsConfigurationException
+		 * Create a SettingsField.
+		 *
+		 * @param array $setting_configuration The configuration to use for the setting.
+		 *
+		 * @throws SettingsConfigurationException When the setting type in $setting_configuration was not found.
 		 */
 		public static function create_setting( array $setting_configuration ): SettingsField {
 			$type = $setting_configuration['type'];
@@ -80,6 +83,13 @@ if ( ! class_exists( 'SettingsFactory' ) ) {
 			}
 		}
 
+		/**
+		 * Create a settings group.
+		 *
+		 * @param array $settings_group The configuration to use for the group.
+		 *
+		 * @return SettingsGroup A settings group.
+		 */
 		public static function create_settings_group( array $settings_group ): SettingsGroup {
 			$page_title = $settings_group['page_title'];
 			$menu_title = $settings_group['menu_title'];
@@ -90,12 +100,19 @@ if ( ! class_exists( 'SettingsFactory' ) ) {
 			$settings_pages = $settings_group['settings_pages'];
 
 			$settings_pages_obj = array();
-			foreach( $settings_pages as $settings_page ) {
-				$settings_pages_obj[] = SettingsFactory::create_settings_page( $settings_page );
+			foreach ( $settings_pages as $settings_page ) {
+				$settings_pages_obj[] = self::create_settings_page( $settings_page );
 			}
 			return new SettingsGroup( $page_title, $menu_title, $capability_needed, $menu_slug, $icon, $position, $settings_pages_obj );
 		}
 
+		/**
+		 * Create a Settings page.
+		 *
+		 * @param array $settings_page The settings page configuration to use.
+		 *
+		 * @return SettingsPage A settings page.
+		 */
 		public static function create_settings_page( array $settings_page ): SettingsPage {
 			$page_title = $settings_page['page_title'];
 			$menu_title = $settings_page['menu_title'];
@@ -107,16 +124,23 @@ if ( ! class_exists( 'SettingsFactory' ) ) {
 
 			$settings_sections_obj = array();
 			foreach ( $settings_sections as $settings_section ) {
-				$settings_sections_obj[] = SettingsFactory::create_settings_section( $settings_section );
+				$settings_sections_obj[] = self::create_settings_section( $settings_section );
 			}
 
 			return new SettingsPage( $page_title, $menu_title, $capability_needed, $menu_slug, $renderer, $settings_sections_obj, $position );
 		}
 
+		/**
+		 * Create a settings section.
+		 *
+		 * @param array $settings_section The settings section configuration to use.
+		 *
+		 * @return SettingsSection A settings section.
+		 */
 		public static function create_settings_section( array $settings_section ): SettingsSection {
-			$id = $settings_section[ 'id' ];
-			$name = $settings_section[ 'name' ];
-			$renderer = isset( $settings_section[ 'renderer'] ) ? $settings_section[ 'renderer' ] : null;
+			$id = $settings_section['id'];
+			$name = $settings_section['name'];
+			$renderer = isset( $settings_section['renderer'] ) ? $settings_section['renderer'] : null;
 			$settings_str = $settings_section['settings'];
 
 			return new SettingsSection( $id, $name, $renderer, $settings_str );

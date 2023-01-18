@@ -1,6 +1,6 @@
 <?php
 /**
- * Settings class
+ * SUCSettings class
  *
  * @package snelstart-uphance-coupling
  */
@@ -29,42 +29,17 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		protected static ?SUCSettings $_instance = null;
 
 		/**
-		 * Variable for storing grootboeken.
+		 * The instance of the settings class.
 		 *
-		 * Null when not retrieved yet, array if this variable holds valid grootboeken, false if retrieving failed.
-		 *
-		 * @var ?mixed
+		 * @var Settings
 		 */
-		private $cached_grootboeken = null;
-
-		/**
-		 * Variable for storing invoices.
-		 *
-		 * Null when not retrieved yet, array if this variable holds valid invoices, false if retrieving failed.
-		 *
-		 * @var ?mixed
-		 */
-		private $cached_invoices = null;
-
-		/**
-		 * Variable for storing credit notes.
-		 *
-		 * Null when not retrieved yet, array if this variable holds valid credit notes, false if retrieving failed.
-		 *
-		 * @var ?mixed
-		 */
-		private $cached_credit_notes = null;
-
-		/**
-		 * Variable for storing organisations.
-		 *
-		 * Null when not retrieved yet, array if this variable holds valid credit notes, false if retrieving failed.
-		 *
-		 * @var ?mixed
-		 */
-		private $cached_organisations = null;
-
 		private Settings $settings;
+
+		/**
+		 * The instance of the settings group class.
+		 *
+		 * @var SettingsGroup
+		 */
 		private SettingsGroup $settings_group;
 
 		/**
@@ -97,7 +72,9 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		}
 
 		/**
-		 * @return Settings
+		 * Get the instance of the settings class.
+		 *
+		 * @return Settings The instance of the settings class.
 		 */
 		public function get_settings(): Settings {
 			return $this->settings;
@@ -112,6 +89,11 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 			add_action( 'current_screen', array( $this, 'do_custom_actions' ), 99 );
 		}
 
+		/**
+		 * Register the settings group settings.
+		 *
+		 * @return void
+		 */
 		public function register_settings() {
 			$this->settings_group->register( $this->settings );
 		}
@@ -125,7 +107,8 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 					cron_runner_sync_all();
 					wp_redirect( '/wp-admin/admin.php?page=suc_admin_menu' );
 					exit;
-				} else if ( isset( $_POST['option_page'] ) && isset( $_POST['action'] ) && 'update' == $_POST['action'] && 'suc_settings' === $_POST['option_page'] && wp_verify_nonce( $_POST['_wpnonce'], 'suc_settings-options' ) ) {
+					// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- We are passing the nonce to nonce verification.
+				} else if ( isset( $_POST['option_page'] ) && isset( $_POST['action'] ) && 'update' == $_POST['action'] && 'suc_settings' === $_POST['option_page'] && isset( $_POST['_wpnonce'] ) && wp_verify_nonce( wp_unslash( $_POST['_wpnonce'] ), 'suc_settings-options' ) ) {
 					$this->settings->update_settings( $_POST );
 					$this->settings->save_settings();
 					wp_redirect( '/wp-admin/admin.php?page=suc_admin_menu' );
