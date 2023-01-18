@@ -88,26 +88,25 @@ if ( ! class_exists( 'CallableChoiceField' ) ) {
                 parent::render( $args );
             } else {
 	            ?>
-                <label><?php echo esc_html( $this->rendered_hint() ); ?>
-                    <select name="<?php echo esc_attr( $this->id ); ?>">
-			            <?php if ( $this->can_be_null ) : ?>
-                            <option value="">----------</option>
-			            <?php endif; ?>
-			            <?php foreach ( $choices as $key => $value ) : ?>
-                            <option
-					            <?php if ( $key == $current_value ) : ?>
-                                    selected
-						            <?php $setting_selected = true; ?>
-					            <?php endif; ?>
-                                    value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $value ); ?></option>
-			            <?php endforeach; ?>
-			            <?php if ( ! $setting_selected && isset( $current_value ) && '' !== $current_value ) : ?>
-                            <option selected value="<?php echo esc_attr( $current_value ); ?>">
-					            <?php echo esc_html( sprintf( __( 'Currently set value %s', 'snelstart-uphance-coupling' ), $current_value ) ); ?>
-                            </option>
-			            <?php endif; ?>
-                    </select>
-                </label>
+                <label for="<?php echo esc_attr( $this->id ); ?>"><?php echo esc_html( $this->rendered_hint() ); ?></label>
+                <select name="<?php echo esc_attr( $this->id ); ?>">
+                    <?php if ( $this->can_be_null ) : ?>
+                        <option value="">----------</option>
+                    <?php endif; ?>
+                    <?php foreach ( $choices as $key => $value ) : ?>
+                        <option
+                            <?php if ( $key == $current_value ) : ?>
+                                selected
+                                <?php $setting_selected = true; ?>
+                            <?php endif; ?>
+                                value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $value ); ?></option>
+                    <?php endforeach; ?>
+                    <?php if ( ! $setting_selected && isset( $current_value ) && '' !== $current_value ) : ?>
+                        <option selected value="<?php echo esc_attr( $current_value ); ?>">
+                            <?php echo esc_html( sprintf( __( 'Currently set value %s', 'snelstart-uphance-coupling' ), $current_value ) ); ?>
+                        </option>
+                    <?php endif; ?>
+                </select>
 	            <?php
             }
 		}

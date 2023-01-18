@@ -90,81 +90,17 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 			initialize_settings_fields();
 
 			$this->settings = SettingsFactory::create_settings( suc_get_settings_config() );
+			$this->settings->initialize_settings();
 			$this->settings_group = SettingsFactory::create_settings_group( suc_get_settings_screen_config() );
 
 			$this->actions_and_filters();
 		}
 
 		/**
-		 * Get (cached) Grootboek codes.
-		 *
-		 * @return array|false false when loading failed, an array of Grootboek codes otherwise.
+		 * @return Settings
 		 */
-		public function grootboekcodes_choices() {
-			$grootboeken = $this->get_grootboeken();
-			if ( false === $grootboeken ) {
-				return false;
-			}
-			$retvalue = array();
-			foreach ( $grootboeken as $grootboek ) {
-				$retvalue[ strval( $grootboek['id'] ) ] = $grootboek['nummer'] . ' (' . $grootboek['omschrijving'] . ', ' . $grootboek['rekeningCode'] . ')';
-			}
-
-			return $retvalue;
-		}
-
-		/**
-		 * Get (cached) Organisations.
-		 *
-		 * @return array|false false when loading failed, an array of Organisations otherwise.
-		 */
-		public function organisations_choices() {
-			$organisations = $this->get_organisations();
-			if ( false === $organisations ) {
-				return false;
-			}
-			$retvalue = array();
-			foreach ( $organisations['organisations'] as $organisation ) {
-				$retvalue[ strval( $organisation['id'] ) ] = $organisation['name'];
-			}
-
-			return $retvalue;
-		}
-
-		/**
-		 * Get (cached) Credit notes.
-		 *
-		 * @return array|false false when loading failed, an array of Credit notes otherwise.
-		 */
-		public function credit_notes_choices() {
-			$credit_notes = $this->get_credit_notes();
-			if ( false === $credit_notes ) {
-				return false;
-			}
-			$retvalue = array();
-			foreach ( $credit_notes['credit_notes'] as $credit_note ) {
-				$retvalue[ $credit_note['id'] ] = $credit_note['credit_note_number'];
-			}
-
-			return $retvalue;
-		}
-
-		/**
-		 * Get (cached) Invoices.
-		 *
-		 * @return array|false false when loading failed, an array of Invoices otherwise.
-		 */
-		public function invoices_choices() {
-			$invoices = $this->get_invoices();
-			if ( false === $invoices ) {
-				return false;
-			}
-			$retvalue = array();
-			foreach ( $invoices['invoices'] as $invoice ) {
-				$retvalue[ $invoice['id'] ] = $invoice['invoice_number'];
-			}
-
-			return $retvalue;
+		public function get_settings(): Settings {
+			return $this->settings;
 		}
 
 		/**
@@ -177,7 +113,6 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 		}
 
 		public function register_settings() {
-			$this->settings->initialize_settings();
 			$this->settings_group->register( $this->settings );
 		}
 
@@ -204,134 +139,6 @@ if ( ! class_exists( 'SUCSettings' ) ) {
 				$snelstart_client = SUCSnelstartClient::instance();
 				if ( ! is_null( $snelstart_client ) ) {
 					$snelstart_client->reset_auth_token();
-				}
-			}
-		}
-
-		/**
-		 * Get grootboeken and set cache.
-		 *
-		 * @return array|null the grootboeken (array) if succeeded, null otherwise.
-		 */
-		private function get_grootboeken(): ?array {
-			if ( isset( $this->cached_grootboeken ) ) {
-				if ( false === $this->cached_grootboeken ) {
-					return null;
-				} else {
-					return $this->cached_grootboeken;
-				}
-			} else {
-				$snelstart_client = SUCSnelstartClient::instance();
-				if ( isset( $snelstart_client ) ) {
-					try {
-						$this->cached_grootboeken = $snelstart_client->grootboeken();
-
-						return $this->cached_grootboeken;
-					} catch ( SUCAPIException $e ) {
-						$this->cached_grootboeken = false;
-
-						return null;
-					}
-				} else {
-					$this->cached_grootboeken = false;
-
-					return null;
-				}
-			}
-		}
-
-		/**
-		 * Get invoices and set cache.
-		 *
-		 * @return array|null the invoices (array) if succeeded, null otherwise.
-		 */
-		private function get_invoices(): ?array {
-			if ( isset( $this->cached_invoices ) ) {
-				if ( false === $this->cached_invoices ) {
-					return null;
-				} else {
-					return $this->cached_invoices;
-				}
-			} else {
-				$uphance_client = SUCUphanceClient::instance();
-				if ( isset( $uphance_client ) ) {
-					try {
-						$this->cached_invoices = $uphance_client->invoices()->result;
-
-						return $this->cached_invoices;
-					} catch ( SUCAPIException $e ) {
-						$this->cached_invoices = false;
-
-						return null;
-					}
-				} else {
-					$this->cached_invoices = false;
-
-					return null;
-				}
-			}
-		}
-
-		/**
-		 * Get invoices and set cache.
-		 *
-		 * @return array|null the invoices (array) if succeeded, null otherwise.
-		 */
-		private function get_credit_notes(): ?array {
-			if ( isset( $this->cached_credit_notes ) ) {
-				if ( false === $this->cached_credit_notes ) {
-					return null;
-				} else {
-					return $this->cached_credit_notes;
-				}
-			} else {
-				$uphance_client = SUCUphanceClient::instance();
-				if ( isset( $uphance_client ) ) {
-					try {
-						$this->cached_credit_notes = $uphance_client->credit_notes()->result;
-
-						return $this->cached_credit_notes;
-					} catch ( SUCAPIException $e ) {
-						$this->cached_credit_notes = false;
-
-						return null;
-					}
-				} else {
-					$this->cached_credit_notes = false;
-
-					return null;
-				}
-			}
-		}
-
-
-		/**
-		 * Get organisations and set cache.
-		 *
-		 * @return array|null the organisations (array) if succeeded, null otherwise.
-		 */
-		private function get_organisations(): ?array {
-			if ( isset( $this->cached_organisations ) ) {
-				if ( false === $this->cached_organisations ) {
-					return null;
-				} else {
-					return $this->cached_organisations;
-				}
-			} else {
-				$uphance_client = SUCUphanceClient::instance();
-				if ( isset( $uphance_client ) ) {
-					try {
-						$this->cached_organisations = $uphance_client->organisations();
-
-						return $this->cached_organisations;
-					} catch ( SUCAPIException $e ) {
-						$this->cached_organisations = false;
-						return null;
-					}
-				} else {
-					$this->cached_organisations = false;
-
-					return null;
 				}
 			}
 		}

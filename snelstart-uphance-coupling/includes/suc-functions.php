@@ -341,3 +341,64 @@ if ( ! function_exists( 'suc_construct_order_line_items' ) ) {
 		return $to_order;
 	}
 }
+
+if ( ! function_exists( 'suc_get_grootboek_choices' ) ) {
+	function suc_get_grootboek_choices(): ?array {
+		include_once SUC_ABSPATH . 'includes/class-succache.php';
+		$grootboeken = SUCCache::instance()->get_grootboeken();
+		if ( is_null( $grootboeken ) ) {
+			return null;
+		}
+		$retvalue = array();
+		foreach ( $grootboeken as $grootboek ) {
+			$retvalue[ strval( $grootboek['id'] ) ] = $grootboek['nummer'] . ' (' . $grootboek['omschrijving'] . ', ' . $grootboek['rekeningCode'] . ')';
+		}
+
+		return $retvalue;
+	}
+}
+
+if ( ! function_exists( 'suc_get_invoices_choices' ) ) {
+	function suc_get_invoices_choices(): ?array {
+		$invoices = SUCCache::instance()->get_invoices();
+		if ( false === $invoices ) {
+			return null;
+		}
+		$retvalue = array();
+		foreach ( $invoices['invoices'] as $invoice ) {
+			$retvalue[ $invoice['id'] ] = $invoice['invoice_number'];
+		}
+
+		return $retvalue;
+	}
+}
+
+if ( ! function_exists( 'suc_get_credit_notes_choices' ) ) {
+	function suc_get_credit_notes_choices(): ?array {
+		$credit_notes = SUCCache::instance()->get_credit_notes();
+		if ( false === $credit_notes ) {
+			return null;
+		}
+		$retvalue = array();
+		foreach ( $credit_notes['credit_notes'] as $credit_note ) {
+			$retvalue[ $credit_note['id'] ] = $credit_note['credit_note_number'];
+		}
+
+		return $retvalue;
+	}
+}
+
+if ( ! function_exists( 'suc_get_organisations_choices' ) ) {
+	function suc_get_organisations_choices(): ?array {
+		$organisations = SUCCache::instance()->get_organisations();
+		if ( false === $organisations ) {
+			return null;
+		}
+		$retvalue = array();
+		foreach ( $organisations['organisations'] as $organisation ) {
+			$retvalue[ strval( $organisation['id'] ) ] = $organisation['name'];
+		}
+
+		return $retvalue;
+	}
+}

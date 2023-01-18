@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-include_once SUC_ABSPATH . 'includes/settings/fields/class-settingsfield.php';
+include_once SUC_ABSPATH . 'includes/settings/fields/class-choicefield.php';
 include_once SUC_ABSPATH . 'includes/settings/class-settingsconfigurationexception.php';
 
 if ( ! class_exists( 'BoolField' ) ) {
@@ -18,7 +18,7 @@ if ( ! class_exists( 'BoolField' ) ) {
 	 *
 	 * @class IntField
 	 */
-	class BoolField extends SettingsField {
+	class BoolField extends ChoiceField {
 
 		/**
 		 * Constructor of BoolField.
@@ -30,60 +30,38 @@ if ( ! class_exists( 'BoolField' ) ) {
 		 *
 		 * @throws SettingsConfigurationException When $default is null and $can_be_null is false.
 		 */
-		public function __construct( string $id, string $name, $default, ?callable $renderer = null, string $hint = '', ?array $conditions = null ) {
+		public function __construct( string $id, string $name, ?bool $default, ?callable $renderer = null, string $hint = '', ?array $conditions = null ) {
             if ( is_null( $conditions ) ) {
                 $conditions = array();
             }
 
-			parent::__construct( $id, $name, $default, $renderer, false, $hint, $conditions );
+            if ( ! is_null( $default ) ) {
+                if ( $default === true ) {
+                    $default = 'on';
+                } else {
+                    $default = 'off';
+                }
+            }
+
+			parent::__construct( $id, $name, [
+                    'on' => 'Yes',
+                    'off' => 'No',
+            ], $default, $renderer, false, $hint, $conditions );
 		}
-
-		/**
-		 * Render this BoolField.
-		 *
-		 * @return void
-		 */
-		public function render( array $args ): void {
-			$value        = $this->get_value(); ?>
-			<label><?php echo esc_html( $this->rendered_hint() ); ?>
-				<input type="checkbox" name="<?php echo esc_attr( $this->id ); ?>"
-					<?php checked( $value ); ?> />
-			</label>
-			<?php
-		}
-
-		public function sanitize( $value_to_sanitize ) {
-            if ( is_null( $value_to_sanitize ) || $value_to_sanitize === '' ) {
-                return null;
-            }
-            return boolval( $value_to_sanitize );
-        }
-
-        public function validate( $value_to_validate ): bool {
-            if ( ! is_null( $value_to_validate ) && ! is_bool( $value_to_validate ) ) {
-                return false;
-            }
-
-	        if ( is_null( $value_to_validate ) ) {
-                return $this->can_be_null;
-            }
-
-            return true;
-        }
 
 		public function serialize(): ?string {
-			if ( $this->value ) {
+			if ( $this->value === 'on' ) {
 				return 'true';
 			} else {
 				return 'false';
 			}
 		}
 
-		public function deserialize( ?string $serialized_value ): bool {
+		public function deserialize( ?string $serialized_value ): string {
 			if ( $serialized_value === 'true' ) {
-				return true;
+				return 'on';
 			} else {
-				return false;
+				return 'off';
 			}
 		}
 

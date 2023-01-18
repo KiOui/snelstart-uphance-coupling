@@ -20,4 +20,9 @@
 			<?php echo esc_html( __( 'Synchronize now', 'snelstart-uphance-coupling' ) ); ?>
 		</a>
 	</form>
+    <style>
+        label {
+            width: 100%;
+        }
+    </style>
 </div>

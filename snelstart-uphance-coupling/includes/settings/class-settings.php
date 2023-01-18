@@ -76,9 +76,11 @@ class Settings {
 
 	public function load_serialized_settings( array $serialized_setting_values ) {
 		foreach ( $this->settings as $id => $setting ) {
-			if ( isset( $serialized_setting_values[ $id ] ) ) {
+			if ( array_key_exists( $id, $serialized_setting_values ) ) {
 				$deserialized_setting_value = $setting->deserialize( $serialized_setting_values[ $id ] );
-				$setting->set_value_force( $deserialized_setting_value );
+				if ( ! $setting->set_value( $deserialized_setting_value ) ) {
+					$setting->set_default();
+				}
 			} else {
 				$setting->set_default();
 			}

@@ -35,7 +35,7 @@ if ( ! class_exists( 'PasswordField' ) ) {
 				$conditions = array();
 			}
 
-			parent::__construct( $id, $name, $default, $renderer, $can_be_null, null, $hint, $conditions );
+			parent::__construct( $id, $name, $default, $renderer, $can_be_null, $hint, $conditions );
 		}
 
 		/**
