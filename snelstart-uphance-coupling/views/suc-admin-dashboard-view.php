@@ -10,7 +10,7 @@
 	<h1 class="wp-heading-inline"><?php esc_html_e( 'Snelstart Uphance Coupling Dashboard', 'snelstart-uphance-coupling' ); ?></h1>
 	<hr class="wp-header-end">
 	<p><?php esc_html_e( 'Snelstart Uphance Coupling settings', 'snelstart-uphance-coupling' ); ?></p>
-	<form action='options.php' method='post'>
+	<form action='/wp-admin/admin.php?page=suc_admin_menu' method='post'>
 		<?php
 		settings_fields( 'suc_settings' );
 		do_settings_sections( 'suc_admin_menu' );
@@ -20,4 +20,9 @@
 			<?php echo esc_html( __( 'Synchronize now', 'snelstart-uphance-coupling' ) ); ?>
 		</a>
 	</form>
+	<style>
+		label {
+			width: 100%;
+		}
+	</style>
 </div>

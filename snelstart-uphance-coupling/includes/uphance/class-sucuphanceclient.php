@@ -45,12 +45,9 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 		 */
 		public static function instance(): ?SUCUphanceClient {
 			if ( is_null( self::$_instance ) ) {
-				$settings = get_option( 'suc_settings', null );
-				if ( ! isset( $settings ) ) {
-					return null;
-				}
-				$uphance_username = $settings['uphance_username'];
-				$uphance_password = $settings['uphance_password'];
+				$settings = SUCSettings::instance()->get_settings();
+				$uphance_username = $settings->get_value( 'uphance_username' );
+				$uphance_password = $settings->get_value( 'uphance_password' );
 
 				if ( isset( $uphance_username ) && isset( $uphance_password ) && '' !== $uphance_username && '' !== $uphance_password ) {
 					self::$_instance = new SUCUphanceClient( new SUCUphanceAuthClient( $uphance_username, $uphance_password ) );

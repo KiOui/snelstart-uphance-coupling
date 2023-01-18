@@ -9,9 +9,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-include_once SUC_ABSPATH . 'includes/settings/class-settingsmanager.php';
+include_once SUC_ABSPATH . 'includes/settings/class-settings.php';
 include_once SUC_ABSPATH . 'includes/settings/class-settingspage.php';
-include_once SUC_ABSPATH . 'includes/settings/class-settingsmenu.php';
+include_once SUC_ABSPATH . 'includes/settings/class-settingsgroup.php';
+include_once SUC_ABSPATH . 'includes/settings/class-settingssection.php';
 include_once SUC_ABSPATH . 'includes/settings/class-settingsconfigurationexception.php';
 
 if ( ! class_exists( 'SettingsFactory' ) ) {
@@ -46,79 +47,103 @@ if ( ! class_exists( 'SettingsFactory' ) ) {
 		 *
 		 * @param array $settings_configuration a settings configuration in array format.
 		 *
-		 * @return SettingsManager a SettingsManager created for the settings configuration.
+		 * @return Settings a Settings object.
 		 * @throws ReflectionException When a setting could not be created due to it not implementing the from_array
 		 * method.
 		 * @throws SettingsConfigurationException When a setting type used in the settings configuration is not
 		 * registered.
 		 */
-		public static function create_settings( array $settings_configuration ): SettingsManager {
-			$manager = new SettingsManager(
-				$settings_configuration['group_name'],
-				$settings_configuration['setting_name'],
-				new SettingsPage(
-					$settings_configuration['page']['page_title'],
-					$settings_configuration['page']['menu_title'],
-					$settings_configuration['page']['capability_needed'],
-					$settings_configuration['page']['menu_slug'],
-					$settings_configuration['page']['icon'],
-					$settings_configuration['page']['position']
-				)
-			);
-			foreach ( $settings_configuration['menu_pages'] as $menu_page_array ) {
-				if ( isset( $menu_page_array['position'] ) ) {
-					$manager->add_menu_page(
-						$menu_page_array['page_title'],
-						$menu_page_array['menu_title'],
-						$menu_page_array['capability_needed'],
-						$menu_page_array['menu_slug'],
-						$menu_page_array['renderer'],
-						$menu_page_array['position'],
-					);
-				} else {
-					$manager->add_menu_page(
-						$menu_page_array['page_title'],
-						$menu_page_array['menu_title'],
-						$menu_page_array['capability_needed'],
-						$menu_page_array['menu_slug'],
-						$menu_page_array['renderer'],
-					);
-				}
+		public static function create_settings( array $settings_configuration ): Settings {
+			$group_name = $settings_configuration['group_name'];
+			$settings_name = $settings_configuration['name'];
+			$settings_values = $settings_configuration['settings'];
+
+			$settings = array();
+			foreach ( $settings_values as $settings_value ) {
+				$settings[ $settings_value['id'] ] = self::create_setting( $settings_value );
 			}
-			foreach ( $settings_configuration['sections'] as $section_array ) {
-				$settings = array();
-				foreach ( $section_array['settings'] as $setting_array ) {
-					$settings[] = self::create_setting( $manager, $setting_array );
-				}
-				$section_array['settings'] = $settings;
-				$section = SettingsSection::from_array( $section_array );
-				$manager->add_section( $section );
-			}
-			return $manager;
+
+			return new Settings( $settings_name, $group_name, $settings );
 		}
 
 		/**
-		 * Create a SettingsField under a SettingsManager.
+		 * Create a SettingsField.
 		 *
-		 * @param SettingsManager $manager the SettingsManager to create the setting for.
-		 * @param array           $setting_array an array representation of the SettingsField to create.
+		 * @param array $setting_configuration The configuration to use for the setting.
 		 *
-		 * @return SettingsField the created SettingsField.
-		 * @throws SettingsConfigurationException | ReflectionException When the settings type stated in the setting
-		 * array is not registered or the from_array method is not created for a SettingsField class registered.
+		 * @throws SettingsConfigurationException When the setting type in $setting_configuration was not found.
 		 */
-		public static function create_setting( SettingsManager $manager, array $setting_array ): SettingsField {
-			$type = $setting_array['type'];
+		public static function create_setting( array $setting_configuration ): SettingsField {
+			$type = $setting_configuration['type'];
 			if ( isset( self::$setting_types[ $type ] ) ) {
 				$from_array = new ReflectionMethod( self::$setting_types[ $type ], 'from_array' );
-				$setting_array['renderer'] = function() use ( $manager, $setting_array ) {
-					$manager->render_settings_field( $setting_array['id'] );
-				};
-				return $from_array->invoke( null, $setting_array );
+				return $from_array->invoke( null, $setting_configuration );
 			} else {
-				throw new SettingsConfigurationException( "Setting Type $type not registered." );
+				throw new SettingsConfigurationException( "Setting type $type is not registered." );
 			}
 		}
 
+		/**
+		 * Create a settings group.
+		 *
+		 * @param array $settings_group The configuration to use for the group.
+		 *
+		 * @return SettingsGroup A settings group.
+		 */
+		public static function create_settings_group( array $settings_group ): SettingsGroup {
+			$page_title = $settings_group['page_title'];
+			$menu_title = $settings_group['menu_title'];
+			$capability_needed = $settings_group['capability_needed'];
+			$menu_slug = $settings_group['menu_slug'];
+			$icon = $settings_group['icon'];
+			$position = $settings_group['position'];
+			$settings_pages = $settings_group['settings_pages'];
+
+			$settings_pages_obj = array();
+			foreach ( $settings_pages as $settings_page ) {
+				$settings_pages_obj[] = self::create_settings_page( $settings_page );
+			}
+			return new SettingsGroup( $page_title, $menu_title, $capability_needed, $menu_slug, $icon, $position, $settings_pages_obj );
+		}
+
+		/**
+		 * Create a Settings page.
+		 *
+		 * @param array $settings_page The settings page configuration to use.
+		 *
+		 * @return SettingsPage A settings page.
+		 */
+		public static function create_settings_page( array $settings_page ): SettingsPage {
+			$page_title = $settings_page['page_title'];
+			$menu_title = $settings_page['menu_title'];
+			$capability_needed = $settings_page['capability_needed'];
+			$menu_slug = $settings_page['menu_slug'];
+			$renderer = $settings_page['renderer'];
+			$position = isset( $settings_page['position'] ) ? $settings_page['position'] : 1;
+			$settings_sections = $settings_page['settings_sections'];
+
+			$settings_sections_obj = array();
+			foreach ( $settings_sections as $settings_section ) {
+				$settings_sections_obj[] = self::create_settings_section( $settings_section );
+			}
+
+			return new SettingsPage( $page_title, $menu_title, $capability_needed, $menu_slug, $renderer, $settings_sections_obj, $position );
+		}
+
+		/**
+		 * Create a settings section.
+		 *
+		 * @param array $settings_section The settings section configuration to use.
+		 *
+		 * @return SettingsSection A settings section.
+		 */
+		public static function create_settings_section( array $settings_section ): SettingsSection {
+			$id = $settings_section['id'];
+			$name = $settings_section['name'];
+			$renderer = isset( $settings_section['renderer'] ) ? $settings_section['renderer'] : null;
+			$settings_str = $settings_section['settings'];
+
+			return new SettingsSection( $id, $name, $renderer, $settings_str );
+		}
 	}
 }

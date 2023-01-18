@@ -41,7 +41,7 @@ if ( ! class_exists( 'SettingsSection' ) ) {
 		/**
 		 * The settings registered under this SettingsSection.
 		 *
-		 * @var array
+		 * @var string[]
 		 */
 		private array $settings;
 
@@ -51,9 +51,9 @@ if ( ! class_exists( 'SettingsSection' ) ) {
 		 * @param string        $id the ID of the setting section to create (as a slug).
 		 * @param string        $name the name of the settings section to create.
 		 * @param callable|null $renderer the custom renderer of the section. Defaults to the default renderer.
-		 * @param array         $settings te settings to add to this section (as an array of SettingsFields).
+		 * @param string[]      $settings te settings to add to this section (as an array of strings).
 		 */
-		public function __construct( string $id, string $name, ?callable $renderer, array $settings = array() ) {
+		public function __construct( string $id, string $name, ?callable $renderer = null, array $settings = array() ) {
 			$this->id = $id;
 			$this->name = $name;
 			$this->renderer = $renderer;
@@ -75,23 +75,65 @@ if ( ! class_exists( 'SettingsSection' ) ) {
 		 * @param string $page the slug of the SettingsPage to register this SettingsSection under.
 		 *
 		 * @return void
+		 * @throws SettingsConfigurationException When a setting could not be found.
 		 */
-		public function do_register( string $page ) {
+		public function register( string $page, Settings $settings ) {
+			$this->register_self( $page );
+			$this->register_settings( $page, $settings );
+		}
+
+		/**
+		 * Register this settings section in WordPress.
+		 *
+		 * @param string $page The page to register the section on.
+		 *
+		 * @return void
+		 */
+		public function register_self( string $page ) {
 			add_settings_section(
 				$this->id,
 				$this->name,
 				$this->get_renderer(),
 				$page,
 			);
-			foreach ( $this->settings as $setting ) {
-				$setting->do_register( $page, $this->id );
+		}
+
+		/**
+		 * Register the settings in this settings section.
+		 *
+		 * @param string   $page The page to register the settings on.
+		 * @param Settings $settings The settings.
+		 *
+		 * @throws SettingsConfigurationException When a setting with the defined key does not exist in $settings.
+		 */
+		public function register_settings( string $page, Settings $settings ) {
+			foreach ( $this->settings as $setting_key ) {
+				$setting_obj = $settings->get_field( $setting_key );
+				if ( is_null( $setting_obj ) ) {
+					throw new SettingsConfigurationException( "Setting with key $setting_key does not exist." );
+				}
+				$conditions_hold = true;
+				foreach ( $setting_obj->get_conditions() as $condition ) {
+					if ( ! $condition->holds( $settings ) ) {
+						$conditions_hold = false;
+					}
+				}
+				if ( $conditions_hold ) {
+					add_settings_field(
+						$setting_obj->get_id(),
+						$setting_obj->get_name(),
+						$setting_obj->get_renderer(),
+						$page,
+						$this->id,
+					);
+				}
 			}
 		}
 
 		/**
 		 * Get all registered SettingsFields under this SettingsSection.
 		 *
-		 * @return array
+		 * @return string[]
 		 */
 		public function get_settings(): array {
 			return $this->settings;

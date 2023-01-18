@@ -58,12 +58,9 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		 */
 		public static function instance(): ?SUCSnelstartClient {
 			if ( is_null( self::$_instance ) ) {
-				$settings = get_option( 'suc_settings', null );
-				if ( ! isset( $settings ) ) {
-					return null;
-				}
-				$snelstart_key = $settings['snelstart_client_key'];
-				$subscription_key = $settings['snelstart_subscription_key'];
+				$settings = SUCSettings::instance()->get_settings();
+				$snelstart_key = $settings->get_value( 'snelstart_client_key' );
+				$subscription_key = $settings->get_value( 'snelstart_subscription_key' );
 
 				if ( isset( $snelstart_key ) && isset( $subscription_key ) && '' !== $snelstart_key && '' !== $subscription_key ) {
 					self::$_instance = new self( $subscription_key, new SUCSnelstartAuthClient( $snelstart_key ) );
