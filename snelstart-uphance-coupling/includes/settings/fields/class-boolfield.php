@@ -57,6 +57,69 @@ if ( ! class_exists( 'BoolField' ) ) {
 			}
 		}
 
+		public function sanitize( $value_to_sanitize ): ?string {
+			if ( is_null( $value_to_sanitize ) || $value_to_sanitize === '' ) {
+				return 'off';
+			}
+			if ( is_bool( $value_to_sanitize ) ) {
+				if ( $value_to_sanitize === true ) {
+					return 'on';
+				} else {
+					return 'off';
+				}
+			}
+			return strval( $value_to_sanitize );
+		}
+
+		public function set_value( $value ): bool {
+			$sanitized_value = $this->sanitize( $value );
+			if ( $this->validate( $sanitized_value ) ) {
+				$this->value = $sanitized_value;
+				return true;
+			} else {
+                return false;
+			}
+		}
+
+		public function set_value_force( $value ) {
+			if ( is_bool( $value ) ) {
+				if ( $value === true ) {
+					$this->value = 'on';
+				} else {
+					$this->value = 'off';
+				}
+			} else {
+				$this->value = $value;
+			}
+		}
+
+		public function get_value(): bool {
+			return $this->value === 'on';
+		}
+
+		/**
+		 * Render this ChoiceField.
+		 *
+		 * @return void
+		 */
+		public function render( array $args ): void {
+			$current_value    = $this->get_value(); ?>
+			<label for="<?php echo esc_attr( $this->id ); ?>"><?php echo esc_html( $this->rendered_hint() ); ?></label>
+			<select name="<?php echo esc_attr( $this->id ); ?>">
+				<option
+					<?php if ( $current_value === true ) : ?>
+						selected
+					<?php endif; ?>
+					value="on">Yes</option>
+				<option
+					<?php if ( $current_value === false ) : ?>
+						selected
+					<?php endif; ?>
+					value="off">No</option>
+			</select>
+			<?php
+		}
+
 		public function deserialize( ?string $serialized_value ): string {
 			if ( $serialized_value === 'true' ) {
 				return 'on';

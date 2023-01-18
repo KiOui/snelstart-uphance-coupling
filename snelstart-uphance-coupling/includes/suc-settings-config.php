@@ -41,6 +41,13 @@ if ( ! function_exists( 'suc_get_settings_config' ) ) {
 					'hint'    => __( 'Whether to synchronize credit notes from Uphance to Snelstart', 'snelstart-uphance-coupling' ),
 				),
 				array(
+					'type'    => 'text',
+					'id'      => 'send_error_email_to',
+					'name'    => __( 'Send admin emails to', 'snelstart-uphance-coupling' ),
+					'can_be_null' => true,
+					'hint'    => __( 'Which email address to send the emails to when an error occurs, leave empty to not send emails.', 'snelstart-uphance-coupling' )
+				),
+				array(
 					'type'        => 'text',
 					'id'          => 'snelstart_client_key',
 					'name'        => __( 'Snelstart Client Key', 'snelstart-uphance-coupling' ),
@@ -164,6 +171,7 @@ if ( ! function_exists( 'suc_get_settings_screen_config' ) ) {
 								'max_credit_notes_to_synchronize',
 								'synchronize_invoices_to_snelstart',
 								'synchronize_credit_notes_to_snelstart',
+								'send_error_email_to',
 							]
 						],
 						[

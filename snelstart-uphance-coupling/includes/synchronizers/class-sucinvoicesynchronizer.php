@@ -146,11 +146,11 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		 * @throws Exception When setup of the class fails.
 		 */
 		public function setup(): void {
-			$manager          = SUCSettings::instance()->get_manager();
-			$invoices_from = $manager->get_value_by_setting_id( 'uphance_synchronise_invoices_from' );
-			$max_to_sync      = $manager->get_value_by_setting_id( 'max_invoices_to_synchronize' );
-			$grootboekcode_btw_hoog = $manager->get_value_by_setting_id( 'snelstart_grootboekcode_btw_hoog' );
-			$grootboekcode_btw_geen = $manager->get_value_by_setting_id( 'snelstart_grootboekcode_btw_geen' );
+			$manager          = SUCSettings::instance()->get_settings();
+			$invoices_from = $manager->get_value( 'uphance_synchronise_invoices_from' );
+			$max_to_sync      = $manager->get_value( 'max_invoices_to_synchronize' );
+			$grootboekcode_btw_hoog = $manager->get_value( 'snelstart_grootboekcode_btw_hoog' );
+			$grootboekcode_btw_geen = $manager->get_value( 'snelstart_grootboekcode_btw_geen' );
 			if ( ! isset( $grootboekcode_btw_hoog ) || ! isset( $grootboekcode_btw_geen ) ) {
 				throw new Exception( 'Grootboekcodes must be set in order to use Credit note synchronizer' );
 			}
@@ -169,9 +169,8 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		public function after_run(): void {
 			if ( count( $this->invoices ) > 0 ) {
 				$latest_invoice = $this->invoices[ count( $this->invoices ) - 1 ]['id'];
-
-				$settings_manager = SUCSettings::instance()->get_manager();
-				$settings_manager->set_value_by_setting_id( 'uphance_synchronise_invoices_from', $latest_invoice );
+				$settings_manager = SUCSettings::instance()->get_settings();
+				$settings_manager->set_value( 'uphance_synchronise_invoices_from', $latest_invoice );
 			}
 		}
 
@@ -181,8 +180,8 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		 * @return bool whether this synchronizer is enabled.
 		 */
 		public function enabled(): bool {
-			$manager          = SUCSettings::instance()->get_manager();
-			return $manager->get_value_by_setting_id( 'synchronize_invoices_to_snelstart' );
+			$manager          = SUCSettings::instance()->get_settings();
+			return $manager->get_value( 'synchronize_invoices_to_snelstart' );
 		}
 	}
 }

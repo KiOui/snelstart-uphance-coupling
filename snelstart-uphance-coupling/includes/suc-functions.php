@@ -102,13 +102,13 @@ if ( ! function_exists( 'cron_runner_sync_all' ) ) {
 
 		$uphance_client   = SUCUphanceClient::instance();
 		$snelstart_client = SUCSnelstartClient::instance();
-		$settings_manager = SUCSettings::instance()->get_manager();
+		$settings_manager = SUCSettings::instance()->get_settings();
 
 		if ( ! isset( $uphance_client ) || ! isset( $snelstart_client ) ) {
 			return;
 		}
 
-		$uphance_organisation = $settings_manager->get_value_by_setting_id( 'uphance_organisation' );
+		$uphance_organisation = $settings_manager->get_value( 'uphance_organisation' );
 
 		if ( ! isset( $uphance_organisation ) ) {
 			return;
@@ -135,6 +135,7 @@ if ( ! function_exists( 'cron_runner_sync_all' ) ) {
 				$synchronizer_class->after_run();
 			}
 		}
+		$settings_manager->save_settings();
 	}
 }
 

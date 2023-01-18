@@ -9,6 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+include_once SUC_ABSPATH . '/includes/class-sucsettings.php';
+
 if ( ! class_exists( 'SUCErrorLogging' ) ) {
 	/**
 	 * Class for logging errors
@@ -114,8 +116,45 @@ if ( ! class_exists( 'SUCErrorLogging' ) ) {
 				add_action( 'manage_suc_errors_posts_custom_column', array( 'SUCErrorLogging', 'error_logs_column_values' ), 10, 2 );
 			}
 
+			add_action( 'wp_insert_post', array( 'SUCErrorLogging', 'send_email_on_post_creation' ), 10, 3 );
+
 			self::add_meta_box_support();
 			self::register();
+		}
+
+		/**
+		 * Send an email when an error occurred.
+		 *
+		 * @param int $post_id The post id of the sub_errors post that was created.
+		 * @param WP_Post $post The post object of the suc_errors post that was created.
+		 * @param bool $update Whether the post updated or was newly created.
+		 *
+		 * @return void
+		 */
+		public static function send_email_on_post_creation( int $post_id, WP_Post $post, bool $update ) {
+			if ( wp_is_post_revision( $post_id ) || $update ) {
+				return;
+			}
+
+			if ( $post->post_type !== 'suc_errors' ) {
+				return;
+			}
+
+			$admin_email = SUCSettings::instance()->get_settings()->get_value( 'send_error_email_to' );
+			if ( is_null( $admin_email ) ) {
+				return;
+			}
+
+			$post_meta = get_post_meta( $post_id );
+
+			$post_url = admin_url( 'post.php?post=' . $post_id ) . '&action=edit';
+			$subject = 'Snelstart Uphance Coupling: A new error occurred while synchronizing';
+
+			$type = $post_meta['suc_error_type'];
+			$error = $post->post_content;
+
+			$message = "A new error occurred while synchronizing:\n\nError type: $type\n\nError message: $error\n\nPost URL: $post_url\n\n";
+			wp_mail( $admin_email, $subject, $message );
 		}
 
 		/**
