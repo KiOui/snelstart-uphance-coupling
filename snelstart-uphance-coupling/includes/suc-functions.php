@@ -90,6 +90,27 @@ if ( ! function_exists( 'convert_snelstart_payment_to_payment' ) ) {
 	}
 }
 
+if ( ! function_exists( 'run_synchronizer' ) ) {
+	/**
+	 * Run a synchronizer.
+	 *
+	 * @param SUCSynchronisable $synchronizer The synchronizer to run.
+	 *
+	 * @return void
+	 */
+	function run_synchronizer( SUCSynchronisable $synchronizer ) {
+		try {
+			$synchronizer->setup();
+		} catch ( Exception $e ) {
+			$error_log = new SUCErrorLogging();
+			$error_log->set_error( $e, 'default', null, null );
+			return;
+		}
+		$synchronizer->run();
+		$synchronizer->after_run();
+	}
+}
+
 if ( ! function_exists( 'cron_runner_sync_all' ) ) {
 	/**
 	 * Synchronization runner for cron.
@@ -124,15 +145,7 @@ if ( ! function_exists( 'cron_runner_sync_all' ) ) {
 
 		foreach ( SUCSynchronizer::$synchronizer_classes as $type => $synchronizer_class ) {
 			if ( $synchronizer_class->enabled() ) {
-				try {
-					$synchronizer_class->setup();
-				} catch ( Exception $e ) {
-					$error_log = new SUCErrorLogging();
-					$error_log->set_error( $e, 'default', null, null );
-					break;
-				}
-				$synchronizer_class->run();
-				$synchronizer_class->after_run();
+				run_synchronizer( $synchronizer_class );
 			}
 		}
 		$settings_manager->save_settings();
