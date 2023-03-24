@@ -80,7 +80,7 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 					$this->sync_credit_note_to_snelstart( $credit_note_converted );
 				} catch ( Exception $e ) {
 					$error_log = new SUCErrorLogging();
-					$error_log->set_error( $e, 'synchronize-credit-note', self::$type, $this->credit_notes[ $i ]['id'] );
+					$error_log->set_error( $e . esc_html( sprintf( '\nURL: https://app.uphance.com/credit_notes/%d', $this->credit_notes[ $i ]['id'] ) ), 'synchronize-credit-note', self::$type, $this->credit_notes[ $i ]['id'] );
 				}
 			}
 		}

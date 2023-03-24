@@ -80,7 +80,7 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 					$this->sync_invoice_to_snelstart( $invoice_converted );
 				} catch ( Exception $e ) {
 					$error_log = new SUCErrorLogging();
-					$error_log->set_error( $e, 'synchronize-invoice', self::$type, $this->invoices[ $i ]['id'] );
+					$error_log->set_error( $e . esc_html( sprintf( '\nURL: https://app.uphance.com/invoices/%d', $this->invoices[ $i ]['id'] ) ), 'synchronize-invoice', self::$type, $this->invoices[ $i ]['id'] );
 				}
 			}
 		}
