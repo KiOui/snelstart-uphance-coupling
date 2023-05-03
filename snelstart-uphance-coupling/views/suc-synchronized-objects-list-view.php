@@ -15,149 +15,151 @@ if ( $per_page <= 0 ) {
 <div class="suc-synchronized-objects-list wrap">
 	<h1 class="wp-heading-inline mb-2">Synchronized Uphance objects</h1>
 	<div id="synchronized-objects-list">
-		<div class="mb-2">
-			<input type="text" class="ml-auto" id="search-input"/>
-		</div>
-		<table class="wp-list-table widefat fixed striped table-view-list posts">
-			<thead>
-				<tr>
-					<th>Object ID</th>
-					<th>Object type</th>
-					<th>Date</th>
-					<th>Object URL</th>
-					<th>Succeeded</th>
-					<th>Details</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr v-for="(object, index) of synchronized_objects" :key="`synchronized_object_${object.id}`">
-					<td>
-						{{ object.meta.id }}
-					</td>
-					<td>
-						{{ object.meta.type }}
-					</td>
-					<td>
-						{{ new Date(object.date).toISOString() }}
-					</td>
-					<td>
-						<template v-if="object.meta.url">
-							<a :href="object.meta.url" target="_blank">{{ object.meta.url }}</a>
-						</template>
-					</td>
-					<td>
-						<i v-if="object.meta.succeeded" class="fs-4 text-success fa-solid fa-check"></i>
-						<i v-else class="fs-4 text-danger fa-solid fa-xmark"></i>
-					</td>
-					<td>
-						<button type="button" class="button action" data-bs-toggle="modal" :data-bs-target="`#details-modal-${index}`">Details</button>
-					</td>
-				</tr>
-			</tbody>
-			<tfoot>
-				<tr>
-					<th colspan="2" class="ts-pager">
-						<button v-if="page === 1" type="button" class="btn first disabled"><i class="fa-solid fa-backward-fast"></i></button>
-						<button v-else v-on:click="update_page(1);" type="button" class="btn first"><i class="fa-solid fa-backward-fast"></i></button>
-
-						<button v-if="page === 1" type="button" class="btn prev disabled"><i class="fa-solid fa-backward"></i></button>
-						<button v-else v-on:click="update_page(page - 1);" type="button" class="btn prev"><i class="fa-solid fa-backward"></i></button>
-
-						<button v-if="page === amount_of_pages" type="button" class="btn next disabled"><i class="fa-solid fa-forward"></i></button>
-						<button v-else v-on:click="update_page(page + 1);" type="button" class="btn next"><i class="fa-solid fa-forward"></i></button>
-
-						<button v-if="page === amount_of_pages" type="button" class="btn last disabled me-1"><i class="fa-solid fa-forward-fast"></i></button>
-						<button v-else v-on:click="update_page(amount_of_pages);" type="button" class="btn last me-1"><i class="fa-solid fa-forward-fast"></i></button>
-
-						<select class="pagesize input-mini me-1" title="Select page size" v-model="per_page">
-							<option value="10">10</option>
-							<option value="20">20</option>
-							<option value="50">50</option>
-							<option value="100">100</option>
-							<option value="500">500</option>
-							<option value="1000">1000</option>
-						</select>
-						<select class="pagenum input-mini" title="Select page number" v-model="page">
-							<template v-for="index in amount_of_pages" :key="index">
-								<option :value="index">{{ index }}</option>
+		<p v-if="synchronized_objects.length === 0" class="alert alert-warning">
+			There are no synchronized objects stored in the database.
+		</p>
+		<template v-else>
+			<div class="mb-2">
+				<input type="text" class="ml-auto" id="search-input"/>
+			</div>
+			<table class="wp-list-table widefat fixed striped table-view-list posts">
+				<thead>
+					<tr>
+						<th>Object ID</th>
+						<th>Object type</th>
+						<th>Date</th>
+						<th>Object URL</th>
+						<th>Succeeded</th>
+						<th>Details</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr v-for="(object, index) of synchronized_objects" :key="`synchronized_object_${object.id}`">
+						<td>
+							{{ object.meta.id }}
+						</td>
+						<td>
+							{{ object.meta.type }}
+						</td>
+						<td>
+							{{ new Date(object.date).toISOString() }}
+						</td>
+						<td>
+							<template v-if="object.meta.url">
+								<a :href="object.meta.url" target="_blank">{{ object.meta.url }}</a>
 							</template>
-						</select>
-					</th>
-					<th colspan="4"></th>
-				</tr>
-			</tfoot>
-		</table>
-		<div v-for="(object, index) of synchronized_objects" :key="`synchronized_object_${object.id}`" class="modal fade" :id="`details-modal-${index}`" tabindex="-1" role="dialog" :aria-labelledby="`details-modal-${index}-label`" aria-hidden="true">
-			<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title" id="exampleModalLabel">#{{ object.meta.id }}</h5>
-						<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-							<span aria-hidden="true">&times;</span>
-						</button>
-					</div>
-					<div class="modal-body">
-						<table class="wp-list-table widefat fixed striped table-view-list posts">
-							<thead>
-								<tr>
-									<td>Property</td>
-									<td>Value</td>
-								</tr>
-							</thead>
-							<tbody>
-								<tr>
-									<td>ID</td>
-									<td>{{ object.meta.id }}</td>
-								</tr>
-								<tr>
-									<td>Type</td>
-									<td>{{ object.meta.type }}</td>
-								</tr>
-								<tr>
-									<td>Date</td>
-									<td>{{ new Date(object.date).toISOString() }}</td>
-								</tr>
-								<tr>
-									<td>URL</td>
-									<td>
-										<template v-if="object.meta.url">
-											<a :href="object.meta.url" target="_blank">{{ object.meta.url }}</a>
-										</template>
-									</td>
-								</tr>
-								<tr>
-									<td>Succeeded</td>
-									<td>
-										<i v-if="object.meta.succeeded" class="fs-4 text-success fa-solid fa-check"></i>
-										<i v-else class="fs-4 text-danger fa-solid fa-xmark"></i>
-									</td>
-								</tr>
-								<template v-if="object.meta.extra_data.length > 0">
-									<tr v-for="(key, value) of Object.entries(object.meta.extra_data)">
+						</td>
+						<td>
+							<i v-if="object.meta.succeeded" class="fs-4 text-success fa-solid fa-check"></i>
+							<i v-else class="fs-4 text-danger fa-solid fa-xmark"></i>
+						</td>
+						<td>
+							<button type="button" class="button action" data-bs-toggle="modal" :data-bs-target="`#details-modal-${index}`">Details</button>
+						</td>
+					</tr>
+				</tbody>
+				<tfoot>
+					<tr>
+						<th colspan="2" class="ts-pager">
+							<button v-if="page === 1" type="button" class="btn first disabled"><i class="fa-solid fa-backward-fast"></i></button>
+							<button v-else v-on:click="update_page(1);" type="button" class="btn first"><i class="fa-solid fa-backward-fast"></i></button>
+
+							<button v-if="page === 1" type="button" class="btn prev disabled"><i class="fa-solid fa-backward"></i></button>
+							<button v-else v-on:click="update_page(page - 1);" type="button" class="btn prev"><i class="fa-solid fa-backward"></i></button>
+
+							<button v-if="page === amount_of_pages" type="button" class="btn next disabled"><i class="fa-solid fa-forward"></i></button>
+							<button v-else v-on:click="update_page(page + 1);" type="button" class="btn next"><i class="fa-solid fa-forward"></i></button>
+
+							<button v-if="page === amount_of_pages" type="button" class="btn last disabled me-1"><i class="fa-solid fa-forward-fast"></i></button>
+							<button v-else v-on:click="update_page(amount_of_pages);" type="button" class="btn last me-1"><i class="fa-solid fa-forward-fast"></i></button>
+
+							<select class="pagesize input-mini me-1" title="Select page size" v-model="per_page">
+								<option value="10">10</option>
+								<option value="20">20</option>
+								<option value="50">50</option>
+								<option value="100">100</option>
+							</select>
+							<select class="pagenum input-mini" title="Select page number" v-model="page">
+								<template v-for="index in amount_of_pages" :key="index">
+									<option :value="index">{{ index }}</option>
+								</template>
+							</select>
+						</th>
+						<th colspan="4"></th>
+					</tr>
+				</tfoot>
+			</table>
+			<div v-for="(object, index) of synchronized_objects" :key="`synchronized_object_${object.id}`" class="modal fade" :id="`details-modal-${index}`" tabindex="-1" role="dialog" :aria-labelledby="`details-modal-${index}-label`" aria-hidden="true">
+				<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title" id="exampleModalLabel">#{{ object.meta.id }}</h5>
+							<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+								<span aria-hidden="true">&times;</span>
+							</button>
+						</div>
+						<div class="modal-body">
+							<table class="wp-list-table widefat fixed striped table-view-list posts mb-3">
+								<thead>
+									<tr>
+										<td>Property</td>
+										<td>Value</td>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td>ID</td>
+										<td>{{ object.meta.id }}</td>
+									</tr>
+									<tr>
+										<td>Type</td>
+										<td>{{ object.meta.type }}</td>
+									</tr>
+									<tr>
+										<td>Date</td>
+										<td>{{ new Date(object.date).toISOString() }}</td>
+									</tr>
+									<tr>
+										<td>URL</td>
 										<td>
-											{{ key }}
-										</td>
-										<td>
-											{{ value }}
+											<template v-if="object.meta.url">
+												<a :href="object.meta.url" target="_blank">{{ object.meta.url }}</a>
+											</template>
 										</td>
 									</tr>
-								</template>
-							</tbody>
-						</table>
-						<div v-if="object.meta.error_message">
-							<h2>Error message</h2>
-							<p>
-								{{ object.meta.error_message }}
-							</p>
+									<tr>
+										<td>Succeeded</td>
+										<td>
+											<i v-if="object.meta.succeeded" class="fs-4 text-success fa-solid fa-check"></i>
+											<i v-else class="fs-4 text-danger fa-solid fa-xmark"></i>
+										</td>
+									</tr>
+									<template v-if="Object.keys(object.meta.extra_data).length > 0">
+										<tr v-for="[key, value] of Object.entries(object.meta.extra_data)">
+											<td>
+												{{ key }}
+											</td>
+											<td>
+												{{ value }}
+											</td>
+										</tr>
+									</template>
+								</tbody>
+							</table>
+							<div v-if="object.meta.error_message">
+								<p class="alert alert-danger">
+									{{ object.meta.error_message }}
+								</p>
+							</div>
 						</div>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-						<button type="button" class="btn btn-danger">Retry Synchronization</button>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+							<button type="button" class="btn btn-danger">Retry Synchronization</button>
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
+		</template>
 	</div>
 </div>
 

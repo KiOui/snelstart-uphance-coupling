@@ -128,7 +128,7 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 						'id' => $object_id,
 						'url' => $url,
 						'error_message' => $error_message,
-						'extra_data' => $extra_data,
+						'extra_data' => json_encode( $extra_data ),
 					)
 				)
 			);
@@ -186,7 +186,12 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 				[
 					'type' => 'object',
 					'single' => true,
-					'show_in_rest' => true
+					'show_in_rest' => array(
+						'schema' => array(
+							'type' => 'object',
+							'additionalProperties' => true,
+						),
+					),
 				]
 			);
 		}
