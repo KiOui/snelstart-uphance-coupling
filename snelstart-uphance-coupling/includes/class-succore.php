@@ -122,10 +122,12 @@ if ( ! class_exists( 'SUCCore' ) ) {
 		private function actions_and_filters() {
 			include_once SUC_ABSPATH . '/includes/class-sucsettings.php';
 			include_once SUC_ABSPATH . '/includes/class-sucerrorlogging.php';
+			include_once SUC_ABSPATH . '/includes/SUCSynchronizedObjects.php';
 			include_once SUC_ABSPATH . '/includes/suc-functions.php';
 			SUCSettings::instance();
 			$uphance_client = SUCUphanceClient::instance();
 			$snelstart_client = SUCSnelstartClient::instance();
+			SUCSynchronizedObjects::init();
 			add_action( 'suc_sync_all', 'cron_runner_sync_all' );
 			add_action( 'init', array( 'SUCErrorLogging', 'init' ) );
 			if ( ! isset( $uphance_client ) || ! isset( $snelstart_client ) ) {

@@ -66,6 +66,10 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 			return $credit_notes;
 		}
 
+		public static function get_url( int $credit_note_id ) {
+			return sprintf( 'https://app.uphance.com/credit_notes/%d', $credit_note_id );
+		}
+
 		/**
 		 * Synchronize credit notes to Snelstart.
 		 *
@@ -78,7 +82,32 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 				try {
 					$credit_note_converted = $this->setup_credit_note_for_synchronisation( $this->credit_notes[ $i ] );
 					$this->sync_credit_note_to_snelstart( $credit_note_converted );
+					SUCSynchronizedObjects::create_synchronized_object(
+						intval( $this->credit_notes[ $i ]['id'] ),
+						$this::$type,
+						true,
+						$this::get_url( intval( $this->credit_notes[ $i ]['id'] ) ),
+						null,
+						[
+							'Credit note number' => $this->credit_notes[ $i ]['credit_note_number'],
+						],
+					);
 				} catch ( Exception $e ) {
+					if ( get_class( $e ) === 'SUCAPIException' ) {
+						$message = $e->get_message();
+					} else {
+						$message = $e->__toString();
+					}
+					SUCSynchronizedObjects::create_synchronized_object(
+						intval( $this->credit_notes[ $i ]['id'] ),
+						$this::$type,
+						false,
+						$this::get_url( intval( $this->credit_notes[ $i ]['id'] ) ),
+						$message,
+						[
+							'Credit note number' => $this->credit_notes[ $i ]['credit_note_number'],
+						],
+					);
 					$error_log = new SUCErrorLogging();
 					$error_log->set_error( $e . esc_html( sprintf( '\nURL: https://app.uphance.com/credit_notes/%d', $this->credit_notes[ $i ]['id'] ) ), 'synchronize-credit-note', self::$type, $this->credit_notes[ $i ]['id'] );
 				}

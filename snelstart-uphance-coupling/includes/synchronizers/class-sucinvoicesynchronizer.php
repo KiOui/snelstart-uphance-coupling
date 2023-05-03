@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 include_once SUC_ABSPATH . 'includes/synchronizers/class-sucsynchronisable.php';
 include_once SUC_ABSPATH . 'includes/snelstart/class-sucbtw.php';
+include_once SUC_ABSPATH . 'includes/SUCSynchronizedObjects.php';
 
 if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 	/**
@@ -66,6 +67,10 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 			return $invoices;
 		}
 
+		public static function get_url( int $invoice_id ) {
+			return sprintf( 'https://app.uphance.com/invoices/%d', $invoice_id );
+		}
+
 		/**
 		 * Run the synchronizer.
 		 *
@@ -78,7 +83,32 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 				try {
 					$invoice_converted = $this->setup_invoice_for_synchronisation( $this->invoices[ $i ] );
 					$this->sync_invoice_to_snelstart( $invoice_converted );
+					SUCSynchronizedObjects::create_synchronized_object(
+						intval( $this->invoices[ $i ]['id'] ),
+						$this::$type,
+						true,
+						$this::get_url( intval( $this->invoices[ $i ]['id'] ) ),
+						null,
+						[
+							'Invoice number' => $this->invoices[ $i ]['invoice_number'],
+						],
+					);
 				} catch ( Exception $e ) {
+					if ( get_class( $e ) === 'SUCAPIException' ) {
+						$message = $e->get_message();
+					} else {
+						$message = $e->__toString();
+					}
+					SUCSynchronizedObjects::create_synchronized_object(
+						intval( $this->invoices[ $i ]['id'] ),
+						$this::$type,
+						false,
+						$this::get_url( intval( $this->invoices[ $i ]['id'] ) ),
+						$message,
+						[
+							'Invoice number' => $this->invoices[ $i ]['invoice_number'],
+						],
+					);
 					$error_log = new SUCErrorLogging();
 					$error_log->set_error( $e . esc_html( sprintf( '\nURL: https://app.uphance.com/invoices/%d', $this->invoices[ $i ]['id'] ) ), 'synchronize-invoice', self::$type, $this->invoices[ $i ]['id'] );
 				}
@@ -117,7 +147,7 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 			}
 
 			if ( ! isset( $betalingstermijn ) ) {
-				throw new Exception( __( 'Failed to synchronize %1$s because invoice due date could not be converter.', 'snelstart-uphance-coupling' ), $invoice_id );
+				throw new Exception( __( 'Failed to synchronize %1$s because invoice due date could not be converted.', 'snelstart-uphance-coupling' ), $invoice_id );
 			}
 
 			try {

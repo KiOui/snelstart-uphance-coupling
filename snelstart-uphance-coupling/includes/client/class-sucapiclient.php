@@ -116,7 +116,7 @@ abstract class SUCAPIClient {
 		return new SUCAPIException(
 			wp_remote_retrieve_response_code( $response ),
 			-1,
-			$url . ":\n " . $msg,
+			$msg,
 			null,
 			gettype( wp_remote_retrieve_headers( $response ) ) === 'array' ? wp_remote_retrieve_headers( $response ) : wp_remote_retrieve_headers( $response )->getAll(),
 		);
