@@ -90,6 +90,7 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 						null,
 						[
 							'Credit note number' => $this->credit_notes[ $i ]['credit_note_number'],
+							'Total' => suc_format_number( $this->credit_notes[ $i ]['grand_total'] ),
 						],
 					);
 				} catch ( Exception $e ) {
@@ -106,6 +107,7 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 						$message,
 						[
 							'Credit note number' => $this->credit_notes[ $i ]['credit_note_number'],
+							'Total' => suc_format_number( $this->credit_notes[ $i ]['grand_total'] ),
 						],
 					);
 					$error_log = new SUCErrorLogging();

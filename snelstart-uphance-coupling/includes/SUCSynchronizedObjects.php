@@ -17,6 +17,31 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 			add_action( 'init', array( 'SUCSynchronizedObjects', 'register_synchronized_objects_post_meta' ) );
 			add_action( 'admin_menu', array( 'SUCSynchronizedObjects', 'add_admin_menu' ) );
 			add_action( 'admin_enqueue_scripts', array( 'SUCSynchronizedObjects', 'synchronized_objects_scripts' ) );
+			add_filter( 'rest_suc_synchronized_query', array( 'SUCSynchronizedObjects', 'filter_query' ), 10, 2 );
+		}
+
+		public static function filter_query( array $args, WP_REST_Request $request ) {
+			if ( ! isset( $args['meta_query' ] ) ) {
+				$args['meta_query'] = array();
+			}
+
+			if ( $request->get_param( 'succeeded' ) === 'true' || $request->get_param( 'succeeded' ) === 'false' ) {
+				$succeeded = $request->get_param( 'succeeded' ) === 'true';
+				$args['meta_query'][] = array(
+					'key' => 'succeeded',
+					'value' => $succeeded,
+				);
+			}
+
+			if ( $request->get_param( 'type' ) !== null ) {
+				$type = strval( $request->get_param( 'type' ) );
+				$args['meta_query'][] = array(
+					'key' => 'type',
+					'value' => $type,
+				);
+			}
+
+			return $args;
 		}
 
 		public static function add_custom_post_types() {

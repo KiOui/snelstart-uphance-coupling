@@ -118,7 +118,6 @@ if ( ! function_exists( 'cron_runner_sync_all' ) ) {
 	 * @return void
 	 */
 	function cron_runner_sync_all(): void {
-		include_once SUC_ABSPATH . 'includes/synchronizers/synchronizer-init.php';
 		include_once SUC_ABSPATH . 'includes/synchronizers/class-sucsynchronizer.php';
 
 		$uphance_client   = SUCUphanceClient::instance();
@@ -140,8 +139,6 @@ if ( ! function_exists( 'cron_runner_sync_all' ) ) {
 				return;
 			}
 		}
-
-		initialize_synchronizers( $uphance_client, $snelstart_client );
 
 		foreach ( SUCSynchronizer::$synchronizer_classes as $type => $synchronizer_class ) {
 			if ( $synchronizer_class->enabled() ) {

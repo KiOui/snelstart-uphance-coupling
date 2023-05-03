@@ -124,6 +124,9 @@ if ( ! class_exists( 'SUCCore' ) ) {
 			include_once SUC_ABSPATH . '/includes/class-sucerrorlogging.php';
 			include_once SUC_ABSPATH . '/includes/SUCSynchronizedObjects.php';
 			include_once SUC_ABSPATH . '/includes/suc-functions.php';
+			include_once SUC_ABSPATH . '/includes/synchronizers/class-sucsynchronizer.php';
+			include_once SUC_ABSPATH . '/includes/synchronizers/class-succreditnotesynchronizer.php';
+			include_once SUC_ABSPATH . '/includes/synchronizers/class-sucinvoicesynchronizer.php';
 			SUCSettings::instance();
 			$uphance_client = SUCUphanceClient::instance();
 			$snelstart_client = SUCSnelstartClient::instance();
@@ -141,6 +144,9 @@ if ( ! class_exists( 'SUCCore' ) ) {
 				}
 
 				add_action( 'admin_notices', 'suc_admin_notice_plugin_not_configured' );
+			} else {
+				SUCSynchronizer::register_synchronizer_class( SUCCreditNoteSynchronizer::$type, new SUCCreditNoteSynchronizer( $uphance_client, $snelstart_client ) );
+				SUCSynchronizer::register_synchronizer_class( SUCInvoiceSynchronizer::$type, new SUCInvoiceSynchronizer( $uphance_client, $snelstart_client ) );
 			}
 		}
 	}

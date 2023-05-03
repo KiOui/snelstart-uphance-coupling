@@ -91,6 +91,7 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 						null,
 						[
 							'Invoice number' => $this->invoices[ $i ]['invoice_number'],
+							'Total' => suc_format_number( $this->invoices[ $i ]['items_total'] + $this->invoices[ $i ]['items_tax'] ),
 						],
 					);
 				} catch ( Exception $e ) {
@@ -107,6 +108,7 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 						$message,
 						[
 							'Invoice number' => $this->invoices[ $i ]['invoice_number'],
+							'Total' => suc_format_number( $this->invoices[ $i ]['items_total'] + $this->invoices[ $i ]['items_tax'] ),
 						],
 					);
 					$error_log = new SUCErrorLogging();
