@@ -128,7 +128,7 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 						'id' => $object_id,
 						'url' => $url,
 						'error_message' => $error_message,
-						'extra_data' => json_encode( $extra_data ),
+						'extra_data' => $extra_data,
 					)
 				)
 			);
