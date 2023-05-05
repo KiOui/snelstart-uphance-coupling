@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-include_once SUC_ABSPATH . 'includes/uphance/class-sucuphanceclient.php';
+include_once SUC_ABSPATH . 'includes/uphance/SUCSendcloudClient.php';
 include_once SUC_ABSPATH . 'includes/snelstart/class-sucsnelstartclient.php';
 include_once SUC_ABSPATH . 'includes/suc-functions.php';
 

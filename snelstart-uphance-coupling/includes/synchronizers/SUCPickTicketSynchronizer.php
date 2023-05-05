@@ -29,6 +29,31 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		private array $pick_tickets;
 
 		/**
+		 * The Uphance client to use for the synchronizer.
+		 *
+		 * @var SUCUphanceClient
+		 */
+		protected SUCUphanceClient $uphance_client;
+
+		/**
+		 * The Sendcloud client to use for the synchronizer.
+		 *
+		 * @var SUCSendcloudClient
+		 */
+		protected SUCSendcloudClient $sendcloud_client;
+
+		/**
+		 * Constructor.
+		 *
+		 * @param SUCuphanceClient   $uphance_client the Uphance client.
+		 * @param SUCSendcloudClient $sendcloud_client the Snelstart client.
+		 */
+		public function __construct( SUCuphanceClient $uphance_client, SUCSendcloudClient $sendcloud_client ) {
+			$this->uphance_client = $uphance_client;
+			$this->sendcloud_client = $sendcloud_client;
+		}
+
+		/**
 		 * Run the synchronizer.
 		 *
 		 * @return void
@@ -40,8 +65,7 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 				try {
 
 				} catch ( Exception $e ) {
-					$error_log = new SUCErrorLogging();
-					// $error_log->set_error( $e . esc_html( sprintf( '\nURL: https://app.uphance.com/invoices/%d', $this->invoices[ $i ]['id'] ) ), 'synchronize-invoice', self::$type, $this->invoices[ $i ]['id'] );
+
 				}
 			}
 		}
@@ -55,18 +79,18 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		 * @throws SUCAPIException|Exception With Exception in an API request or other Exception.
 		 */
 		public function sync_pick_ticket_to_sendcloud( array $pick_ticket ): void {
-			$pick_ticket = $pick_ticket['id'];
+			$pick_ticket_id = $pick_ticket['id'];
 
 		}
 
 		/**
 		 * Synchronize one pick ticket to Sendcloud.
 		 *
-		 * @param string $id the ID of the pick ticket to synchronize.
+		 * @param array $to_synchronize the data from Uphance to send to Sendcloud.
 		 *
 		 * @return void
 		 */
-		public function synchronize_one( string $id ): void {
+		public function synchronize_one( array $to_synchronize ): void {
 			// TODO: implement this method.
 		}
 
@@ -77,11 +101,27 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		 */
 		public function enabled(): bool {
 			$manager          = SUCSettings::instance()->get_settings();
-			return $manager->get_value( 'synchronize_pick_tickets_to_snelstart' );
+			return $manager->get_value( 'synchronize_pick_tickets_to_sendcloud' );
 		}
 
 		public function setup(): void {}
 
+		public function setup_objects(): void {
+			// TODO: Implement setup_objects() method.
+		}
+
 		public function after_run(): void {}
+
+		public function get_url( array $object ): string {
+			return "";
+		}
+
+		public function create_synchronized_object( array $object, bool $succeeded, ?string $error_message ) {
+			// TODO: Implement create_synchronized_object() method.
+		}
+
+		public function retrieve_object( int $id ): array {
+			return array();
+		}
 	}
 }

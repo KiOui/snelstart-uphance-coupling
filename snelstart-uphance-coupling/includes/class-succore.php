@@ -117,22 +117,38 @@ if ( ! class_exists( 'SUCCore' ) ) {
 		}
 
 		/**
+		 * Register the REST Routes with the plugin.
+		 *
+		 * @return void
+		 */
+		public function register_rest_routes() {
+			include_once SUC_ABSPATH . '/includes/rest/SUCRestRoutes.php';
+			include_once SUC_ABSPATH . '/includes/rest/SUCRetryRestRoute.php';
+
+			SUCRestRoutes::register_rest_route("retry", new SUCRetryRestRoute());
+
+			add_action( 'rest_api_init', array( 'SUCRestRoutes', 'register_rest_routes' ) );
+		}
+
+		/**
 		 * Add actions and filters.
 		 */
 		private function actions_and_filters() {
 			include_once SUC_ABSPATH . '/includes/class-sucsettings.php';
-			include_once SUC_ABSPATH . '/includes/class-sucerrorlogging.php';
 			include_once SUC_ABSPATH . '/includes/SUCSynchronizedObjects.php';
 			include_once SUC_ABSPATH . '/includes/suc-functions.php';
 			include_once SUC_ABSPATH . '/includes/synchronizers/class-sucsynchronizer.php';
 			include_once SUC_ABSPATH . '/includes/synchronizers/class-succreditnotesynchronizer.php';
 			include_once SUC_ABSPATH . '/includes/synchronizers/class-sucinvoicesynchronizer.php';
+			include_once SUC_ABSPATH . '/includes/synchronizers/SUCPickTicketSynchronizer.php';
+			include_once SUC_ABSPATH . '/includes/uphance/class-sucuphanceclient.php';
+			include_once SUC_ABSPATH .'/includes/snelstart/class-sucsnelstartclient.php';
 			SUCSettings::instance();
 			$uphance_client = SUCUphanceClient::instance();
 			$snelstart_client = SUCSnelstartClient::instance();
 			SUCSynchronizedObjects::init();
 			add_action( 'suc_sync_all', 'cron_runner_sync_all' );
-			add_action( 'init', array( 'SUCErrorLogging', 'init' ) );
+			$this->register_rest_routes();
 			if ( ! isset( $uphance_client ) || ! isset( $snelstart_client ) ) {
 				/**
 				 * Add admin notice that the plugin is not configured.

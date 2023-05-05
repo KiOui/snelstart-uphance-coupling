@@ -134,6 +134,10 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 				wp_enqueue_script( 'suc-vuejs', 'https://unpkg.com/vue@3/dist/vue.global.js' );
 				wp_enqueue_style( 'suc-bootstrap', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css' );
 				wp_enqueue_script( 'suc-bootstrap', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js' );
+				wp_enqueue_script( 'suc-tata', SUC_PLUGIN_URI . '/assets/js/tata.js' );
+				wp_enqueue_script( 'suc-shared', SUC_PLUGIN_URI . '/assets/js/shared.js' );
+				wp_enqueue_style( 'suc-tata-fix', SUC_PLUGIN_URI . '/assets/css/tata-fix.css' );
+				wp_enqueue_style( 'suc-shared', SUC_PLUGIN_URI . '/assets/css/shared.css' );
 			}
 		}
 

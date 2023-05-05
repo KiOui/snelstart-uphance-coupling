@@ -98,6 +98,19 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 		}
 
 		/**
+		 * Get an invoice.
+		 *
+		 * @param int $invoice_id the invoice ID of the invoice to get.
+		 *
+		 * @return array the invoice
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		public function invoice( int $invoice_id ): array {
+			$url = "invoices/$invoice_id";
+			return $this->_get( $url, null, null );
+		}
+
+		/**
 		 * Get all invoices.
 		 *
 		 * @param int|null $since_id optional ID of invoice, when set only invoices from this ID will be requested.
@@ -145,6 +158,19 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 			$url = $url . $this->create_querystring( $queries );
 			$response = $this->_get( $url, null, null );
 			return new SUCAPIPaginatedResult( $response );
+		}
+
+		/**
+		 * Get a credit note.
+		 *
+		 * @param int $credit_note_id the credit note ID of the credit note to get.
+		 *
+		 * @return array the credit note
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		public function credit_note( int $credit_note_id ): array {
+			$url = "credit_notes/$credit_note_id";
+			return $this->_get( $url, null, null )['credit_notes'];
 		}
 
 		/**

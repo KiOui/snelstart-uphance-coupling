@@ -24,6 +24,8 @@ if ( ! in_array( $filter_type, $types ) ) {
 	$filter_type = null;
 }
 
+$nonce = wp_create_nonce( 'wp_rest' );
+
 ?>
 
 <div class="suc-synchronized-objects-list wrap">
@@ -125,7 +127,7 @@ if ( ! in_array( $filter_type, $types ) ) {
 				</tr>
 			</tfoot>
 		</table>
-		<div v-for="(object, index) of synchronized_objects" :key="`synchronized_object_${object.id}`" class="modal fade" :id="`details-modal-${index}`" tabindex="-1" role="dialog" :aria-labelledby="`details-modal-${index}-label`" aria-hidden="true">
+		<div v-for="(object, index) of synchronized_objects" :key="`synchronized_object_${object.id}`" class="modal" :id="`details-modal-${index}`" tabindex="-1" role="dialog" :aria-labelledby="`details-modal-${index}-label`" aria-hidden="true">
 			<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
 				<div class="modal-content">
 					<div class="modal-header">
@@ -190,7 +192,8 @@ if ( ! in_array( $filter_type, $types ) ) {
 					</div>
 					<div class="modal-footer">
 						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-						<button type="button" class="btn btn-danger">Retry Synchronization</button>
+						<button v-if="object.meta.type in retries_in_progress && retries_in_progress[object.meta.type].indexOf(object.meta.id) !== -1" type="button" class="btn btn-danger disabled d-flex align-center justify-content-center"><span class="me-1">Retry Synchronization</span> <span class="loader"></span></button>
+						<button v-else type="button" class="btn btn-danger" @click="retry_synchronization(object.meta.id, object.meta.type)">Retry Synchronization</button>
 					</div>
 				</div>
 			</div>
@@ -209,6 +212,7 @@ if ( ! in_array( $filter_type, $types ) ) {
                 filter_succeeded: "<?php echo esc_js( $filter_succeeded ); ?>",
                 filter_type: "<?php echo esc_js( $filter_type ); ?>",
 				synchronized_objects: [],
+				retries_in_progress: {},
 				amount_of_objects: 0,
 				amount_of_pages: 0,
 			}
@@ -333,6 +337,39 @@ if ( ! in_array( $filter_type, $types ) ) {
 			},
 			update_page(page_number) {
 				this.page = page_number;
+			},
+			retry_synchronization(object_id, object_type) {
+                if (!(object_type in this.retries_in_progress)) {
+                    this.retries_in_progress[object_type] = [];
+                }
+                this.retries_in_progress[object_type].push(object_id);
+                fetch('/wp-json/snelstart-uphance-coupling/v1/synchronized-objects/retry', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        "Accept": 'application/json',
+	                    "X-WP-Nonce": "<?php echo esc_js( $nonce ); ?>",
+                    },
+                    body: JSON.stringify({
+                        'type': object_type,
+	                    'id': object_id,
+                    })
+                }).then(response => {
+                    if (response.status < 200 || response.status >= 300) {
+                        throw response;
+                    } else {
+                        return response;
+                    }
+                }).then(response => {
+                    tata.success('', 'Object synchronized successfully.');
+                }).catch((error) => {
+	                show_error_from_api(error);
+                }).finally(() => {
+                    const index = this.retries_in_progress[object_type].indexOf(object_id);
+					if (index > -1) {
+                        this.retries_in_progress[object_type].splice(index, 1);
+					}
+                });
 			}
 		}
 	}).mount('#synchronized-objects-list');

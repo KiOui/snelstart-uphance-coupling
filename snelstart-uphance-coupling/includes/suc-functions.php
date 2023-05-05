@@ -101,9 +101,9 @@ if ( ! function_exists( 'run_synchronizer' ) ) {
 	function run_synchronizer( SUCSynchronisable $synchronizer ) {
 		try {
 			$synchronizer->setup();
+			$synchronizer->setup_objects();
 		} catch ( Exception $e ) {
-			$error_log = new SUCErrorLogging();
-			$error_log->set_error( $e, 'default', null, null );
+			// TODO: Maybe log some kind of exception here.
 			return;
 		}
 		$synchronizer->run();

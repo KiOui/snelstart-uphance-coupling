@@ -41,6 +41,15 @@ if ( ! function_exists( 'suc_get_settings_config' ) ) {
 					'maximum'     => null,
 				),
 				array(
+					'type'        => 'positive_int',
+					'id'          => 'max_pick_tickets_to_synchronize',
+					'name'        => __( 'Maximum amount of pick tickets to synchronize', 'snelstart-uphance-coupling' ),
+					'default'     => 5,
+					'can_be_null' => true,
+					'hint'        => __( 'Maximum amount of pick tickets to synchronize per run (leave empty for all)', 'snelstart-uphance-coupling' ),
+					'maximum'     => null,
+				),
+				array(
 					'type'    => 'bool',
 					'id'      => 'synchronize_invoices_to_snelstart',
 					'name'    => __( 'Synchronize invoices to Snelstart', 'snelstart-uphance-coupling' ),
@@ -53,6 +62,13 @@ if ( ! function_exists( 'suc_get_settings_config' ) ) {
 					'name'    => __( 'Synchronize credit notes to Snelstart', 'snelstart-uphance-coupling' ),
 					'default' => false,
 					'hint'    => __( 'Whether to synchronize credit notes from Uphance to Snelstart', 'snelstart-uphance-coupling' ),
+				),
+				array(
+					'type'    => 'bool',
+					'id'      => 'synchronize_pick_tickets_to_sendcloud',
+					'name'    => __( 'Synchronize credit notes to Sendcloud', 'snelstart-uphance-coupling' ),
+					'default' => false,
+					'hint'    => __( 'Whether to synchronize credit notes from Uphance to Sendcloud', 'snelstart-uphance-coupling' ),
 				),
 				array(
 					'type'    => 'text',
@@ -153,6 +169,16 @@ if ( ! function_exists( 'suc_get_settings_config' ) ) {
 						new FieldsSetSettingsCondition( array( 'uphance_username', 'uphance_password' ) ),
 					),
 				),
+				array(
+					'type'        => 'positive_int',
+					'id'          => 'uphance_synchronise_pick_tickets_from',
+					'name'        => __( 'Uphance Synchronise pick tickets from', 'snelstart-uphance-coupling' ),
+					'can_be_null' => true,
+					'hint'        => __( 'Uphance Synchronise pick tickets from this pick ticket number onward.', 'snelstart-uphance-coupling' ),
+					'conditions'  => array(
+						new FieldsSetSettingsCondition( array( 'uphance_username', 'uphance_password' ) ),
+					),
+				),
 			),
 		);
 	}
@@ -188,8 +214,10 @@ if ( ! function_exists( 'suc_get_settings_screen_config' ) ) {
 							'settings' => array(
 								'max_invoices_to_synchronize',
 								'max_credit_notes_to_synchronize',
+								'max_pick_tickets_to_synchronize',
 								'synchronize_invoices_to_snelstart',
 								'synchronize_credit_notes_to_snelstart',
+								'synchronize_pick_tickets_to_sendcloud',
 								'send_error_email_to',
 							),
 						),
@@ -213,6 +241,7 @@ if ( ! function_exists( 'suc_get_settings_screen_config' ) ) {
 								'uphance_organisation',
 								'uphance_synchronise_invoices_from',
 								'uphance_synchronise_credit_notes_from',
+								'uphance_synchronise_pick_tickets_from',
 							),
 						),
 					),

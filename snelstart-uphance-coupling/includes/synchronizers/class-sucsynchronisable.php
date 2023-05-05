@@ -18,56 +18,54 @@ if ( ! interface_exists( 'SUCSynchronisable' ) ) {
 	abstract class SUCSynchronisable {
 
 		/**
-		 * The Uphance client to use for the synchronizer.
-		 *
-		 * @var SUCUphanceClient
-		 */
-		protected SUCUphanceClient $uphance_client;
-
-		/**
-		 * The Snelstart client to use for the synchronizer.
-		 *
-		 * @var SUCSnelstartClient
-		 */
-		protected SUCSnelstartClient $snelstart_client;
-
-		/**
-		 * Constructor.
-		 *
-		 * @param SUCuphanceClient   $uphance_client the Uphance client.
-		 * @param SUCSnelstartClient $snelstart_client the Snelstart client.
-		 */
-		public function __construct( SUCuphanceClient $uphance_client, SUCSnelstartClient $snelstart_client ) {
-			$this->uphance_client = $uphance_client;
-			$this->snelstart_client = $snelstart_client;
-		}
-
-		/**
 		 * Setup this class for a run() or synchronize_one().
 		 *
 		 * @return void
 		 */
 		abstract public function setup(): void;
 
+
+		/**
+		 * Setup the class objects for a run().
+		 *
+		 * @return void
+		 */
+		abstract public function setup_objects(): void;
+
 		/**
 		 * Method to synchronize multiple instances.
 		 *
-		 * The method setup() must be called before this method. The method after_run() must be called after this method.
+		 * The setup() and setup_objects() methods must be called before this method. The method after_run() must be called after this method.
 		 *
 		 * @return void
 		 */
 		abstract public function run(): void;
 
+		abstract public function get_url( array $object ): string;
+
+		abstract public function create_synchronized_object( array $object, bool $succeeded, ?string $error_message );
+
 		/**
 		 * Method to synchronize one instance.
 		 *
-		 * The method setup() must be called before this method.
+		 * The setup() method must be called before this method.
 		 *
-		 * @param string $id the ID of the instance to synchronize.
+		 * @param array $to_synchronize the data to synchronize.
 		 *
+		 * @throws SUCAPIException On Exception with the API.
 		 * @return void
 		 */
-		abstract public function synchronize_one( string $id): void;
+		abstract public function synchronize_one( array $to_synchronize ): void;
+
+		/**
+		 * Retrieve data of an object by its ID.
+		 *
+		 * @param int $id the ID of the object to retrieve.
+		 *
+		 * @throws SUCAPIException On Exception with the API.
+		 * @return array
+		 */
+		abstract public function retrieve_object( int $id ): array;
 
 		/**
 		 * Actions to execute after a run.

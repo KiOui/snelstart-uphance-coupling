@@ -35,5 +35,13 @@ if ( ! class_exists( 'SUCSynchronizer' ) ) {
 		public static function register_synchronizer_class( string $type, $class ) {
 			self::$synchronizer_classes[ $type ] = $class;
 		}
+
+		public static function get_synchronizer_class( string $type ): ?SUCSynchronisable {
+			if ( array_key_exists( $type, SUCSynchronizer::$synchronizer_classes ) ) {
+				return SUCSynchronizer::$synchronizer_classes[ $type ];
+			} else {
+				return null;
+			}
+		}
 	}
 }
