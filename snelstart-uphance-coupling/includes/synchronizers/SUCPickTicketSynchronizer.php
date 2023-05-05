@@ -106,8 +106,40 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 
 		public function setup(): void {}
 
+		/**
+		 * Get the pick tickets to sync.
+		 *
+		 * @throws SUCAPIException On Exception with the API.
+		 */
+		private function get_pick_tickets_to_sync( ?string $pick_tickets_from, ?int $max_to_sync ): array {
+			if ( isset( $pick_tickets_from ) ) {
+				$pick_tickets = $this->uphance_client->pick_tickets( $pick_tickets_from )->result;
+			} else {
+				$pick_tickets = $this->uphance_client->pick_tickets()->result;
+			}
+
+			$pick_tickets = $pick_tickets['pick_tickets'];
+
+			if ( isset( $max_to_sync ) ) {
+				if ( 0 === $max_to_sync ) {
+					return array();
+				} else {
+					$pick_tickets = array_slice( $pick_tickets, 0, $max_to_sync );
+				}
+			}
+
+			return $pick_tickets;
+		}
+
+		/**
+		 * @throws SettingsConfigurationException
+		 * @throws SUCAPIException
+		 */
 		public function setup_objects(): void {
-			// TODO: Implement setup_objects() method.
+			$manager = SUCSettings::instance()->get_settings();
+			$pick_tickets_from = $manager->get_value( 'uphance_synchronise_pick_tickets_from' );
+			$max_to_sync = $manager->get_value( 'max_pick_tickets_to_synchronize' );
+			$this->pick_tickets = $this->get_pick_tickets_to_sync( $pick_tickets_from, $max_to_sync );
 		}
 
 		public function after_run(): void {}

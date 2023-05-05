@@ -165,7 +165,7 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 		 *
 		 * @param int $credit_note_id the credit note ID of the credit note to get.
 		 *
-		 * @return array the credit note
+		 * @return array the credit note.
 		 * @throws SUCAPIException On exception with API request.
 		 */
 		public function credit_note( int $credit_note_id ): array {
@@ -178,11 +178,43 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 		 *
 		 * @param int|null $since_id optional ID of credit note, when set only credit notes from this ID will be requested.
 		 *
-		 * @return SUCAPIPaginatedResult the result with invoices.
+		 * @return SUCAPIPaginatedResult the result with credit notes.
 		 * @throws SUCAPIException On exception with API request.
 		 */
 		public function credit_notes( ?int $since_id = null, int $page = 1 ): SUCAPIPaginatedResult {
 			$url = 'credit_notes/';
+			$queries = array(
+				'since_id' => $since_id,
+				'page' => $page,
+			);
+			$url = $url . $this->create_querystring( $queries );
+			$response = $this->_get( $url, null, null );
+			return new SUCAPIPaginatedResult( $response );
+		}
+
+		/**
+		 * Get a pick tickets.
+		 *
+		 * @param int $pick_ticket_id the pick ticket ID of the pick ticket to get.
+		 *
+		 * @return array the pick ticket.
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		public function pick_ticket( int $pick_ticket_id ): array {
+			$url = "pick_tickets/$pick_ticket_id";
+			return $this->_get( $url, null, null )['pick_ticket'];
+		}
+
+		/**
+		 * Get all pick tickets.
+		 *
+		 * @param int|null $since_id optional ID of pick tickets, when set only pick tickets from this ID will be requested.
+		 *
+		 * @return SUCAPIPaginatedResult the result with pick tickets.
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		public function pick_tickets( ?int $since_id = null, int $page = 1 ): SUCAPIPaginatedResult {
+			$url = 'pick_tickets/';
 			$queries = array(
 				'since_id' => $since_id,
 				'page' => $page,

@@ -143,12 +143,16 @@ if ( ! class_exists( 'SUCCore' ) ) {
 			include_once SUC_ABSPATH . '/includes/synchronizers/SUCPickTicketSynchronizer.php';
 			include_once SUC_ABSPATH . '/includes/uphance/class-sucuphanceclient.php';
 			include_once SUC_ABSPATH .'/includes/snelstart/class-sucsnelstartclient.php';
+			include_once SUC_ABSPATH .'/includes/sendcloud/SUCSendcloudClient.php';
+
 			SUCSettings::instance();
 			$uphance_client = SUCUphanceClient::instance();
 			$snelstart_client = SUCSnelstartClient::instance();
+			$sendcloud_client = SUCSendcloudClient::instance();
 			SUCSynchronizedObjects::init();
 			add_action( 'suc_sync_all', 'cron_runner_sync_all' );
 			$this->register_rest_routes();
+
 			if ( ! isset( $uphance_client ) || ! isset( $snelstart_client ) ) {
 				/**
 				 * Add admin notice that the plugin is not configured.
@@ -163,6 +167,7 @@ if ( ! class_exists( 'SUCCore' ) ) {
 			} else {
 				SUCSynchronizer::register_synchronizer_class( SUCCreditNoteSynchronizer::$type, new SUCCreditNoteSynchronizer( $uphance_client, $snelstart_client ) );
 				SUCSynchronizer::register_synchronizer_class( SUCInvoiceSynchronizer::$type, new SUCInvoiceSynchronizer( $uphance_client, $snelstart_client ) );
+				SUCSynchronizer::register_synchronizer_class( SUCPickTicketSynchronizer::$type, new SUCPickTicketSynchronizer( $uphance_client, $sendcloud_client ) );
 			}
 		}
 	}

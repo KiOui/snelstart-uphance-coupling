@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 include_once SUC_ABSPATH . 'includes/client/class-sucapiauthclient.php';
+include_once SUC_ABSPATH . 'includes/sendcloud/SUCSendcloudAuthClient.php';
 
 if ( ! class_exists( 'SUCSendcloudClient' ) ) {
 	/**
@@ -44,14 +45,7 @@ if ( ! class_exists( 'SUCSendcloudClient' ) ) {
 		public static function instance(): ?SUCSendcloudClient {
 			if ( is_null( self::$_instance ) ) {
 				$settings         = SUCSettings::instance()->get_settings();
-				$uphance_username = $settings->get_value( 'uphance_username' );
-				$uphance_password = $settings->get_value( 'uphance_password' );
-
-				if ( isset( $uphance_username ) && isset( $uphance_password ) && '' !== $uphance_username && '' !== $uphance_password ) {
-					self::$_instance = new SUCUphanceClient( new SUCSendcloudAuthClient( $uphance_username, $uphance_password ) );
-				} else {
-					return null;
-				}
+				self::$_instance = new SUCSendcloudClient( new SUCSendcloudAuthClient() );
 			}
 
 			return self::$_instance;
@@ -60,10 +54,10 @@ if ( ! class_exists( 'SUCSendcloudClient' ) ) {
 		/**
 		 * Constructor.
 		 *
-		 * @param SUCAPIAuthClient|null $auth_client the authentication client.
+		 * @param SUCSendcloudAuthClient|null $auth_client the authentication client.
 		 * @param int $requests_timeout request timeout.
 		 */
-		public function __construct( ?SUCAPIAuthClient $auth_client, int $requests_timeout = 45 ) {
+		public function __construct( ?SUCSendcloudAuthClient $auth_client, int $requests_timeout = 45 ) {
 			parent::__construct( $auth_client, $requests_timeout );
 			$this->requests_timeout = $requests_timeout;
 		}
