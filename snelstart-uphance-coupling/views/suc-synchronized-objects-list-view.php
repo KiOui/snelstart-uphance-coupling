@@ -165,7 +165,7 @@ $nonce = wp_create_nonce( 'wp_rest' );
 								</template>
 							</select>
 						</th>
-						<th colspan="4"></th>
+						<th colspan="6"></th>
 					</tr>
 				</tfoot>
 			</table>
