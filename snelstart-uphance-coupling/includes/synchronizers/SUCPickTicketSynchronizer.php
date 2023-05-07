@@ -165,13 +165,22 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		 * @param array       $object The object.
 		 * @param bool        $succeeded Whether the synchronization succeeded.
 		 * @param string      $source The source of the synchronization.
+		 * @param string      $method The method of the synchronization.
 		 * @param string|null $error_message A possible error message that occurred during synchronization.
 		 *
 		 * @return void
 		 */
-		public function create_synchronized_object( array $object, bool $succeeded, string $source, ?string $error_message ) {
+		public function create_synchronized_object( array $object, bool $succeeded, string $source, string $method, ?string $error_message ) {
 		}
 
+		/**
+		 * Retrieve a pick ticket by ID.
+		 *
+		 * @param int $id The ID of the pick ticket to retrieve.
+		 *
+		 * @return array A pick ticket.
+		 * @throws SUCAPIException When an exception with the API occurred.
+		 */
 		public function retrieve_object( int $id ): array {
 			return $this->uphance_client->pick_ticket( $id );
 		}

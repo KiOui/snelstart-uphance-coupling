@@ -18,3 +18,12 @@
         transform: rotate(360deg);
     }
 }
+
+.table-wrapper {
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.table-wrapper table td {
+    vertical-align: middle;
+}

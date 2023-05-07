@@ -59,6 +59,24 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 				);
 			}
 
+			if ( $request->get_param( 'source' ) !== null ) {
+				$source = strval( $request->get_param( 'source' ) );
+				$args['meta_query'][] = array(
+					'key' => 'source',
+					'value' => $source,
+				);
+			}
+
+			if ( $request->get_param( 'method' ) !== null ) {
+				$method = strval( $request->get_param( 'method' ) );
+				if ( 'create' === $method || 'update' === $method || 'delete' === $method ) {
+					$args['meta_query'][] = array(
+						'key' => 'method',
+						'value' => $method,
+					);
+				}
+			}
+
 			return $args;
 		}
 
@@ -188,13 +206,14 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 		 * @param string      $object_type The type of the synchronized object.
 		 * @param bool        $succeeded Whether the synchronization succeeded.
 		 * @param string      $source The source of the synchronization.
+		 * @param string      $method The method of the synchronization (create, update, delete).
 		 * @param string|null $url The URL of the object.
 		 * @param string|null $error_message The error message that occurred during synchronization.
 		 * @param array|null  $extra_data Possible extra data.
 		 *
 		 * @return void
 		 */
-		public static function create_synchronized_object( int $object_id, string $object_type, bool $succeeded, string $source, ?string $url, ?string $error_message = null, ?array $extra_data = null ) {
+		public static function create_synchronized_object( int $object_id, string $object_type, bool $succeeded, string $source, string $method, ?string $url, ?string $error_message = null, ?array $extra_data = null ) {
 			if ( null === $extra_data ) {
 				$extra_data = array();
 			}
@@ -209,6 +228,7 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 						'type' => $object_type,
 						'id' => $object_id,
 						'source' => $source,
+						'method' => $method,
 						'url' => $url,
 						'error_message' => $error_message,
 						'extra_data' => $extra_data,
@@ -268,10 +288,18 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 					'show_in_rest' => true,
 				)
 			);
-
 			register_post_meta(
 				'suc_synchronized',
 				'source',
+				array(
+					'type' => 'string',
+					'single' => true,
+					'show_in_rest' => true,
+				)
+			);
+			register_post_meta(
+				'suc_synchronized',
+				'method',
 				array(
 					'type' => 'string',
 					'single' => true,

@@ -90,11 +90,12 @@ if ( ! interface_exists( 'SUCSynchronisable' ) ) {
 		 * @param array       $object The object.
 		 * @param bool        $succeeded Whether the synchronization succeeded.
 		 * @param string      $source The source of the synchronization.
+		 * @param string      $method The method of the synchronization.
 		 * @param string|null $error_message A possible error message that occurred during synchronization.
 		 *
 		 * @return void
 		 */
-		abstract public function create_synchronized_object( array $object, bool $succeeded, string $source, ?string $error_message );
+		abstract public function create_synchronized_object( array $object, bool $succeeded, string $source, string $method, ?string $error_message );
 
 		/**
 		 * Method to synchronize one instance.

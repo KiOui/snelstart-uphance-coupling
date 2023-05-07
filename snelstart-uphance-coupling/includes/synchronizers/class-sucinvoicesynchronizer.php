@@ -121,6 +121,7 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 							$this->invoices[ $i ],
 							false,
 							'cron',
+							'create',
 							$e->get_message()
 						);
 					} catch ( Exception $e ) {
@@ -128,6 +129,7 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 							$this->invoices[ $i ],
 							false,
 							'cron',
+							'create',
 							$e->__toString()
 						);
 					}
@@ -141,16 +143,18 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		 * @param array       $object The object.
 		 * @param bool        $succeeded Whether the synchronization succeeded.
 		 * @param string      $source The source of the synchronization.
+		 * @param string      $method The method of the synchronization.
 		 * @param string|null $error_message A possible error message that occurred during synchronization.
 		 *
 		 * @return void
 		 */
-		public function create_synchronized_object( array $object, bool $succeeded, string $source, ?string $error_message ) {
+		public function create_synchronized_object( array $object, bool $succeeded, string $source, string $method, ?string $error_message ) {
 			SUCSynchronizedObjects::create_synchronized_object(
 				intval( $object['id'] ),
 				$this::$type,
 				$succeeded,
 				$source,
+				$method,
 				$this::get_url( $object ),
 				$error_message,
 				array(

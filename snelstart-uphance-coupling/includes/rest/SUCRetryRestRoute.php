@@ -38,9 +38,9 @@ if ( ! class_exists( 'SUCRetryRestRoute' ) ) {
 							'type' => 'string',
 							'validate_callback' => array( $this, 'validate_args_type' ),
 							'sanitize_callback' => array( $this, 'sanitize_args_type' ),
-						)
+						),
 					),
-					'permission_callback' => array( $this, 'check_permissions')
+					'permission_callback' => array( $this, 'check_permissions' ),
 				)
 			);
 		}
@@ -55,28 +55,37 @@ if ( ! class_exists( 'SUCRetryRestRoute' ) ) {
 		public function retry_synchronized_object( WP_REST_Request $request ): WP_REST_Response {
 			$synchronizer_class = SUCSynchronizer::get_synchronizer_class( $request->get_param( 'type' ) );
 			if ( is_null( $synchronizer_class ) ) {
-				return new WP_REST_Response([
-					'error_message' => 'Type not found.'
-				], 400);
+				return new WP_REST_Response(
+					array(
+						'error_message' => 'Type not found.',
+					),
+					400
+				);
 			}
 			$synchronizer_class->setup();
 
 			try {
 				$object_to_synchronize = $synchronizer_class->retrieve_object( $request->get_param( 'id' ) );
-			} catch (SUCAPIException $e) {
-				return new WP_REST_Response([
-					'error_message' => 'Failed to get object data.'
-				], 500);
+			} catch ( SUCAPIException $e ) {
+				return new WP_REST_Response(
+					array(
+						'error_message' => 'Failed to get object data.',
+					),
+					500
+				);
 			}
 
 			try {
 				$synchronizer_class->synchronize_one( $object_to_synchronize );
-				$synchronizer_class->create_synchronized_object( $object_to_synchronize, true, null );
-			} catch (SUCAPIException $e) {
-				$synchronizer_class->create_synchronized_object( $object_to_synchronize, false, $e->get_message() );
-				return new WP_REST_Response([
-					'error_message' => 'Failed to synchronize object: ' . esc_js( $e->get_message() ),
-				], 500);
+				$synchronizer_class->create_synchronized_object( $object_to_synchronize, true, 'manual', 'create', null );
+			} catch ( SUCAPIException $e ) {
+				$synchronizer_class->create_synchronized_object( $object_to_synchronize, false, 'manual', 'create', $e->get_message() );
+				return new WP_REST_Response(
+					array(
+						'error_message' => 'Failed to synchronize object: ' . esc_js( $e->get_message() ),
+					),
+					500
+				);
 			}
 
 			return new WP_REST_Response();

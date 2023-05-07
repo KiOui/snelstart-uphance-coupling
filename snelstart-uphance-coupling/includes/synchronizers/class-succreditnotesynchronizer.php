@@ -108,16 +108,18 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 		 * @param array       $object The object.
 		 * @param bool        $succeeded Whether the synchronization succeeded.
 		 * @param string      $source The source of the synchronization.
+		 * @param string      $method The method of the synchronization.
 		 * @param string|null $error_message A possible error message that occurred during synchronization.
 		 *
 		 * @return void
 		 */
-		public function create_synchronized_object( array $object, bool $succeeded, string $source, ?string $error_message ) {
+		public function create_synchronized_object( array $object, bool $succeeded, string $source, string $method, ?string $error_message ) {
 			SUCSynchronizedObjects::create_synchronized_object(
 				intval( $object['id'] ),
 				$this::$type,
 				$succeeded,
 				$source,
+				$method,
 				$this::get_url( $object ),
 				$error_message,
 				array(
@@ -139,14 +141,14 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 				if ( ! $this->object_already_successfully_synchronized( $this->credit_notes[ $i ]['id'] ) ) {
 					try {
 						$this->synchronize_one( $this->credit_notes[ $i ] );
-						$this->create_synchronized_object( $this->credit_notes[ $i ], true, 'cron', null );
+						$this->create_synchronized_object( $this->credit_notes[ $i ], true, 'cron', 'create', null );
 					} catch ( Exception $e ) {
 						if ( get_class( $e ) === 'SUCAPIException' ) {
 							$message = $e->get_message();
 						} else {
 							$message = $e->__toString();
 						}
-						$this->create_synchronized_object( $this->credit_notes[ $i ], false, 'cron', $message );
+						$this->create_synchronized_object( $this->credit_notes[ $i ], false, 'cron', 'create', $message );
 					}
 				}
 			}

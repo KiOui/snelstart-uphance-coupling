@@ -45,13 +45,13 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 		}
 
 		/**
-		 * Try to synchronize an invoice to Snelstart.
+		 * Try to create an invoice in Snelstart.
 		 *
 		 * @param WP_REST_Request $request The REST API request.
 		 *
 		 * @return WP_REST_Response A REST response with a failed or succeeded status code.
 		 */
-		public function synchronize_invoice_to_snelstart( WP_REST_Request $request ): WP_REST_Response {
+		private function create_invoice_in_snelstart( WP_REST_Request $request ): WP_REST_Response {
 			$invoice = $request->get_param( 'invoice' );
 			$synchronizer_class = SUCSynchronizer::get_synchronizer_class( 'invoice' );
 
@@ -59,9 +59,9 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 				$synchronizer_class->setup();
 			} catch ( Exception $e ) {
 				if ( $e instanceof SUCAPIException ) {
-					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', $e->get_message() );
+					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'create', $e->get_message() );
 				} else {
-					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', $e->__toString() );
+					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'create', $e->__toString() );
 				}
 				return new WP_REST_Response(
 					array(
@@ -73,9 +73,9 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 
 			try {
 				$synchronizer_class->synchronize_one( $invoice );
-				$synchronizer_class->create_synchronized_object( $invoice, true, 'webhook', null );
+				$synchronizer_class->create_synchronized_object( $invoice, true, 'webhook', 'create', null );
 			} catch ( SUCAPIException $e ) {
-				$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', $e->get_message() );
+				$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'create', $e->get_message() );
 				return new WP_REST_Response(
 					array(
 						'error_message' => 'Failed to synchronize object: ' . esc_js( $e->get_message() ),
@@ -84,6 +84,27 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 				);
 			}
 			return new WP_REST_Response();
+		}
+
+		/**
+		 * Try to synchronize an invoice to Snelstart.
+		 *
+		 * @param WP_REST_Request $request The REST API request.
+		 *
+		 * @return WP_REST_Response A REST response with a failed or succeeded status code.
+		 */
+		public function synchronize_invoice_to_snelstart( WP_REST_Request $request ): WP_REST_Response {
+			$event = $request->get_param( 'event' );
+			if ( 'invoice_create' === $event ) {
+				return $this->create_invoice_in_snelstart( $request );
+			} else {
+				return new WP_REST_Response(
+					array(
+						'error_message' => 'Event type not known.',
+					),
+					400
+				);
+			}
 		}
 
 		/**
