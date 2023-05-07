@@ -124,8 +124,14 @@ if ( ! class_exists( 'SUCCore' ) ) {
 		public function register_rest_routes() {
 			include_once SUC_ABSPATH . '/includes/rest/SUCRestRoutes.php';
 			include_once SUC_ABSPATH . '/includes/rest/SUCRetryRestRoute.php';
+			include_once SUC_ABSPATH . '/includes/rest/uphance/SUCPickTicketRestRoute.php';
+			include_once SUC_ABSPATH . '/includes/rest/uphance/SUCInvoiceRestRoute.php';
+			include_once SUC_ABSPATH . '/includes/rest/uphance/SUCCreditNoteRestRoute.php';
 
-			SUCRestRoutes::register_rest_route("retry", new SUCRetryRestRoute());
+			SUCRestRoutes::register_rest_route( 'retry', new SUCRetryRestRoute() );
+			SUCRestRoutes::register_rest_route( 'uphance-pickticket', new SUCPickTicketRestRoute() );
+			SUCRestRoutes::register_rest_route( 'uphance-invoice', new SUCInvoiceRestRoute() );
+			SUCRestRoutes::register_rest_route( 'uphance-creditnote', new SUCCreditNoteRestRoute() );
 
 			add_action( 'rest_api_init', array( 'SUCRestRoutes', 'register_rest_routes' ) );
 		}
@@ -142,8 +148,8 @@ if ( ! class_exists( 'SUCCore' ) ) {
 			include_once SUC_ABSPATH . '/includes/synchronizers/class-sucinvoicesynchronizer.php';
 			include_once SUC_ABSPATH . '/includes/synchronizers/SUCPickTicketSynchronizer.php';
 			include_once SUC_ABSPATH . '/includes/uphance/class-sucuphanceclient.php';
-			include_once SUC_ABSPATH .'/includes/snelstart/class-sucsnelstartclient.php';
-			include_once SUC_ABSPATH .'/includes/sendcloud/SUCSendcloudClient.php';
+			include_once SUC_ABSPATH . '/includes/snelstart/class-sucsnelstartclient.php';
+			include_once SUC_ABSPATH . '/includes/sendcloud/SUCSendcloudClient.php';
 
 			SUCSettings::instance();
 			$uphance_client = SUCUphanceClient::instance();
@@ -157,16 +163,30 @@ if ( ! class_exists( 'SUCCore' ) ) {
 				/**
 				 * Add admin notice that the plugin is not configured.
 				 */
-				function suc_admin_notice_plugin_not_configured() {
+				function suc_admin_notice_plugin_not_configured_uphance_snelstart() {
 					if ( is_admin() && current_user_can( 'edit_plugins' ) ) {
 						echo '<div class="notice notice-error"><p>' . esc_html( __( 'Snelstart Uphance coupling requires Uphance and Snelstart settings to be configured in order to work.', 'snelstart-uphance-coupling' ) ) . '</p></div>';
 					}
 				}
 
-				add_action( 'admin_notices', 'suc_admin_notice_plugin_not_configured' );
+				add_action( 'admin_notices', 'suc_admin_notice_plugin_not_configured_uphance_snelstart' );
 			} else {
 				SUCSynchronizer::register_synchronizer_class( SUCCreditNoteSynchronizer::$type, new SUCCreditNoteSynchronizer( $uphance_client, $snelstart_client ) );
 				SUCSynchronizer::register_synchronizer_class( SUCInvoiceSynchronizer::$type, new SUCInvoiceSynchronizer( $uphance_client, $snelstart_client ) );
+			}
+
+			if ( ! isset( $uphance_client ) || ! isset( $sendcloud_client ) ) {
+				/**
+				 * Add admin notice that the plugin is not configured.
+				 */
+				function suc_admin_notice_plugin_not_configured_uphance_sendcloud() {
+					if ( is_admin() && current_user_can( 'edit_plugins' ) ) {
+						echo '<div class="notice notice-error"><p>' . esc_html( __( 'Snelstart Uphance coupling requires Uphance and Sendcloud settings to be configured in order to work.', 'snelstart-uphance-coupling' ) ) . '</p></div>';
+					}
+				}
+
+				add_action( 'admin_notices', 'suc_admin_notice_plugin_not_configured_uphance_sendcloud' );
+			} else {
 				SUCSynchronizer::register_synchronizer_class( SUCPickTicketSynchronizer::$type, new SUCPickTicketSynchronizer( $uphance_client, $sendcloud_client ) );
 			}
 		}

@@ -21,6 +21,7 @@ if ( ! interface_exists( 'SUCSynchronisable' ) ) {
 		 * Setup this class for a run() or synchronize_one().
 		 *
 		 * @return void
+		 * @throws Exception When setup of the class fails.
 		 */
 		abstract public function setup(): void;
 
@@ -41,9 +42,59 @@ if ( ! interface_exists( 'SUCSynchronisable' ) ) {
 		 */
 		abstract public function run(): void;
 
+		/**
+		 * Get the URL of an object.
+		 *
+		 * @param array $object The object to get the URL for.
+		 *
+		 * @return string A URL pointing to the Uphance resource.
+		 */
 		abstract public function get_url( array $object ): string;
 
-		abstract public function create_synchronized_object( array $object, bool $succeeded, ?string $error_message );
+		/**
+		 * Check whether a successful synchronization already took place via another method.
+		 *
+		 * @param int $id The ID of the invoice.
+		 *
+		 * @return bool Whether the invoice was already successfully synchronized.
+		 */
+		public function object_already_successfully_synchronized( int $id ): bool {
+			$posts = get_posts(
+				array(
+					'post_type' => 'suc_synchronized',
+					'meta_query' => array(
+						array(
+							'key'     => 'id',
+							'value'   => $id,
+							'compare' => '=',
+						),
+						array(
+							'key' => 'succeeded',
+							'value' => true,
+							'compare' => '=',
+						),
+						array(
+							'key' => 'type',
+							'value' => $this::$type,
+							'compare' => '=',
+						),
+					),
+				)
+			);
+			return count( $posts ) > 0;
+		}
+
+		/**
+		 * Create a synchronized object.
+		 *
+		 * @param array       $object The object.
+		 * @param bool        $succeeded Whether the synchronization succeeded.
+		 * @param string      $source The source of the synchronization.
+		 * @param string|null $error_message A possible error message that occurred during synchronization.
+		 *
+		 * @return void
+		 */
+		abstract public function create_synchronized_object( array $object, bool $succeeded, string $source, ?string $error_message );
 
 		/**
 		 * Method to synchronize one instance.

@@ -179,6 +179,16 @@ if ( ! function_exists( 'suc_get_settings_config' ) ) {
 						new FieldsSetSettingsCondition( array( 'uphance_username', 'uphance_password' ) ),
 					),
 				),
+				array(
+					'type'        => 'text',
+					'id'          => 'uphance_api_secret',
+					'name'        => __( 'Uphance API secret', 'snelstart-uphance-coupling' ),
+					'can_be_null' => true,
+					'hint'        => __( 'The secret that Uphance should pass to the webhook API endpoints in order to authenticate towards the server. This should be a UUID.', 'snelstart-uphance-coupling' ),
+					'conditions'  => array(
+						new FieldsSetSettingsCondition( array( 'uphance_username', 'uphance_password' ) ),
+					),
+				),
 			),
 		);
 	}
@@ -242,6 +252,7 @@ if ( ! function_exists( 'suc_get_settings_screen_config' ) ) {
 								'uphance_synchronise_invoices_from',
 								'uphance_synchronise_credit_notes_from',
 								'uphance_synchronise_pick_tickets_from',
+								'uphance_api_secret',
 							),
 						),
 					),

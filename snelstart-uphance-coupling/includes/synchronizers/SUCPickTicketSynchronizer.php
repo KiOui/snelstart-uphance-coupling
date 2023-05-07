@@ -132,8 +132,12 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		}
 
 		/**
-		 * @throws SettingsConfigurationException
-		 * @throws SUCAPIException
+		 * Setup objects before run job.
+		 *
+		 * @return void
+		 *
+		 * @throws SettingsConfigurationException When settings are not configured correctly.
+		 * @throws SUCAPIException When pick tickets could not be retrieved from Uphance.
 		 */
 		public function setup_objects(): void {
 			$manager = SUCSettings::instance()->get_settings();
@@ -144,16 +148,32 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 
 		public function after_run(): void {}
 
+		/**
+		 * Get the URL of a pick ticket.
+		 *
+		 * @param array $object The object to get the URL for.
+		 *
+		 * @return string A URL pointing to the Uphance resource.
+		 */
 		public function get_url( array $object ): string {
-			return "";
+			return 'https://app.uphance.com/pick_tickets/' . $object['id'];
 		}
 
-		public function create_synchronized_object( array $object, bool $succeeded, ?string $error_message ) {
-			// TODO: Implement create_synchronized_object() method.
+		/**
+		 * Create a synchronized object.
+		 *
+		 * @param array       $object The object.
+		 * @param bool        $succeeded Whether the synchronization succeeded.
+		 * @param string      $source The source of the synchronization.
+		 * @param string|null $error_message A possible error message that occurred during synchronization.
+		 *
+		 * @return void
+		 */
+		public function create_synchronized_object( array $object, bool $succeeded, string $source, ?string $error_message ) {
 		}
 
 		public function retrieve_object( int $id ): array {
-			return array();
+			return $this->uphance_client->pick_ticket( $id );
 		}
 	}
 }

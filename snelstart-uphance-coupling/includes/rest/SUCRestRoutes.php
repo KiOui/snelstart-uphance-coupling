@@ -14,6 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 include_once SUC_ABSPATH . '/includes/synchronizers/class-sucsynchronizer.php';
 
 if ( ! class_exists( 'SUCRestRoutes' ) ) {
+	/**
+	 * Rest Routes class.
+	 *
+	 * @class SUCRestRoutes
+	 */
 	class SUCRestRoutes {
 		/**
 		 * Registered REST routes.
@@ -42,8 +47,8 @@ if ( ! class_exists( 'SUCRestRoutes' ) ) {
 		 * @return SUCRestRoute|null Either an instance of SUCRestRoute or null when the type was not found.
 		 */
 		public static function get_rest_route( string $type ): ?SUCRestRoute {
-			if ( array_key_exists( $type, SUCRestRoutes::$rest_routes ) ) {
-				return SUCRestRoutes::$rest_routes[ $type ];
+			if ( array_key_exists( $type, self::$rest_routes ) ) {
+				return self::$rest_routes[ $type ];
 			} else {
 				return null;
 			}
@@ -57,7 +62,7 @@ if ( ! class_exists( 'SUCRestRoutes' ) ) {
 		 * @return void
 		 */
 		public static function register_rest_routes() {
-			foreach( SUCRestRoutes::$rest_routes as $rest_route ) {
+			foreach ( self::$rest_routes as $rest_route ) {
 				$rest_route->add_rest_api_endpoints();
 			}
 		}

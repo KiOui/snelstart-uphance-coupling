@@ -1,6 +1,6 @@
 <?php
 /**
- * Core class
+ * Synchronized objects class.
  *
  * @package snelstart-uphance-coupling
  */
@@ -10,18 +10,36 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
+	/**
+	 * Synchronized objects class.
+	 *
+	 * @class SUCSynchronizedObjects
+	 */
 	class SUCSynchronizedObjects {
 
+		/**
+		 * Add actions and filters.
+		 *
+		 * @return void
+		 */
 		public static function init() {
-			add_action( 'init', array( 'SUCSynchronizedObjects', 'add_custom_post_types') );
+			add_action( 'init', array( 'SUCSynchronizedObjects', 'add_custom_post_types' ) );
 			add_action( 'init', array( 'SUCSynchronizedObjects', 'register_synchronized_objects_post_meta' ) );
 			add_action( 'admin_menu', array( 'SUCSynchronizedObjects', 'add_admin_menu' ) );
 			add_action( 'admin_enqueue_scripts', array( 'SUCSynchronizedObjects', 'synchronized_objects_scripts' ) );
 			add_filter( 'rest_suc_synchronized_query', array( 'SUCSynchronizedObjects', 'filter_query' ), 10, 2 );
 		}
 
+		/**
+		 * Filter WP_REST_Request query when certain arguments are set.
+		 *
+		 * @param array           $args The arguments of the query.
+		 * @param WP_REST_Request $request The REST Request.
+		 *
+		 * @return array The adjusted arguments of the query.
+		 */
 		public static function filter_query( array $args, WP_REST_Request $request ) {
-			if ( ! isset( $args['meta_query' ] ) ) {
+			if ( ! isset( $args['meta_query'] ) ) {
 				$args['meta_query'] = array();
 			}
 
@@ -44,6 +62,11 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 			return $args;
 		}
 
+		/**
+		 * Add synchronized objects custom post type.
+		 *
+		 * @return void
+		 */
 		public static function add_custom_post_types() {
 			register_post_type(
 				'suc_synchronized',
@@ -113,6 +136,11 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 			add_post_type_support( 'suc_synchronized', 'custom-fields' );
 		}
 
+		/**
+		 * Add synchronized objects menu to the admin bar.
+		 *
+		 * @return void
+		 */
 		public static function add_admin_menu() {
 			add_menu_page(
 				'Synchronized objects',
@@ -125,24 +153,49 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 			);
 		}
 
+		/**
+		 * Render synchronized objects menu page.
+		 *
+		 * @return void
+		 */
 		public static function render_synchronized_objects_menu_page() {
 			include_once SUC_ABSPATH . '/views/suc-synchronized-objects-list-view.php';
 		}
 
-		public static function synchronized_objects_scripts( $hook_suffix ) {
+		/**
+		 * Add scripts and styles for synchronized objects overview page.
+		 *
+		 * @param string $hook_suffix The page that is being loaded.
+		 *
+		 * @return void
+		 */
+		public static function synchronized_objects_scripts( string $hook_suffix ) {
 			if ( 'toplevel_page_synchronized-objects' === $hook_suffix ) {
-				wp_enqueue_script( 'suc-vuejs', 'https://unpkg.com/vue@3/dist/vue.global.js' );
-				wp_enqueue_style( 'suc-bootstrap', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css' );
-				wp_enqueue_script( 'suc-bootstrap', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js' );
-				wp_enqueue_script( 'suc-tata', SUC_PLUGIN_URI . '/assets/js/tata.js' );
-				wp_enqueue_script( 'suc-shared', SUC_PLUGIN_URI . '/assets/js/shared.js' );
-				wp_enqueue_style( 'suc-tata-fix', SUC_PLUGIN_URI . '/assets/css/tata-fix.css' );
-				wp_enqueue_style( 'suc-shared', SUC_PLUGIN_URI . '/assets/css/shared.css' );
+				wp_enqueue_script( 'suc-vuejs', 'https://unpkg.com/vue@3/dist/vue.global.js', array(), '3' );
+				wp_enqueue_style( 'suc-bootstrap', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css', array(), '5.3.0-alpha3' );
+				wp_enqueue_script( 'suc-bootstrap', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js', array(), '5.3.0-alpha3' );
+				wp_enqueue_script( 'suc-tata', SUC_PLUGIN_URI . '/assets/js/tata.js', array(), '1.0' );
+				wp_enqueue_script( 'suc-shared', SUC_PLUGIN_URI . '/assets/js/shared.js', array(), '1.0' );
+				wp_enqueue_style( 'suc-tata-fix', SUC_PLUGIN_URI . '/assets/css/tata-fix.css', array(), '1.0' );
+				wp_enqueue_style( 'suc-shared', SUC_PLUGIN_URI . '/assets/css/shared.css', array(), '1.0' );
 			}
 		}
 
-		public static function create_synchronized_object( int $object_id, string $object_type, bool $succeeded, ?string $url, ?string $error_message = null, ?array $extra_data = null) {
-			if ( $extra_data === null ) {
+		/**
+		 * Create a synchronized object.
+		 *
+		 * @param int         $object_id The object ID of the synchronized object.
+		 * @param string      $object_type The type of the synchronized object.
+		 * @param bool        $succeeded Whether the synchronization succeeded.
+		 * @param string      $source The source of the synchronization.
+		 * @param string|null $url The URL of the object.
+		 * @param string|null $error_message The error message that occurred during synchronization.
+		 * @param array|null  $extra_data Possible extra data.
+		 *
+		 * @return void
+		 */
+		public static function create_synchronized_object( int $object_id, string $object_type, bool $succeeded, string $source, ?string $url, ?string $error_message = null, ?array $extra_data = null ) {
+			if ( null === $extra_data ) {
 				$extra_data = array();
 			}
 
@@ -155,64 +208,80 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 						'succeeded' => $succeeded,
 						'type' => $object_type,
 						'id' => $object_id,
+						'source' => $source,
 						'url' => $url,
 						'error_message' => $error_message,
 						'extra_data' => $extra_data,
-					)
+					),
 				)
 			);
 		}
 
+		/**
+		 * Register post meta for synchronized objects.
+		 *
+		 * @return void
+		 */
 		public static function register_synchronized_objects_post_meta() {
 			register_post_meta(
 				'suc_synchronized',
 				'succeeded',
-				[
+				array(
 					'type' => 'boolean',
 					'single' => true,
-					'show_in_rest' => true
-				]
+					'show_in_rest' => true,
+				)
 			);
 			register_post_meta(
 				'suc_synchronized',
 				'type',
-				[
+				array(
 					'type' => 'string',
 					'single' => true,
-					'show_in_rest' => true
-				]
+					'show_in_rest' => true,
+				)
 			);
 			register_post_meta(
 				'suc_synchronized',
 				'id',
-				[
+				array(
 					'type' => 'number',
 					'single' => true,
-					'show_in_rest' => true
-				]
+					'show_in_rest' => true,
+				)
 			);
 			register_post_meta(
 				'suc_synchronized',
 				'url',
-				[
+				array(
 					'type' => 'string',
 					'single' => true,
-					'show_in_rest' => true
-				]
+					'show_in_rest' => true,
+				)
 			);
 			register_post_meta(
 				'suc_synchronized',
 				'error_message',
-				[
+				array(
 					'type' => 'string',
 					'single' => true,
-					'show_in_rest' => true
-				]
+					'show_in_rest' => true,
+				)
+			);
+
+			register_post_meta(
+				'suc_synchronized',
+				'source',
+				array(
+					'type' => 'string',
+					'single' => true,
+					'show_in_rest' => true,
+				)
 			);
 			register_post_meta(
 				'suc_synchronized',
 				'extra_data',
-				[
+				array(
 					'type' => 'object',
 					'single' => true,
 					'show_in_rest' => array(
@@ -221,7 +290,7 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 							'additionalProperties' => true,
 						),
 					),
-				]
+				)
 			);
 		}
 

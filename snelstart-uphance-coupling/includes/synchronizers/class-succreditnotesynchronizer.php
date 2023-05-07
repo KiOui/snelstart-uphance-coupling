@@ -91,21 +91,39 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 			return $credit_notes;
 		}
 
-		public function get_url( array $credit_note_id ): string {
-			return sprintf( 'https://app.uphance.com/credit_notes/%d', $credit_note_id[ 'id' ] );
+		/**
+		 * Get the URL of a credit note.
+		 *
+		 * @param array $object The object to get the URL for.
+		 *
+		 * @return string A URL pointing to the Uphance resource.
+		 */
+		public function get_url( array $object ): string {
+			return sprintf( 'https://app.uphance.com/credit_notes/%d', $object['id'] );
 		}
 
-		public function create_synchronized_object( array $object, bool $succeeded, ?string $error_message ) {
+		/**
+		 * Create a synchronized object.
+		 *
+		 * @param array       $object The object.
+		 * @param bool        $succeeded Whether the synchronization succeeded.
+		 * @param string      $source The source of the synchronization.
+		 * @param string|null $error_message A possible error message that occurred during synchronization.
+		 *
+		 * @return void
+		 */
+		public function create_synchronized_object( array $object, bool $succeeded, string $source, ?string $error_message ) {
 			SUCSynchronizedObjects::create_synchronized_object(
 				intval( $object['id'] ),
 				$this::$type,
 				$succeeded,
+				$source,
 				$this::get_url( $object ),
 				$error_message,
-				[
+				array(
 					'Credit note number' => $object['credit_note_number'],
 					'Total' => suc_format_number( $object['grand_total'] ),
-				],
+				),
 			);
 		}
 
@@ -118,16 +136,18 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 			$amount_of_credit_notes = count( $this->credit_notes );
 
 			for ( $i = 0; $i < $amount_of_credit_notes; $i ++ ) {
-				try {
-					$this->synchronize_one( $this->credit_notes[ $i ] );
-					$this->create_synchronized_object( $this->credit_notes[ $i ], true, null );
-				} catch ( Exception $e ) {
-					if ( get_class( $e ) === 'SUCAPIException' ) {
-						$message = $e->get_message();
-					} else {
-						$message = $e->__toString();
+				if ( ! $this->object_already_successfully_synchronized( $this->credit_notes[ $i ]['id'] ) ) {
+					try {
+						$this->synchronize_one( $this->credit_notes[ $i ] );
+						$this->create_synchronized_object( $this->credit_notes[ $i ], true, 'cron', null );
+					} catch ( Exception $e ) {
+						if ( get_class( $e ) === 'SUCAPIException' ) {
+							$message = $e->get_message();
+						} else {
+							$message = $e->__toString();
+						}
+						$this->create_synchronized_object( $this->credit_notes[ $i ], false, 'cron', $message );
 					}
-					$this->create_synchronized_object( $this->credit_notes[ $i ], false, $message );
 				}
 			}
 		}
@@ -206,7 +226,8 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 		 * @param array $to_synchronize the data of the credit note to synchronize.
 		 *
 		 * @return void
-		 * @throws SUCAPIException
+		 *
+		 * @throws SUCAPIException On Snelstart API exception.
 		 */
 		public function synchronize_one( array $to_synchronize ): void {
 			$credit_note_converted = $this->setup_credit_note_for_synchronisation( $to_synchronize );
@@ -214,7 +235,9 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 		}
 
 		/**
-		 * @throws SUCAPIException
+		 * Retrieve an object from Uphance by ID.
+		 *
+		 * @throws SUCAPIException On Uphance API exception.
 		 */
 		public function retrieve_object( int $id ): array {
 			return $this->uphance_client->credit_note( $id );

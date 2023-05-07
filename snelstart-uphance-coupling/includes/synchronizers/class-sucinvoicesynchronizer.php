@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 include_once SUC_ABSPATH . 'includes/synchronizers/class-sucsynchronisable.php';
 include_once SUC_ABSPATH . 'includes/snelstart/class-sucbtw.php';
 include_once SUC_ABSPATH . 'includes/SUCSynchronizedObjects.php';
+include_once SUC_ABSPATH . 'includes/class-sucsettings.php';
 
 if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 	/**
@@ -92,8 +93,15 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 			return $invoices;
 		}
 
+		/**
+		 * Get the URL of an invoice.
+		 *
+		 * @param array $object The object to get the URL for.
+		 *
+		 * @return string A URL pointing to the Uphance resource.
+		 */
 		public function get_url( array $object ): string {
-			return sprintf( 'https://app.uphance.com/invoices/%d', $object[ 'id' ] );
+			return sprintf( 'https://app.uphance.com/invoices/%d', $object['id'] );
 		}
 
 		/**
@@ -105,35 +113,50 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 			$amount_of_invoices = count( $this->invoices );
 
 			for ( $i = 0; $i < $amount_of_invoices; $i ++ ) {
-				try {
-					$this->synchronize_one( $this->invoices[ $i ] );
-				} catch ( SUCAPIException $e ) {
-					$this->create_synchronized_object(
-						$this->invoices[ $i ],
-						false,
-						$e->get_message()
-					);
-				} catch ( Exception $e ) {
-					$this->create_synchronized_object(
-						$this->invoices[ $i ],
-						false,
-						$e->__toString()
-					);
+				if ( ! $this->object_already_successfully_synchronized( $this->invoices[ $i ]['id'] ) ) {
+					try {
+						$this->synchronize_one( $this->invoices[ $i ] );
+					} catch ( SUCAPIException $e ) {
+						$this->create_synchronized_object(
+							$this->invoices[ $i ],
+							false,
+							'cron',
+							$e->get_message()
+						);
+					} catch ( Exception $e ) {
+						$this->create_synchronized_object(
+							$this->invoices[ $i ],
+							false,
+							'cron',
+							$e->__toString()
+						);
+					}
 				}
 			}
 		}
 
-		public function create_synchronized_object( array $object, bool $succeeded, ?string $error_message ) {
+		/**
+		 * Create a synchronized object.
+		 *
+		 * @param array       $object The object.
+		 * @param bool        $succeeded Whether the synchronization succeeded.
+		 * @param string      $source The source of the synchronization.
+		 * @param string|null $error_message A possible error message that occurred during synchronization.
+		 *
+		 * @return void
+		 */
+		public function create_synchronized_object( array $object, bool $succeeded, string $source, ?string $error_message ) {
 			SUCSynchronizedObjects::create_synchronized_object(
 				intval( $object['id'] ),
 				$this::$type,
 				$succeeded,
+				$source,
 				$this::get_url( $object ),
 				$error_message,
-				[
+				array(
 					'Invoice number' => $object['invoice_number'],
 					'Total' => suc_format_number( $object['items_total'] + $object['items_tax'] ),
-				],
+				),
 			);
 		}
 
@@ -187,7 +210,8 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		 * @param $to_synchronize array data to synchronize.
 		 *
 		 * @return void
-		 * @throws SUCAPIException
+		 *
+		 * @throws SUCAPIException When the Snelstart API throws an exception.
 		 */
 		public function synchronize_one( array $to_synchronize ): void {
 			$invoice_converted = $this->setup_invoice_for_synchronisation( $to_synchronize );
@@ -195,7 +219,11 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		}
 
 		/**
-		 * @throws SUCAPIException
+		 * Retrieve one of the invoices to synchronize by ID.
+		 *
+		 * @return array The invoice to synchronize.
+		 *
+		 * @throws SUCAPIException When the invoice could not be retrieved.
 		 */
 		public function retrieve_object( int $id ): array {
 			return $this->uphance_client->invoice( $id );
@@ -220,8 +248,12 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		}
 
 		/**
-		 * @throws SettingsConfigurationException
-		 * @throws SUCAPIException
+		 * Setup objects before run.
+		 *
+		 * @return void
+		 *
+		 * @throws SettingsConfigurationException When settings are not configured correctly.
+		 * @throws SUCAPIException When invoices could not be retrieved from Uphance.
 		 */
 		public function setup_objects(): void {
 			$manager          = SUCSettings::instance()->get_settings();
@@ -234,6 +266,8 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		 * Update settings after run.
 		 *
 		 * @return void
+		 *
+		 * @throws SettingsConfigurationException When settings are not configured correctly.
 		 */
 		public function after_run(): void {
 			if ( count( $this->invoices ) > 0 ) {
@@ -247,6 +281,8 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		 * Whether this synchronizer should be enabled.
 		 *
 		 * @return bool whether this synchronizer is enabled.
+		 *
+		 * @throws SettingsConfigurationException When settings are not configured correctly.
 		 */
 		public function enabled(): bool {
 			$manager          = SUCSettings::instance()->get_settings();
