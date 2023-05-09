@@ -25,7 +25,7 @@ if ( ! class_exists( 'SUCSendcloudClient' ) ) {
 		 *
 		 * @var string
 		 */
-		protected string $prefix = 'https://api.uphance.com/';
+		protected string $prefix = 'https://panel.sendcloud.sc/api/v2/';
 
 		/**
 		 * Sendcloud Client instance.
@@ -45,7 +45,13 @@ if ( ! class_exists( 'SUCSendcloudClient' ) ) {
 		public static function instance(): ?SUCSendcloudClient {
 			if ( is_null( self::$_instance ) ) {
 				$settings         = SUCSettings::instance()->get_settings();
-				self::$_instance = new SUCSendcloudClient( new SUCSendcloudAuthClient() );
+				$public_key = $settings->get_value( 'sendcloud_public_key' );
+				$private_key = $settings->get_value( 'sendcloud_private_key' );
+				if ( isset( $public_key ) && isset( $private_key ) && '' !== $public_key && '' !== $private_key ) {
+					self::$_instance = new SUCSendcloudClient( new SUCSendcloudAuthClient( $public_key, $private_key ) );
+				} else {
+					return null;
+				}
 			}
 
 			return self::$_instance;
@@ -60,6 +66,37 @@ if ( ! class_exists( 'SUCSendcloudClient' ) ) {
 		public function __construct( ?SUCSendcloudAuthClient $auth_client, int $requests_timeout = 45 ) {
 			parent::__construct( $auth_client, $requests_timeout );
 			$this->requests_timeout = $requests_timeout;
+		}
+
+		/**
+		 * Overwrite auth_headers function to add Ocp-Apim-Subscription-Key.
+		 *
+		 * @return array auth headers to use for all requests.
+		 */
+		protected function auth_headers(): array {
+			$keys = $this->auth_manager->request_access_token();
+			$public_key = $keys['public-key'];
+			$private_key = $keys['private-key'];
+
+			return array(
+				'Authorization' => 'Basic ' . base64_encode( "$public_key:$private_key" ),
+			);
+		}
+
+		public function create_parcel( array $data ) {
+			return $this->_post(
+				'parcels?errors=verbose',
+				null,
+				$data,
+			);
+		}
+
+		public function get_shipping_methods() {
+			return $this->_get(
+				'shipping_methods',
+				null,
+				null,
+			);
 		}
 
 	}

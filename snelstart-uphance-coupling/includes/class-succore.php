@@ -141,8 +141,8 @@ if ( ! class_exists( 'SUCCore' ) ) {
 		 */
 		private function actions_and_filters() {
 			include_once SUC_ABSPATH . '/includes/class-sucsettings.php';
-			include_once SUC_ABSPATH . '/includes/SUCSynchronizedObjects.php';
-			include_once SUC_ABSPATH . '/includes/SUCObjectMapping.php';
+			include_once SUC_ABSPATH . '/includes/objects/SUCSynchronizedObjects.php';
+			include_once SUC_ABSPATH . '/includes/objects/SUCObjectMapping.php';
 			include_once SUC_ABSPATH . '/includes/suc-functions.php';
 			include_once SUC_ABSPATH . '/includes/synchronizers/class-sucsynchronizer.php';
 			include_once SUC_ABSPATH . '/includes/synchronizers/class-succreditnotesynchronizer.php';

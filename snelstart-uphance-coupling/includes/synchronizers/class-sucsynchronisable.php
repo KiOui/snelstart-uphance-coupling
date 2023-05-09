@@ -122,6 +122,18 @@ if ( ! interface_exists( 'SUCSynchronisable' ) ) {
 		abstract public function update_one( array $to_synchronize ): void;
 
 		/**
+		 * Method to delete one instance.
+		 *
+		 * The setup() method must be called before this method.
+		 *
+		 * @param array $to_synchronize the data to delete.
+		 *
+		 * @throws SUCAPIException On Exception with the API.
+		 * @return void
+		 */
+		abstract public function delete_one( array $to_synchronize ): void;
+
+		/**
 		 * Retrieve data of an object by its ID.
 		 *
 		 * @param int $id the ID of the object to retrieve.

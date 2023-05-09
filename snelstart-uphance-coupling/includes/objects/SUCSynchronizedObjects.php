@@ -26,8 +26,22 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 			add_action( 'init', array( 'SUCSynchronizedObjects', 'add_custom_post_types' ) );
 			add_action( 'init', array( 'SUCSynchronizedObjects', 'register_synchronized_objects_post_meta' ) );
 			add_action( 'admin_menu', array( 'SUCSynchronizedObjects', 'add_admin_menu' ) );
-			add_action( 'admin_enqueue_scripts', array( 'SUCSynchronizedObjects', 'synchronized_objects_scripts' ) );
-			add_filter( 'rest_suc_synchronized_query', array( 'SUCSynchronizedObjects', 'filter_query' ), 10, 2 );
+			add_action(
+				'admin_enqueue_scripts',
+				array(
+					'SUCSynchronizedObjects',
+					'synchronized_objects_scripts',
+				)
+			);
+			add_filter(
+				'rest_suc_synchronized_query',
+				array(
+					'SUCSynchronizedObjects',
+					'filter_query',
+				),
+				10,
+				2
+			);
 		}
 
 		/**
@@ -44,25 +58,25 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 			}
 
 			if ( $request->get_param( 'succeeded' ) === 'true' || $request->get_param( 'succeeded' ) === 'false' ) {
-				$succeeded = $request->get_param( 'succeeded' ) === 'true';
+				$succeeded            = $request->get_param( 'succeeded' ) === 'true';
 				$args['meta_query'][] = array(
-					'key' => 'succeeded',
+					'key'   => 'succeeded',
 					'value' => $succeeded,
 				);
 			}
 
 			if ( $request->get_param( 'type' ) !== null ) {
-				$type = strval( $request->get_param( 'type' ) );
+				$type                 = strval( $request->get_param( 'type' ) );
 				$args['meta_query'][] = array(
-					'key' => 'type',
+					'key'   => 'type',
 					'value' => $type,
 				);
 			}
 
 			if ( $request->get_param( 'source' ) !== null ) {
-				$source = strval( $request->get_param( 'source' ) );
+				$source               = strval( $request->get_param( 'source' ) );
 				$args['meta_query'][] = array(
-					'key' => 'source',
+					'key'   => 'source',
 					'value' => $source,
 				);
 			}
@@ -71,7 +85,7 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 				$method = strval( $request->get_param( 'method' ) );
 				if ( 'create' === $method || 'update' === $method || 'delete' === $method ) {
 					$args['meta_query'][] = array(
-						'key' => 'method',
+						'key'   => 'method',
 						'value' => $method,
 					);
 				}
@@ -220,18 +234,18 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 
 			wp_insert_post(
 				array(
-					'post_type' => 'suc_synchronized',
-					'post_title' => 'Object #' . $object_id,
+					'post_type'   => 'suc_synchronized',
+					'post_title'  => 'Object #' . $object_id,
 					'post_status' => 'publish',
-					'meta_input' => array(
-						'succeeded' => $succeeded,
-						'type' => $object_type,
-						'id' => $object_id,
-						'source' => $source,
-						'method' => $method,
-						'url' => $url,
+					'meta_input'  => array(
+						'succeeded'     => $succeeded,
+						'type'          => $object_type,
+						'id'            => $object_id,
+						'source'        => $source,
+						'method'        => $method,
+						'url'           => $url,
 						'error_message' => $error_message,
-						'extra_data' => $extra_data,
+						'extra_data'    => $extra_data,
 					),
 				)
 			);
@@ -247,8 +261,8 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 				'suc_synchronized',
 				'succeeded',
 				array(
-					'type' => 'boolean',
-					'single' => true,
+					'type'         => 'boolean',
+					'single'       => true,
 					'show_in_rest' => true,
 				)
 			);
@@ -256,8 +270,8 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 				'suc_synchronized',
 				'type',
 				array(
-					'type' => 'string',
-					'single' => true,
+					'type'         => 'string',
+					'single'       => true,
 					'show_in_rest' => true,
 				)
 			);
@@ -265,8 +279,8 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 				'suc_synchronized',
 				'id',
 				array(
-					'type' => 'number',
-					'single' => true,
+					'type'         => 'number',
+					'single'       => true,
 					'show_in_rest' => true,
 				)
 			);
@@ -274,8 +288,8 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 				'suc_synchronized',
 				'url',
 				array(
-					'type' => 'string',
-					'single' => true,
+					'type'         => 'string',
+					'single'       => true,
 					'show_in_rest' => true,
 				)
 			);
@@ -283,8 +297,8 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 				'suc_synchronized',
 				'error_message',
 				array(
-					'type' => 'string',
-					'single' => true,
+					'type'         => 'string',
+					'single'       => true,
 					'show_in_rest' => true,
 				)
 			);
@@ -292,8 +306,8 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 				'suc_synchronized',
 				'source',
 				array(
-					'type' => 'string',
-					'single' => true,
+					'type'         => 'string',
+					'single'       => true,
 					'show_in_rest' => true,
 				)
 			);
@@ -301,8 +315,8 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 				'suc_synchronized',
 				'method',
 				array(
-					'type' => 'string',
-					'single' => true,
+					'type'         => 'string',
+					'single'       => true,
 					'show_in_rest' => true,
 				)
 			);
@@ -310,11 +324,11 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 				'suc_synchronized',
 				'extra_data',
 				array(
-					'type' => 'object',
-					'single' => true,
+					'type'         => 'object',
+					'single'       => true,
 					'show_in_rest' => array(
 						'schema' => array(
-							'type' => 'object',
+							'type'                 => 'object',
 							'additionalProperties' => true,
 						),
 					),

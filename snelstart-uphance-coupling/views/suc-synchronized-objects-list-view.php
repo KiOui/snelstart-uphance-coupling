@@ -244,7 +244,7 @@ $nonce = wp_create_nonce( 'wp_rest' );
 					<div class="modal-footer">
 						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						<button v-if="object.meta.type in retries_in_progress && retries_in_progress[object.meta.type].indexOf(object.meta.id) !== -1" type="button" class="btn btn-danger disabled d-flex align-center justify-content-center"><span class="me-1">Retry Synchronization</span> <span class="loader"></span></button>
-						<button v-else type="button" class="btn btn-danger" @click="retry_synchronization(object.meta.id, object.meta.type)">Retry Synchronization</button>
+						<button v-else type="button" class="btn btn-danger" @click="retry_synchronization(object.meta.id, object.meta.type, object.meta.method === null || object.meta.method === undefined || object.meta.method === '' ? 'create' : object.meta.method)">Retry Synchronization</button>
 					</div>
 				</div>
 			</div>
@@ -423,7 +423,7 @@ $nonce = wp_create_nonce( 'wp_rest' );
 			update_page(page_number) {
 				this.page = page_number;
 			},
-			retry_synchronization(object_id, object_type) {
+			retry_synchronization(object_id, object_type, method) {
 				if (!(object_type in this.retries_in_progress)) {
 					this.retries_in_progress[object_type] = [];
 				}
@@ -438,6 +438,7 @@ $nonce = wp_create_nonce( 'wp_rest' );
 					body: JSON.stringify({
 						'type': object_type,
 						'id': object_id,
+						'method': method,
 					})
 				}).then(response => {
 					if (response.status < 200 || response.status >= 300) {

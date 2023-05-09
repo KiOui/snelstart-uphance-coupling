@@ -109,15 +109,15 @@ if ( ! class_exists( 'SUCObjectMapping' ) ) {
 		public static function create_mapped_object( string $type, string $mapped_from_service, string $mapped_to_service, string $mapped_from_object_id, string $mapped_to_object_id ) {
 			wp_insert_post(
 				array(
-					'post_type' => 'suc_mapped_object',
-					'post_title' => "Object $type map from $mapped_from_service to $mapped_to_service with ID ($mapped_from_object_id, $mapped_to_object_id)",
+					'post_type'   => 'suc_mapped_object',
+					'post_title'  => "Object $type map from $mapped_from_service to $mapped_to_service with ID ($mapped_from_object_id, $mapped_to_object_id)",
 					'post_status' => 'publish',
-					'meta_input' => array(
-						'type' => $type,
-						'mapped_from_service' => $mapped_from_service,
-						'mapped_to_service' => $mapped_to_service,
+					'meta_input'  => array(
+						'type'                  => $type,
+						'mapped_from_service'   => $mapped_from_service,
+						'mapped_to_service'     => $mapped_to_service,
 						'mapped_from_object_id' => $mapped_from_object_id,
-						'mapped_to_object_id' => $mapped_to_object_id,
+						'mapped_to_object_id'   => $mapped_to_object_id,
 					),
 				)
 			);
@@ -131,7 +131,7 @@ if ( ! class_exists( 'SUCObjectMapping' ) ) {
 		public static function get_mapped_object( string $type, string $mapped_from_service, string $mapped_to_service, string $mapped_from_object_id ): ?WP_Post {
 			$posts = get_posts(
 				array(
-					'post_type' => 'suc_mapped_object',
+					'post_type'  => 'suc_mapped_object',
 					'meta_query' => array(
 						array(
 							'key'     => 'type',
@@ -139,18 +139,18 @@ if ( ! class_exists( 'SUCObjectMapping' ) ) {
 							'compare' => '=',
 						),
 						array(
-							'key' => 'mapped_from_service',
-							'value' => $mapped_from_service,
+							'key'     => 'mapped_from_service',
+							'value'   => $mapped_from_service,
 							'compare' => '=',
 						),
 						array(
-							'key' => 'mapped_to_service',
-							'value' => $mapped_to_service,
+							'key'     => 'mapped_to_service',
+							'value'   => $mapped_to_service,
 							'compare' => '=',
 						),
 						array(
-							'key' => 'mapped_from_object_id',
-							'value' => $mapped_from_object_id,
+							'key'     => 'mapped_from_object_id',
+							'value'   => $mapped_from_object_id,
 							'compare' => '=',
 						),
 					),
@@ -173,8 +173,8 @@ if ( ! class_exists( 'SUCObjectMapping' ) ) {
 				'suc_mapped_object',
 				'type',
 				array(
-					'type' => 'string',
-					'single' => true,
+					'type'         => 'string',
+					'single'       => true,
 					'show_in_rest' => true,
 				)
 			);
@@ -182,8 +182,8 @@ if ( ! class_exists( 'SUCObjectMapping' ) ) {
 				'suc_mapped_object',
 				'mapped_from_service',
 				array(
-					'type' => 'string',
-					'single' => true,
+					'type'         => 'string',
+					'single'       => true,
 					'show_in_rest' => true,
 				)
 			);
@@ -191,8 +191,8 @@ if ( ! class_exists( 'SUCObjectMapping' ) ) {
 				'suc_mapped_object',
 				'mapped_to_service',
 				array(
-					'type' => 'string',
-					'single' => true,
+					'type'         => 'string',
+					'single'       => true,
 					'show_in_rest' => true,
 				)
 			);
@@ -200,8 +200,8 @@ if ( ! class_exists( 'SUCObjectMapping' ) ) {
 				'suc_mapped_object',
 				'mapped_from_object_id',
 				array(
-					'type' => 'string',
-					'single' => true,
+					'type'         => 'string',
+					'single'       => true,
 					'show_in_rest' => true,
 				)
 			);
@@ -209,8 +209,8 @@ if ( ! class_exists( 'SUCObjectMapping' ) ) {
 				'suc_mapped_object',
 				'mapped_to_object_id',
 				array(
-					'type' => 'string',
-					'single' => true,
+					'type'         => 'string',
+					'single'       => true,
 					'show_in_rest' => true,
 				)
 			);

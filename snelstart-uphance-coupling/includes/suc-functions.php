@@ -85,7 +85,7 @@ if ( ! function_exists( 'convert_snelstart_payment_to_payment' ) ) {
 	 * @throws Exception On conversion error.
 	 */
 	function convert_snelstart_payment_to_payment( array $snelstart_payment ): SUCPayment {
-		include_once SUC_ABSPATH . 'includes/model/class-sucpayment.php';
+		include_once SUC_ABSPATH . 'includes/model/SUCPayment.php';
 		return new SUCPayment( 'snelstart_' . $snelstart_payment['id'], floatval( $snelstart_payment['saldo'] ), $snelstart_payment['factuur_nummer'], $snelstart_payment['omschrijving'], new DateTime( $snelstart_payment['datum'] ), new DateTime( $snelstart_payment['datum'] ) );
 	}
 }
@@ -350,6 +350,27 @@ if ( ! function_exists( 'suc_construct_order_line_items' ) ) {
 			);
 		}
 		return $to_order;
+	}
+}
+
+if ( ! function_exists( 'suc_get_shipping_choices' ) ) {
+	/**
+	 * Get shipping choices.
+	 *
+	 * @return array|null An array of string => string choices on succes, null on failure.
+	 */
+	function suc_get_shipping_choices(): ?array {
+		include_once SUC_ABSPATH . 'includes/class-succache.php';
+		$shipping_methods = SUCCache::instance()->get_shipping_methods();
+		if ( is_null( $shipping_methods ) ) {
+			return null;
+		}
+		$retvalue = array();
+		foreach ( $shipping_methods['shipping_methods'] as $shipping_method ) {
+			$retvalue[ strval( $shipping_method['name'] ) ] = $shipping_method['name'];
+		}
+
+		return $retvalue;
 	}
 }
 

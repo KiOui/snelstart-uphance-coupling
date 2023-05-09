@@ -168,7 +168,7 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		 * @throws SUCAPIException On exception with API request.
 		 */
 		public function remove_verkoopboeking( string $id ): array {
-			return $this->_delete( "verkoopboekingen/$id", null, null );
+			return $this->_delete( "verkoopboekingen/$id", null, null, false );
 		}
 
 		/**

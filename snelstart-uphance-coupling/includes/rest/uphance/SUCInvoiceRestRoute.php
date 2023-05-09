@@ -5,7 +5,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 include_once SUC_ABSPATH . '/includes/rest/SUCRestRoute.php';
-include_once SUC_ABSPATH . 'includes/class-sucsettings.php';
+include_once SUC_ABSPATH . '/includes/class-sucsettings.php';
+include_once SUC_ABSPATH . '/includes/objects/SUCObjectMapping.php';
 
 if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 	/**
@@ -115,39 +116,46 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 		 */
 		private function delete_invoice_from_snelstart( WP_REST_Request $request ): WP_REST_Response {
 			$invoice = $request->get_param( 'invoice' );
-			$mapped_object = SUCObjectMapping::get_mapped_object( 'invoice', 'uphance', 'snelstart', $invoice['id'] );
-			if ( null === $mapped_object ) {
-				return new WP_REST_Response(
-					array(
-						'error_message' => 'No invoice mapping found with given data.',
-					),
-					400
-				);
-			}
+			$synchronizer_class = SUCSynchronizer::get_synchronizer_class( 'invoice' );
 
-			$snelstart_client = SUCSnelstartClient::instance();
-			if ( null === $snelstart_client ) {
+			try {
+				$synchronizer_class->setup();
+			} catch ( Exception $e ) {
+				if ( $e instanceof SUCAPIException ) {
+					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'delete', $e->get_message() );
+				} else {
+					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'delete', $e->__toString() );
+				}
+
 				return new WP_REST_Response(
 					array(
-						'error_message' => 'Failed to setup Uphance client.',
+						'error_message' => 'Failed to setup synchronizer.',
 					),
 					500
 				);
 			}
 
 			try {
-				$snelstart_client->remove_verkoopboeking( get_post_meta( $mapped_object->ID, 'mapped_to_object_id', true ) );
-				SUCSynchronizedObjects::create_synchronized_object( $invoice['id'], SUCInvoiceSynchronizer::$type, true, 'webhook', 'delete', null, null, null );
+				$synchronizer_class->delete_one( $invoice );
+				$synchronizer_class->create_synchronized_object( $invoice, true, 'webhook', 'delete', null );
 			} catch ( SUCAPIException $e ) {
-				SUCSynchronizedObjects::create_synchronized_object( $invoice['id'], SUCInvoiceSynchronizer::$type, false, 'webhook', 'delete', null, $e->get_message(), null );
+				$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'delete', $e->get_message() );
 				return new WP_REST_Response(
 					array(
 						'error_message' => 'Failed to remove object: ' . esc_js( $e->get_message() ),
 					),
 					500
 				);
+			} catch ( Exception $e ) {
+				$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'delete', $e->__toString() );
+				return new WP_REST_Response(
+					array(
+						'error_message' => 'Failed to remove object: ' . esc_js( $e->__toString() ),
+					),
+					500
+				);
 			}
-			wp_delete_post( $mapped_object->ID, true );
+
 			return new WP_REST_Response();
 		}
 
@@ -245,7 +253,6 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 		 * @return bool Whether the secret parameter was validated correctly.
 		 */
 		public function validate_args_event( $param, WP_REST_Request $request, string $key ): bool {
-			print_r( $request );
 			return 'invoice_create' === $param || 'invoice_update' === $param || 'invoice_delete' === $param;
 		}
 

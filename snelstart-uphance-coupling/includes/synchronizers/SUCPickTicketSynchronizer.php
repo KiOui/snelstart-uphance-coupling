@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 include_once SUC_ABSPATH . 'includes/synchronizers/class-sucsynchronisable.php';
+include_once SUC_ABSPATH . 'includes/class-succache.php';
 
 if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 	/**
@@ -26,7 +27,26 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		 */
 		public static string $type = 'pick-ticket';
 
+		/**
+		 * The pick tickets to synchronize.
+		 *
+		 * @var array
+		 */
 		private array $pick_tickets;
+
+		/**
+		 * The shipping method to use.
+		 *
+		 * @var array
+		 */
+		private string $shipping_method;
+
+		/**
+		 * The ID of the shipping method to use.
+		 *
+		 * @var array
+		 */
+		private int $shipping_method_id;
 
 		/**
 		 * The Uphance client to use for the synchronizer.
@@ -60,6 +80,15 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		 */
 		public function run(): void {
 			$amount_of_pick_tickets = count( $this->pick_tickets );
+			echo '<pre>';
+			try {
+				$this->synchronize_one( $this->pick_tickets[0] );
+				exit;
+			} catch ( Exception $e ) {
+				print_r( $e );
+			}
+			echo '</pre>';
+			exit;
 
 			for ( $i = 0; $i < $amount_of_pick_tickets; $i ++ ) {
 				try {
@@ -71,16 +100,134 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		}
 
 		/**
-		 * Synchronize a Pick ticket to Sendcloud.
+		 * Map a pick ticket to parcel items.
 		 *
-		 * @param array $pick_ticket the invoice to synchronize.
+		 * @param array $pick_ticket The pick ticket from Uphance.
 		 *
-		 * @return void
-		 * @throws SUCAPIException|Exception With Exception in an API request or other Exception.
+		 * @return array The parcel items to be sent to Sendcloud.
 		 */
-		public function sync_pick_ticket_to_sendcloud( array $pick_ticket ): void {
-			$pick_ticket_id = $pick_ticket['id'];
+		private function map_parcel_items( array $pick_ticket ): array {
+			$parcel_items = array();
+			foreach ( $pick_ticket['line_items'] as $product ) {
+				$product_description = $product['product_name'];
+				$product_id = $product['product_id'];
+				$color = $product['color'];
+				foreach ( $product['line_quantities'] as $quantity ) {
+					if ( $quantity['quantity'] > 0 ) {
+						$sku = $quantity['sku_id'];
+						$size = $quantity['size'];
+						$parcel_items[] = array(
+							'description' => $product_description,
+							'quantity' => $quantity['quantity'],
+							'sku' => $sku,
+							'weight' => '0.001',
+							'value' => suc_format_number( floatval( $product['unit_price'] ) ),
+							'product_id' => $product_id,
+							'properties' => array(
+								'color' => $color,
+								'size' => $size,
+							),
+						);
+					}
+				}
+			}
+			return $parcel_items;
+		}
 
+		/**
+		 * Convert a weight from Uphance to KG.
+		 *
+		 * @param float  $weight The weight from Uphance.
+		 * @param string $weight_unit The weight unit from Uphance (g, oz, lb or kg).
+		 *
+		 * @return float The weight converted to KG.
+		 */
+		private function convert_weight_to_kg( float $weight, string $weight_unit ) {
+			if ( 'g' === $weight_unit ) {
+				return $weight / 1000;
+			} else if ( 'oz' === $weight_unit ) {
+				return $weight * 0.02834952;
+			} else if ( 'lb' === $weight_unit ) {
+				return $weight * 0.4535924;
+			} else {
+				return $weight;
+			}
+		}
+
+		/**
+		 * Convert a dimension string (W x L x H) to array of split dimensions.
+		 *
+		 * @param string $dimension_string The dimension string.
+		 *
+		 * @return array An array of split dimensions.
+		 */
+		private function convert_dimensions( string $dimension_string ): ?array {
+			$matches = array();
+			if ( preg_match( '/^(?P<width>\d*) *x *(?P<length>\d*) *x *(?P<height>\d*)$/', $dimension_string, $matches ) ) {
+				return array(
+					'width' => $matches['width'],
+					'length' => $matches['length'],
+					'height' => $matches['height'],
+				);
+			} else {
+				return null;
+			}
+		}
+
+		/**
+		 * Set up a pick ticket for synchronization.
+		 *
+		 * @param array $pick_ticket The pick ticket from Uphance.
+		 *
+		 * @return array The data to be sent to Sendcloud.
+		 */
+		public function setup_pick_ticket_for_synchronisation( array $pick_ticket ) {
+			if ( ! empty( $pick_ticket['address']['line_2'] ) && ! empty( $pick_ticket['address']['line_3'] ) ) {
+				$address_2 = $pick_ticket['address']['line_2'] . ' - ' . $pick_ticket['address']['line_3'];
+			} else if ( ! empty( $pick_ticket['address']['line_2'] ) ) {
+				$address_2 = $pick_ticket['address']['line_2'];
+			} else if ( ! empty( $pick_ticket['address']['line_3'] ) ) {
+				$address_2 = $pick_ticket['address']['line_3'];
+			} else {
+				$address_2 = '';
+			}
+
+			$dimensions = $this->convert_dimensions( $pick_ticket['dimensions'] );
+
+			if ( isset( $pick_ticket['gross_weight'] ) && '' !== $pick_ticket['gross_weight'] ) {
+				$weight = suc_format_number( $this->convert_weight_to_kg( $pick_ticket['gross_weight'], $pick_ticket['gross_weight_unit'] ) );
+			} else {
+				$weight = null;
+			}
+
+			return array(
+				'parcel' => array(
+					'name' => $pick_ticket['contact_name'],
+					'company_name' => $pick_ticket['customer_name'],
+					'email' => $pick_ticket['contact_email'],
+					'telephone' => $pick_ticket['contact_phone'],
+					'address' => $pick_ticket['address']['line_1'],
+					'address_2' => $address_2,
+					'order_number' => $pick_ticket['order_number'],
+					'city' => $pick_ticket['address']['city'],
+					'country' => $pick_ticket['address']['country'],
+					'postal_code' => $pick_ticket['address']['postcode'],
+					'country_state' => $pick_ticket['address']['state'],
+					'parcel_items' => $this->map_parcel_items( $pick_ticket ),
+					'weight' => $weight,
+					'length' => is_null( $dimensions ) ? null : $dimensions['length'],
+					'width' => is_null( $dimensions ) ? null : $dimensions['width'],
+					'height' => is_null( $dimensions ) ? null : $dimensions['height'],
+					'total_order_value' => $pick_ticket['grand_total'],
+					'total_order_value_currency' => $pick_ticket['currency'],
+					'customs_shipment_type' => 2, // Commercial goods.
+					'is_return' => false,
+					'shipment' => array(
+						'id' => $this->shipping_method_id,
+						'name' => $this->shipping_method,
+					),
+				),
+			);
 		}
 
 		/**
@@ -91,7 +238,16 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		 * @return void
 		 */
 		public function synchronize_one( array $to_synchronize ): void {
-			// TODO: implement this method.
+			$parcel = $this->setup_pick_ticket_for_synchronisation( $to_synchronize );
+			$sendcloud_parcel = $this->sendcloud_client->create_parcel( $parcel );
+			/*
+			SUCObjectMapping::create_mapped_object(
+				self::$type,
+				'uphance',
+				'sendcloud',
+				$to_synchronize['id'],
+				$sendcloud_parcel['parcel']['id'],
+			);*/
 		}
 
 		/**
@@ -104,7 +260,33 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 			return $manager->get_value( 'synchronize_pick_tickets_to_sendcloud' );
 		}
 
-		public function setup(): void {}
+		public function setup(): void {
+			$shipping_methods = SUCCache::instance()->get_shipping_methods();
+			if ( null === $shipping_methods ) {
+				throw new Exception( 'Shipping methods could not be retrieved from Sendcloud.' );
+			}
+
+			$manager = SUCSettings::instance()->get_settings();
+			$selected_shipping_method_name = $manager->get_value( 'sendcloud_shipping_method' );
+			if ( null === $selected_shipping_method_name ) {
+				throw new Exception( 'No default shipping method selected.' );
+			}
+
+			$set = false;
+
+			foreach ( $shipping_methods['shipping_methods'] as $shipping_method ) {
+				if ( $shipping_method['name'] === $selected_shipping_method_name ) {
+					$this->shipping_method = $selected_shipping_method_name;
+					$this->shipping_method_id = $shipping_method['id'];
+					$set = true;
+					break;
+				}
+			}
+
+			if ( ! $set ) {
+				throw new Exception( 'Shipping method not found in Sendcloud.' );
+			}
+		}
 
 		/**
 		 * Get the pick tickets to sync.
@@ -187,6 +369,10 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 
 		public function update_one( array $to_synchronize ): void {
 			// TODO: Implement update_one() method.
+		}
+
+		public function delete_one( array $to_synchronize ): void {
+			// TODO: Implement delete_one() method.
 		}
 	}
 }

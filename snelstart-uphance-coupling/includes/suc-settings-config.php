@@ -66,9 +66,9 @@ if ( ! function_exists( 'suc_get_settings_config' ) ) {
 				array(
 					'type'    => 'bool',
 					'id'      => 'synchronize_pick_tickets_to_sendcloud',
-					'name'    => __( 'Synchronize credit notes to Sendcloud', 'snelstart-uphance-coupling' ),
+					'name'    => __( 'Synchronize pick tickets to Sendcloud', 'snelstart-uphance-coupling' ),
 					'default' => false,
-					'hint'    => __( 'Whether to synchronize credit notes from Uphance to Sendcloud', 'snelstart-uphance-coupling' ),
+					'hint'    => __( 'Whether to synchronize pick tickets from Uphance to Sendcloud', 'snelstart-uphance-coupling' ),
 				),
 				array(
 					'type'    => 'text',
@@ -122,6 +122,31 @@ if ( ! function_exists( 'suc_get_settings_config' ) ) {
 					'callable'    => 'suc_get_grootboek_choices',
 					'conditions'  => array(
 						new FieldsSetSettingsCondition( array( 'snelstart_client_key', 'snelstart_subscription_key' ) ),
+					),
+				),
+				array(
+					'type'        => 'text',
+					'id'          => 'sendcloud_public_key',
+					'name'        => __( 'Sendcloud Public Key', 'snelstart-uphance-coupling' ),
+					'can_be_null' => true,
+					'hint'        => __( 'The Sencdloud API public key', 'snelstart-uphance-coupling' ),
+				),
+				array(
+					'type'        => 'text',
+					'id'          => 'sendcloud_private_key',
+					'name'        => __( 'Sendcloud Private Key', 'snelstart-uphance-coupling' ),
+					'can_be_null' => true,
+					'hint'        => __( 'The Sendcloud API private key', 'snelstart-uphance-coupling' ),
+				),
+				array(
+					'type'        => 'callable_choice',
+					'id'          => 'sendcloud_shipping_method',
+					'name'        => __( 'Sendcloud Shipping method', 'snelstart-uphance-coupling' ),
+					'can_be_null' => true,
+					'hint'        => __( 'Default Sendcloud shipping method.', 'snelstart-uphance-coupling' ),
+					'callable'    => 'suc_get_shipping_choices',
+					'conditions'  => array(
+						new FieldsSetSettingsCondition( array( 'sendcloud_public_key', 'sendcloud_private_key' ) ),
 					),
 				),
 				array(
@@ -253,6 +278,15 @@ if ( ! function_exists( 'suc_get_settings_screen_config' ) ) {
 								'uphance_synchronise_credit_notes_from',
 								'uphance_synchronise_pick_tickets_from',
 								'uphance_api_secret',
+							),
+						),
+						array(
+							'id' => 'sendcloud_settings',
+							'name' => __( 'Sendcloud settings', 'snelstart-uphance-coupling' ),
+							'settings' => array(
+								'sendcloud_public_key',
+								'sendcloud_private_key',
+								'sendcloud_shipping_method',
 							),
 						),
 					),

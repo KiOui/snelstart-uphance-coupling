@@ -11,8 +11,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 include_once SUC_ABSPATH . 'includes/synchronizers/class-sucsynchronisable.php';
 include_once SUC_ABSPATH . 'includes/snelstart/class-sucbtw.php';
-include_once SUC_ABSPATH . 'includes/SUCSynchronizedObjects.php';
-include_once SUC_ABSPATH . 'includes/SUCObjectMapping.php';
+include_once SUC_ABSPATH . 'includes/objects/SUCSynchronizedObjects.php';
+include_once SUC_ABSPATH . 'includes/objects/SUCObjectMapping.php';
 include_once SUC_ABSPATH . 'includes/class-sucsettings.php';
 
 if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
@@ -150,6 +150,15 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		 * @return void
 		 */
 		public function create_synchronized_object( array $object, bool $succeeded, string $source, string $method, ?string $error_message ) {
+			$extra_data = array();
+			if ( array_key_exists( 'invoice_number', $object ) ) {
+				$extra_data['Invoice number'] = $object['invoice_number'];
+			}
+
+			if ( array_key_exists( 'items_total', $object ) && array_key_exists( 'items_tax', $object ) ) {
+				$extra_data['Total'] = suc_format_number( $object['items_total'] + $object['items_tax'] );
+			}
+
 			SUCSynchronizedObjects::create_synchronized_object(
 				intval( $object['id'] ),
 				$this::$type,
@@ -158,10 +167,7 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 				$method,
 				$this::get_url( $object ),
 				$error_message,
-				array(
-					'Invoice number' => $object['invoice_number'],
-					'Total' => suc_format_number( $object['items_total'] + $object['items_tax'] ),
-				),
+				$extra_data,
 			);
 		}
 
@@ -314,7 +320,27 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 			}
 
 			$invoice_data = $this->setup_invoice_for_synchronisation( $to_synchronize );
-			$this->snelstart_client->update_verkoopboeking( get_post_meta( $mapped_object->ID, 'mapped_to_object_id', true ), $invoice_data );
+			$id_in_snelstart = get_post_meta( $mapped_object->ID, 'mapped_to_object_id', true );
+			$invoice_data['id'] = $id_in_snelstart;
+			$this->snelstart_client->update_verkoopboeking( $id_in_snelstart, $invoice_data );
+		}
+
+		/**
+		 * Remove a verkoopboeking from Snelstart.
+		 *
+		 * @param array $to_synchronize The data to remove.
+		 *
+		 * @throws SUCAPIException On Exception with the API.
+		 * @throws Exception When mapped object does not exist.
+		 */
+		public function delete_one( array $to_synchronize ): void {
+			$mapped_object = SUCObjectMapping::get_mapped_object( self::$type, 'uphance', 'snelstart', $to_synchronize['id'] );
+			if ( null === $mapped_object ) {
+				throw new Exception( 'Mapped object for this type does not exist.' );
+			}
+
+			$this->snelstart_client->remove_verkoopboeking( get_post_meta( $mapped_object->ID, 'mapped_to_object_id', true ) );
+			wp_delete_post( $mapped_object->ID, true );
 		}
 	}
 }

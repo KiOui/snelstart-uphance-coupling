@@ -39,6 +39,12 @@ if ( ! class_exists( 'SUCRetryRestRoute' ) ) {
 							'validate_callback' => array( $this, 'validate_args_type' ),
 							'sanitize_callback' => array( $this, 'sanitize_args_type' ),
 						),
+						'method' => array(
+							'required' => true,
+							'type' => 'string',
+							'validate_callback' => array( $this, 'validate_args_method' ),
+							'sanitize_callback' => array( $this, 'sanitize_args_method' ),
+						),
 					),
 					'permission_callback' => array( $this, 'check_permissions' ),
 				)
@@ -46,13 +52,13 @@ if ( ! class_exists( 'SUCRetryRestRoute' ) ) {
 		}
 
 		/**
-		 * Try to synchronize an object again.
+		 * Retry creating an object.
 		 *
-		 * @param WP_REST_Request $request The REST API request.
+		 * @param WP_REST_Request $request The request.
 		 *
-		 * @return WP_REST_Response A REST response with a failed or succeeded status code.
+		 * @return WP_REST_Response The response.
 		 */
-		public function retry_synchronized_object( WP_REST_Request $request ): WP_REST_Response {
+		private function retry_create_object( WP_REST_Request $request ): WP_REST_Response {
 			$synchronizer_class = SUCSynchronizer::get_synchronizer_class( $request->get_param( 'type' ) );
 			if ( is_null( $synchronizer_class ) ) {
 				return new WP_REST_Response(
@@ -87,8 +93,135 @@ if ( ! class_exists( 'SUCRetryRestRoute' ) ) {
 					500
 				);
 			}
-
 			return new WP_REST_Response();
+		}
+
+		/**
+		 * Retry updating an object.
+		 *
+		 * @param WP_REST_Request $request The request.
+		 *
+		 * @return WP_REST_Response The response.
+		 */
+		private function retry_update_object( WP_REST_Request $request ): WP_REST_Response {
+			$synchronizer_class = SUCSynchronizer::get_synchronizer_class( $request->get_param( 'type' ) );
+			if ( is_null( $synchronizer_class ) ) {
+				return new WP_REST_Response(
+					array(
+						'error_message' => 'Type not found.',
+					),
+					400
+				);
+			}
+
+			try {
+				$synchronizer_class->setup();
+			} catch ( Exception $e ) {
+				return new WP_REST_Response(
+					array(
+						'error_message' => 'Failed to setup synchronizer class.',
+					),
+					500
+				);
+			}
+
+			try {
+				$object_to_synchronize = $synchronizer_class->retrieve_object( $request->get_param( 'id' ) );
+			} catch ( SUCAPIException $e ) {
+				return new WP_REST_Response(
+					array(
+						'error_message' => 'Failed to get object data.',
+					),
+					500
+				);
+			}
+
+			try {
+				$synchronizer_class->update_one( $object_to_synchronize );
+				$synchronizer_class->create_synchronized_object( $object_to_synchronize, true, 'manual', 'update', null );
+			} catch ( SUCAPIException $e ) {
+				$synchronizer_class->create_synchronized_object( $object_to_synchronize, false, 'manual', 'update', $e->get_message() );
+				return new WP_REST_Response(
+					array(
+						'error_message' => 'Failed to update object: ' . esc_js( $e->get_message() ),
+					),
+					500
+				);
+			}
+			return new WP_REST_Response();
+		}
+
+		/**
+		 * Retry removing an object.
+		 *
+		 * @param WP_REST_Request $request The request.
+		 *
+		 * @return WP_REST_Response The response.
+		 */
+		private function retry_remove_object( WP_REST_Request $request ): WP_REST_Response {
+			$synchronizer_class = SUCSynchronizer::get_synchronizer_class( $request->get_param( 'type' ) );
+			if ( is_null( $synchronizer_class ) ) {
+				return new WP_REST_Response(
+					array(
+						'error_message' => 'Type not found.',
+					),
+					400
+				);
+			}
+
+			try {
+				$synchronizer_class->setup();
+			} catch ( Exception $e ) {
+				return new WP_REST_Response(
+					array(
+						'error_message' => 'Failed to setup synchronizer class.',
+					),
+					500
+				);
+			}
+
+			$object_to_synchronize = array(
+				'id' => $request->get_param( 'id' ),
+			);
+
+			try {
+				$synchronizer_class->delete_one( $object_to_synchronize );
+				$synchronizer_class->create_synchronized_object( $object_to_synchronize, true, 'manual', 'delete', null );
+			} catch ( SUCAPIException $e ) {
+				$synchronizer_class->create_synchronized_object( $object_to_synchronize, false, 'manual', 'delete', $e->get_message() );
+				return new WP_REST_Response(
+					array(
+						'error_message' => 'Failed to delete object: ' . esc_js( $e->get_message() ),
+					),
+					500
+				);
+			}
+			return new WP_REST_Response();
+		}
+
+		/**
+		 * Try to synchronize an object again.
+		 *
+		 * @param WP_REST_Request $request The REST API request.
+		 *
+		 * @return WP_REST_Response A REST response with a failed or succeeded status code.
+		 */
+		public function retry_synchronized_object( WP_REST_Request $request ): WP_REST_Response {
+			$method = $request->get_param( 'method' );
+			if ( 'create' === $method ) {
+				return $this->retry_create_object( $request );
+			} else if ( 'update' === $method ) {
+				return $this->retry_update_object( $request );
+			} else if ( 'delete' === $method ) {
+				return $this->retry_remove_object( $request );
+			} else {
+				return new WP_REST_Response(
+					array(
+						'error_message' => 'Unknown method.',
+					),
+					400
+				);
+			}
 		}
 
 		/**
@@ -151,6 +284,32 @@ if ( ! class_exists( 'SUCRetryRestRoute' ) ) {
 		 * @return string Sanitized REST parameter for type.
 		 */
 		public function sanitize_args_type( $value, WP_REST_Request $request, string $param ): string {
+			return strval( $value );
+		}
+
+		/**
+		 * Validate method REST parameter.
+		 *
+		 * @param mixed           $param   The value of the REST parameter.
+		 * @param WP_REST_Request $request The request.
+		 * @param string          $key     The key of the parameter.
+		 *
+		 * @return bool Whether the method parameter was validated correctly.
+		 */
+		public function validate_args_method( $param, WP_REST_Request $request, string $key ): bool {
+			return 'create' === $param || 'update' === $param || 'delete' === $param;
+		}
+
+		/**
+		 * Sanitize method REST parameter.
+		 *
+		 * @param mixed           $value   The value of the REST parameter.
+		 * @param WP_REST_Request $request The request.
+		 * @param string          $param   The parameter name.
+		 *
+		 * @return string Sanitized REST parameter for method.
+		 */
+		public function sanitize_args_method( $value, WP_REST_Request $request, string $param ): string {
 			return strval( $value );
 		}
 	}

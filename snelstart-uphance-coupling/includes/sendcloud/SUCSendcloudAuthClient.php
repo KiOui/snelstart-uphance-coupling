@@ -20,32 +20,37 @@ if ( ! class_exists( 'SUCSendcloudAuthClient' ) ) {
 	class SUCSendcloudAuthClient extends SUCAPIAuthClient {
 
 		/**
-		 * Token info setting name.
+		 * The public key.
 		 *
 		 * @var string
 		 */
-		protected string $token_info_setting = 'suc_sendcloud_token_info';
+		private string $public_key;
 
 		/**
-		 * Token URL for authentication tokens.
+		 * The private key.
 		 *
 		 * @var string
 		 */
-		private string $token_url = '';
+		private string $private_key;
 
 		/**
 		 * Constructor.
 		 */
-		public function __construct() {
+		public function __construct( string $public_key, string $private_key ) {
+			$this->public_key = $public_key;
+			$this->private_key = $private_key;
 		}
 
 		/**
-		 * Request a new Access token.
+		 * Get public and private key.
 		 *
-		 * @throws SUCAPIException On error with the API request, also thrown when authentication fails.
+		 * @return array The public and private key.
 		 */
 		public function request_access_token(): array {
-			return array();
+			return array(
+				'private-key' => $this->private_key,
+				'public-key' => $this->public_key,
+			);
 		}
 	}
 }

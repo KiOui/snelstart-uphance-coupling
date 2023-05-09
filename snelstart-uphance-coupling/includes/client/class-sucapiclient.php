@@ -111,10 +111,9 @@ abstract class SUCAPIClient {
 	 * @return SUCAPIException the created exception.
 	 */
 	protected function make_exception( $response, string $url ): SUCAPIException {
-		// TODO: Include body in error message.
 		$msg = self::get_error_message( wp_remote_retrieve_body( $response ) );
 		return new SUCAPIException(
-			wp_remote_retrieve_response_code( $response ),
+			intval( wp_remote_retrieve_response_code( $response ) ),
 			-1,
 			$msg,
 			null,
@@ -158,11 +157,12 @@ abstract class SUCAPIClient {
 	 * @param string     $url the URL to call.
 	 * @param array|null $payload the payload of the request.
 	 * @param array      $params extra request parameters.
+	 * @param bool       $expect_data Whether to expect data.
 	 *
 	 * @return array the response of the request.
 	 * @throws SUCAPIException On API error.
 	 */
-	protected function _internal_call( string $method, string $url, ?array $payload, array $params ): array {
+	protected function _internal_call( string $method, string $url, ?array $payload, array $params, bool $expect_data ): array {
 		$args = array( 'params' => $params );
 		if ( ! ( str_starts_with( $url, 'http' ) ) ) {
 			$url = $this->prefix . $url;
@@ -185,14 +185,18 @@ abstract class SUCAPIClient {
 		$args['method'] = $method;
 
 		$response = wp_remote_get( $url, $args );
-		if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) < 200 || wp_remote_retrieve_response_code( $response ) > 300 ) {
+		if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) < 200 || wp_remote_retrieve_response_code( $response ) >= 300 ) {
 			throw $this->make_exception( $response, $url );
 		} else {
 			$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
 			if ( isset( $decoded ) ) {
 				return $decoded;
 			} else {
-				throw $this->make_exception( $response, $url );
+				if ( $expect_data ) {
+					throw $this->make_exception( $response, $url );
+				} else {
+					return array();
+				}
 			}
 		}
 	}
@@ -203,15 +207,16 @@ abstract class SUCAPIClient {
 	 * @param string     $url the URL to call.
 	 * @param array|null $args the arguments for the request.
 	 * @param array|null $payload the payload of the request.
+	 * @param bool       $expect_data Whether to expect data.
 	 *
 	 * @return array response.
 	 * @throws SUCAPIException On API error.
 	 */
-	protected function _get( string $url, ?array $args, ?array $payload ): array {
+	protected function _get( string $url, ?array $args, ?array $payload, bool $expect_data = true ): array {
 		if ( ! isset( $args ) ) {
 			$args = array();
 		}
-		return $this->_internal_call( 'GET', $url, $payload, $args );
+		return $this->_internal_call( 'GET', $url, $payload, $args, $expect_data );
 	}
 
 	/**
@@ -220,15 +225,16 @@ abstract class SUCAPIClient {
 	 * @param string     $url the URL to call.
 	 * @param array|null $args the arguments for the request.
 	 * @param array|null $payload the payload of the request.
+	 * @param bool       $expect_data Whether to expect data.
 	 *
 	 * @return array response.
 	 * @throws SUCAPIException On API error.
 	 */
-	protected function _post( string $url, ?array $args, ?array $payload ): array {
+	protected function _post( string $url, ?array $args, ?array $payload, bool $expect_data = true ): array {
 		if ( ! isset( $args ) ) {
 			$args = array();
 		}
-		return $this->_internal_call( 'POST', $url, $payload, $args );
+		return $this->_internal_call( 'POST', $url, $payload, $args, $expect_data );
 	}
 
 	/**
@@ -237,15 +243,16 @@ abstract class SUCAPIClient {
 	 * @param string     $url the URL to call.
 	 * @param array|null $args the arguments for the request.
 	 * @param array|null $payload the payload of the request.
+	 * @param bool       $expect_data Whether to expect data.
 	 *
 	 * @return array response.
 	 * @throws SUCAPIException On API error.
 	 */
-	protected function _delete( string $url, ?array $args, ?array $payload ): array {
+	protected function _delete( string $url, ?array $args, ?array $payload, bool $expect_data = true ): array {
 		if ( ! isset( $args ) ) {
 			$args = array();
 		}
-		return $this->_internal_call( 'DELETE', $url, $payload, $args );
+		return $this->_internal_call( 'DELETE', $url, $payload, $args, $expect_data );
 	}
 
 	/**
@@ -254,14 +261,15 @@ abstract class SUCAPIClient {
 	 * @param string     $url the URL to call.
 	 * @param array|null $args the arguments for the request.
 	 * @param array|null $payload the payload of the request.
+	 * @param bool       $expect_data Whether to expect data.
 	 *
 	 * @return array response.
 	 * @throws SUCAPIException On API error.
 	 */
-	protected function _put( string $url, ?array $args, ?array $payload ): array {
+	protected function _put( string $url, ?array $args, ?array $payload, bool $expect_data = true ): array {
 		if ( ! isset( $args ) ) {
 			$args = array();
 		}
-		return $this->_internal_call( 'PUT', $url, $payload, $args );
+		return $this->_internal_call( 'PUT', $url, $payload, $args, $expect_data );
 	}
 }
