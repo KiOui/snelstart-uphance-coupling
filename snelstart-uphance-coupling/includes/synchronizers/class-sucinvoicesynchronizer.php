@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 include_once SUC_ABSPATH . 'includes/synchronizers/class-sucsynchronisable.php';
 include_once SUC_ABSPATH . 'includes/snelstart/class-sucbtw.php';
 include_once SUC_ABSPATH . 'includes/SUCSynchronizedObjects.php';
+include_once SUC_ABSPATH . 'includes/SUCObjectMapping.php';
 include_once SUC_ABSPATH . 'includes/class-sucsettings.php';
 
 if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
@@ -168,24 +169,12 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		 * Setup an invoice for synchronisation.
 		 *
 		 * @throws SUCAPIException When setup failed.
+		 * @throws Exception When construction of invoice failed.
 		 */
 		private function setup_invoice_for_synchronisation( array $invoice ): array {
-			$invoice['customer'] = $this->uphance_client->customer_by_id( $invoice['company_id'] )['customer'];
-			return $invoice;
-		}
-
-		/**
-		 * Synchronize an invoice to Snelstart.
-		 *
-		 * @param array $invoice the invoice to synchronize.
-		 *
-		 * @return void
-		 * @throws SUCAPIException|Exception With Exception in an API request or other Exception.
-		 */
-		public function sync_invoice_to_snelstart( array $invoice ): void {
 			$invoice_id = $invoice['id'];
-			$customer = $invoice['customer'];
-			$grootboek_regels = suc_construct_order_line_items( $invoice['line_items'], $this->btw_converter );
+			$customer                    = $this->uphance_client->customer_by_id( $invoice['company_id'] )['customer'];
+			$grootboek_regels            = suc_construct_order_line_items( $invoice['line_items'], $this->btw_converter );
 			$btw_regels                  = suc_construct_btw_line_items( $invoice['line_items'] );
 			$snelstart_relatie_for_order = get_or_create_relatie_with_name( $this->snelstart_client, $customer );
 			$betalingstermijn            = suc_convert_date_to_amount_of_days_until( $invoice['due_date'] );
@@ -205,7 +194,17 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 				$invoice_date = new DateTime( 'now' );
 			}
 
-			$this->snelstart_client->add_verkoopboeking( $invoice['invoice_number'], $snelstart_relatie_for_order['id'], suc_format_number( $invoice['items_total'] + $invoice['items_tax'] ), $betalingstermijn, $grootboek_regels, $btw_regels, $invoice_date );
+			return array(
+				'factuurnummer' => $invoice['invoice_number'],
+				'klant' => array(
+					'id' => $snelstart_relatie_for_order['id'],
+				),
+				'boekingsregels' => $grootboek_regels,
+				'factuurbedrag' => suc_format_number( $invoice['items_total'] + $invoice['items_tax'] ),
+				'betalingstermijn' => $betalingstermijn,
+				'factuurdatum' => $invoice_date->format( 'Y-m-d H:i:s' ),
+				'btw' => $btw_regels,
+			);
 		}
 
 		/**
@@ -219,7 +218,14 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		 */
 		public function synchronize_one( array $to_synchronize ): void {
 			$invoice_converted = $this->setup_invoice_for_synchronisation( $to_synchronize );
-			$this->sync_invoice_to_snelstart( $invoice_converted );
+			$snelstart_invoice = $this->snelstart_client->add_verkoopboeking( $invoice_converted );
+			SUCObjectMapping::create_mapped_object(
+				self::$type,
+				'uphance',
+				'snelstart',
+				$to_synchronize['id'],
+				$snelstart_invoice['id'],
+			);
 		}
 
 		/**
@@ -291,6 +297,24 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		public function enabled(): bool {
 			$manager          = SUCSettings::instance()->get_settings();
 			return $manager->get_value( 'synchronize_invoices_to_snelstart' );
+		}
+
+		/**
+		 * Update one instance.
+		 *
+		 * @param array $to_synchronize The data to synchronize.
+		 *
+		 * @throws SUCAPIException On Exception with the API.
+		 * @throws Exception When the mapped object does not exist or the invoice can not be converted.
+		 */
+		public function update_one( array $to_synchronize ): void {
+			$mapped_object = SUCObjectMapping::get_mapped_object( self::$type, 'uphance', 'snelstart', $to_synchronize['id'] );
+			if ( null === $mapped_object ) {
+				throw new Exception( 'Mapped object for this type does not exist.' );
+			}
+
+			$invoice_data = $this->setup_invoice_for_synchronisation( $to_synchronize );
+			$this->snelstart_client->update_verkoopboeking( get_post_meta( $mapped_object->ID, 'mapped_to_object_id', true ), $invoice_data );
 		}
 	}
 }

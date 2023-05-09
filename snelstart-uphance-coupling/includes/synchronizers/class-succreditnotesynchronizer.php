@@ -297,5 +297,9 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 			$manager          = SUCSettings::instance()->get_settings();
 			return $manager->get_value( 'synchronize_credit_notes_to_snelstart' );
 		}
+
+		public function update_one( array $to_synchronize ): void {
+			// TODO: Implement update_one() method.
+		}
 	}
 }

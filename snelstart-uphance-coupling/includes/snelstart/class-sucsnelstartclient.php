@@ -134,24 +134,41 @@ if ( ! class_exists( 'SUCSnelstartClient' ) ) {
 		/**
 		 * Add a verkoopboeking.
 		 *
+		 * @param array $data The data to send to the endpoint.
+		 *
 		 * @throws SUCAPIException On exception with API request.
 		 */
-		public function add_verkoopboeking( string $factuurnummer, string $klant, $factuurbedrag, int $betalingstermijn, array $boekingsregels, array $btw_regels, DateTime $date ): array {
+		public function add_verkoopboeking( array $data ): array {
 			return $this->_post(
 				'verkoopboekingen',
 				null,
-				array(
-					'factuurnummer' => $factuurnummer,
-					'klant' => array(
-						'id' => $klant,
-					),
-					'boekingsregels' => $boekingsregels,
-					'factuurbedrag' => $factuurbedrag,
-					'betalingstermijn' => $betalingstermijn,
-					'factuurdatum' => $date->format( 'Y-m-d H:i:s' ),
-					'btw' => $btw_regels,
-				)
+				$data
 			);
+		}
+
+		/**
+		 * Update a verkoopboeking.
+		 *
+		 * @param string $id The ID of the verkoopboeking to update.
+		 * @param array  $data The data to send with the request.
+		 *
+		 * @return array The response (empty).
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		public function update_verkoopboeking( string $id, array $data ): array {
+			return $this->_put( "verkoopboekingen/$id", null, $data );
+		}
+
+		/**
+		 * Remove a verkoopboeking.
+		 *
+		 * @param string $id The ID of the verkoopboeking to remove.
+		 *
+		 * @return array The response (empty).
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		public function remove_verkoopboeking( string $id ): array {
+			return $this->_delete( "verkoopboekingen/$id", null, null );
 		}
 
 		/**

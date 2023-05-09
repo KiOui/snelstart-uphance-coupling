@@ -184,5 +184,9 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		public function retrieve_object( int $id ): array {
 			return $this->uphance_client->pick_ticket( $id );
 		}
+
+		public function update_one( array $to_synchronize ): void {
+			// TODO: Implement update_one() method.
+		}
 	}
 }

@@ -142,6 +142,7 @@ if ( ! class_exists( 'SUCCore' ) ) {
 		private function actions_and_filters() {
 			include_once SUC_ABSPATH . '/includes/class-sucsettings.php';
 			include_once SUC_ABSPATH . '/includes/SUCSynchronizedObjects.php';
+			include_once SUC_ABSPATH . '/includes/SUCObjectMapping.php';
 			include_once SUC_ABSPATH . '/includes/suc-functions.php';
 			include_once SUC_ABSPATH . '/includes/synchronizers/class-sucsynchronizer.php';
 			include_once SUC_ABSPATH . '/includes/synchronizers/class-succreditnotesynchronizer.php';
@@ -156,6 +157,7 @@ if ( ! class_exists( 'SUCCore' ) ) {
 			$snelstart_client = SUCSnelstartClient::instance();
 			$sendcloud_client = SUCSendcloudClient::instance();
 			SUCSynchronizedObjects::init();
+			SUCObjectMapping::init();
 			add_action( 'suc_sync_all', 'cron_runner_sync_all' );
 			$this->register_rest_routes();
 
