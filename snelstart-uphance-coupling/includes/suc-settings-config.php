@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 include_once SUC_ABSPATH . 'includes/settings/conditions/class-fieldssetsettingscondition.php';
+include_once SUC_ABSPATH . 'includes/suc-functions.php';
 
 if ( ! function_exists( 'suc_get_settings_config' ) ) {
 	/**
@@ -83,6 +84,7 @@ if ( ! function_exists( 'suc_get_settings_config' ) ) {
 					'name'        => __( 'Snelstart Client Key', 'snelstart-uphance-coupling' ),
 					'can_be_null' => true,
 					'hint'        => __( 'The snelstart API client key', 'snelstart-uphance-coupling' ),
+					'subscribers' => array( 'suc_reset_snelstart_token_on_settings_change' ),
 				),
 				array(
 					'type'        => 'text',
@@ -90,6 +92,7 @@ if ( ! function_exists( 'suc_get_settings_config' ) ) {
 					'name'        => __( 'Snelstart Subscription Key', 'snelstart-uphance-coupling' ),
 					'can_be_null' => true,
 					'hint'        => __( 'The snelstart API subscription key', 'snelstart-uphance-coupling' ),
+					'subscribers' => array( 'suc_reset_snelstart_token_on_settings_change' ),
 				),
 				array(
 					'type'        => 'callable_choice',
@@ -155,6 +158,7 @@ if ( ! function_exists( 'suc_get_settings_config' ) ) {
 					'name'        => __( 'Uphance username', 'snelstart-uphance-coupling' ),
 					'can_be_null' => true,
 					'hint'        => __( 'The Uphance username to connect to the Uphance API', 'snelstart-uphance-coupling' ),
+					'subscribers' => array( 'suc_reset_uphance_token_on_settings_change' ),
 				),
 				array(
 					'type'        => 'password',
@@ -162,6 +166,7 @@ if ( ! function_exists( 'suc_get_settings_config' ) ) {
 					'name'        => __( 'Uphance password', 'snelstart-uphance-coupling' ),
 					'can_be_null' => true,
 					'hint'        => __( 'The Uphance password to connect to the Uphance API', 'snelstart-uphance-coupling' ),
+					'subscribers' => array( 'suc_reset_uphance_token_on_settings_change' ),
 				),
 				array(
 					'type'        => 'callable_choice',

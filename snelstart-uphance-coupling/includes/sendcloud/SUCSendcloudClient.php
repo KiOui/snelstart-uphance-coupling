@@ -61,7 +61,7 @@ if ( ! class_exists( 'SUCSendcloudClient' ) ) {
 		 * Constructor.
 		 *
 		 * @param SUCSendcloudAuthClient|null $auth_client the authentication client.
-		 * @param int $requests_timeout request timeout.
+		 * @param int                         $requests_timeout request timeout.
 		 */
 		public function __construct( ?SUCSendcloudAuthClient $auth_client, int $requests_timeout = 45 ) {
 			parent::__construct( $auth_client, $requests_timeout );
@@ -85,9 +85,25 @@ if ( ! class_exists( 'SUCSendcloudClient' ) ) {
 
 		public function create_parcel( array $data ) {
 			return $this->_post(
-				'parcels?errors=verbose',
+				'parcels',
 				null,
 				$data,
+			);
+		}
+
+		public function update_parcel( array $data ) {
+			return $this->_put(
+				'parcels',
+				null,
+				$data,
+			);
+		}
+
+		public function cancel_parcel( string $id ) {
+			return $this->_post(
+				"parcels/$id/cancel",
+				null,
+				null,
 			);
 		}
 

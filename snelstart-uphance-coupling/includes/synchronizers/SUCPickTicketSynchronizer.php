@@ -80,21 +80,35 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		 */
 		public function run(): void {
 			$amount_of_pick_tickets = count( $this->pick_tickets );
-			echo '<pre>';
-			try {
-				$this->synchronize_one( $this->pick_tickets[0] );
-				exit;
-			} catch ( Exception $e ) {
-				print_r( $e );
-			}
-			echo '</pre>';
-			exit;
 
 			for ( $i = 0; $i < $amount_of_pick_tickets; $i ++ ) {
-				try {
-
-				} catch ( Exception $e ) {
-
+				if ( ! $this->object_already_successfully_synchronized( $this->pick_tickets[ $i ]['id'] ) ) {
+					try {
+						$this->synchronize_one( $this->pick_tickets[ $i ] );
+						$this->create_synchronized_object(
+							$this->pick_tickets[ $i ],
+							true,
+							'cron',
+							'create',
+							null
+						);
+					} catch ( SUCAPIException $e ) {
+						$this->create_synchronized_object(
+							$this->pick_tickets[ $i ],
+							false,
+							'cron',
+							'create',
+							$e->get_message()
+						);
+					} catch ( Exception $e ) {
+						$this->create_synchronized_object(
+							$this->pick_tickets[ $i ],
+							false,
+							'cron',
+							'create',
+							$e->__toString()
+						);
+					}
 				}
 			}
 		}
@@ -226,6 +240,7 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 						'id' => $this->shipping_method_id,
 						'name' => $this->shipping_method,
 					),
+					'request_label' => 'shipped' === $pick_ticket['status'],
 				),
 			);
 		}
@@ -240,14 +255,13 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		public function synchronize_one( array $to_synchronize ): void {
 			$parcel = $this->setup_pick_ticket_for_synchronisation( $to_synchronize );
 			$sendcloud_parcel = $this->sendcloud_client->create_parcel( $parcel );
-			/*
 			SUCObjectMapping::create_mapped_object(
 				self::$type,
 				'uphance',
 				'sendcloud',
 				$to_synchronize['id'],
 				$sendcloud_parcel['parcel']['id'],
-			);*/
+			);
 		}
 
 		/**
@@ -353,6 +367,21 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		 * @return void
 		 */
 		public function create_synchronized_object( array $object, bool $succeeded, string $source, string $method, ?string $error_message ) {
+			$extra_data = array();
+			if ( array_key_exists( 'order_number', $object ) ) {
+				$extra_data['Order number'] = $object['order_number'];
+			}
+
+			SUCSynchronizedObjects::create_synchronized_object(
+				intval( $object['id'] ),
+				$this::$type,
+				$succeeded,
+				$source,
+				$method,
+				$this::get_url( $object ),
+				$error_message,
+				$extra_data,
+			);
 		}
 
 		/**
@@ -368,11 +397,29 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		}
 
 		public function update_one( array $to_synchronize ): void {
-			// TODO: Implement update_one() method.
+			$mapped_object = SUCObjectMapping::get_mapped_object( self::$type, 'uphance', 'sendcloud', $to_synchronize['id'] );
+			if ( null === $mapped_object ) {
+				throw new Exception( 'Mapped object for this type does not exist.' );
+			}
+
+			$parcel = $this->setup_pick_ticket_for_synchronisation( $to_synchronize );
+			$parcel['parcel']['id'] = get_post_meta( $mapped_object->ID, 'mapped_to_object_id', true );
+			$this->sendcloud_client->update_parcel( $parcel );
 		}
 
+		/**
+		 * Delete a pick ticket from Sendcloud.
+		 *
+		 * @throws Exception|SUCAPIException API Exception on exception with API and Exception when Mapped object does not exist.
+		 */
 		public function delete_one( array $to_synchronize ): void {
-			// TODO: Implement delete_one() method.
+			$mapped_object = SUCObjectMapping::get_mapped_object( self::$type, 'uphance', 'sendcloud', $to_synchronize['id'] );
+			if ( null === $mapped_object ) {
+				throw new Exception( 'Mapped object for this type does not exist.' );
+			}
+
+			$this->sendcloud_client->cancel_parcel( get_post_meta( $mapped_object->ID, 'mapped_to_object_id', true ) );
+			wp_delete_post( $mapped_object->ID, true );
 		}
 	}
 }

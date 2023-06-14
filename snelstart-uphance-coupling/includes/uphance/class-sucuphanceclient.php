@@ -106,8 +106,13 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 		 * @throws SUCAPIException On exception with API request.
 		 */
 		public function invoice( int $invoice_id ): array {
-			$url = "invoices/$invoice_id";
-			return $this->_get( $url, null, null );
+			$url = "invoices/?invoice_id=$invoice_id";
+			$invoice = $this->_get( $url, null, null )['invoices'];
+			if ( count( $invoice ) > 0 ) {
+				return $invoice[0];
+			} else {
+				throw new SUCAPIException( 404, 404, 'The invoice could not be found', 'The invoice could not be found', null );
+			}
 		}
 
 		/**
@@ -170,7 +175,7 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 		 */
 		public function credit_note( int $credit_note_id ): array {
 			$url = "credit_notes/$credit_note_id";
-			return $this->_get( $url, null, null )['credit_notes'];
+			return $this->_get( $url, null, null )['credit_notes'][0];
 		}
 
 		/**

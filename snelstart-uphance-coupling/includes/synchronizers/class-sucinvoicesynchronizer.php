@@ -117,6 +117,13 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 				if ( ! $this->object_already_successfully_synchronized( $this->invoices[ $i ]['id'] ) ) {
 					try {
 						$this->synchronize_one( $this->invoices[ $i ] );
+						$this->create_synchronized_object(
+							$this->invoices[ $i ],
+							true,
+							'cron',
+							'create',
+							null
+						);
 					} catch ( SUCAPIException $e ) {
 						$this->create_synchronized_object(
 							$this->invoices[ $i ],

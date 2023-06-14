@@ -67,7 +67,7 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 					array(
 						'error_message' => 'Failed to setup synchronizer.',
 					),
-					500
+					200
 				);
 			}
 
@@ -84,27 +84,10 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 					array(
 						'error_message' => 'Failed to synchronize invoice to Snelstart.',
 					),
-					500
+					200
 				);
 			}
 			return new WP_REST_Response();
-		}
-
-		/**
-		 * Maybe delete an invoice from Snelstart (if it has not been done before).
-		 *
-		 * @param WP_REST_Request $request The request.
-		 *
-		 * @return WP_REST_Response The response.
-		 */
-		private function maybe_delete_invoice_from_snelstart( WP_REST_Request $request ): WP_REST_Response {
-			$invoice = $request->get_param( 'invoice' );
-			$mapped_object = SUCObjectMapping::get_mapped_object( 'invoice', 'uphance', 'snelstart', $invoice['id'] );
-			if ( null === $mapped_object ) {
-				return new WP_REST_Response();
-			} else {
-				return $this->delete_invoice_from_snelstart( $request );
-			}
 		}
 
 		/**
@@ -131,7 +114,7 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 					array(
 						'error_message' => 'Failed to setup synchronizer.',
 					),
-					500
+					200
 				);
 			}
 
@@ -144,7 +127,7 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 					array(
 						'error_message' => 'Failed to remove object: ' . esc_js( $e->get_message() ),
 					),
-					500
+					200
 				);
 			} catch ( Exception $e ) {
 				$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'delete', $e->__toString() );
@@ -152,28 +135,11 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 					array(
 						'error_message' => 'Failed to remove object: ' . esc_js( $e->__toString() ),
 					),
-					500
+					200
 				);
 			}
 
 			return new WP_REST_Response();
-		}
-
-		/**
-		 * Maybe create an invoice in Snelstart (if it has not been done before).
-		 *
-		 * @param WP_REST_Request $request The request.
-		 *
-		 * @return WP_REST_Response The response.
-		 */
-		private function maybe_create_invoice_in_snelstart( WP_REST_Request $request ): WP_REST_Response {
-			$invoice = $request->get_param( 'invoice' );
-			$mapped_object = SUCObjectMapping::get_mapped_object( 'invoice', 'uphance', 'snelstart', $invoice['id'] );
-			if ( null === $mapped_object ) {
-				return $this->create_invoice_in_snelstart( $request );
-			} else {
-				return new WP_REST_Response();
-			}
 		}
 
 		/**
@@ -187,6 +153,17 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 			$invoice = $request->get_param( 'invoice' );
 			$synchronizer_class = SUCSynchronizer::get_synchronizer_class( 'invoice' );
 
+			$mapped_object = SUCObjectMapping::get_mapped_object( SUCInvoiceSynchronizer::$type, 'uphance', 'snelstart', $invoice['id'] );
+			if ( null !== $mapped_object ) {
+				$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'create', 'Mapped object for this type already exists.' );
+				return new WP_REST_Response(
+					array(
+						'error_message' => 'Mapped object for this type already exists.',
+					),
+					200
+				);
+			}
+
 			try {
 				$synchronizer_class->setup();
 			} catch ( Exception $e ) {
@@ -199,7 +176,7 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 					array(
 						'error_message' => 'Failed to setup synchronizer.',
 					),
-					500
+					200
 				);
 			}
 
@@ -212,7 +189,7 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 					array(
 						'error_message' => 'Failed to synchronize object: ' . esc_js( $e->get_message() ),
 					),
-					500
+					200
 				);
 			}
 			return new WP_REST_Response();
@@ -228,11 +205,11 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 		public function synchronize_invoice_to_snelstart( WP_REST_Request $request ): WP_REST_Response {
 			$event = $request->get_param( 'event' );
 			if ( 'invoice_create' === $event ) {
-				return $this->maybe_create_invoice_in_snelstart( $request );
+				return $this->create_invoice_in_snelstart( $request );
 			} else if ( 'invoice_update' === $event ) {
 				return $this->update_invoice_in_snelstart( $request );
 			} else if ( 'invoice_delete' === $event ) {
-				return $this->maybe_delete_invoice_from_snelstart( $request );
+				return $this->delete_invoice_from_snelstart( $request );
 			} else {
 				return new WP_REST_Response(
 					array(

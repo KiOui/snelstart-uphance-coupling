@@ -23,6 +23,6 @@ if ( ! class_exists( 'SUCRestRoute' ) ) {
 		 *
 		 * @return void
 		 */
-		public abstract function add_rest_api_endpoints(): void;
+		abstract public function add_rest_api_endpoints(): void;
 	}
 }

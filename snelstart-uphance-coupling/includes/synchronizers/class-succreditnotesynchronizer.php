@@ -234,7 +234,14 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 		 */
 		public function synchronize_one( array $to_synchronize ): void {
 			$credit_note_converted = $this->setup_credit_note_for_synchronisation( $to_synchronize );
-			$this->snelstart_client->add_verkoopboeking( $credit_note_converted );
+			$snelstart_credit_note = $this->snelstart_client->add_verkoopboeking( $credit_note_converted );
+			SUCObjectMapping::create_mapped_object(
+				self::$type,
+				'uphance',
+				'snelstart',
+				$to_synchronize['id'],
+				$snelstart_credit_note['id'],
+			);
 		}
 
 		/**

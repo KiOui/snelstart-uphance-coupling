@@ -443,7 +443,7 @@ if ( ! function_exists( 'suc_get_organisations_choices' ) ) {
 	 */
 	function suc_get_organisations_choices(): ?array {
 		$organisations = SUCCache::instance()->get_organisations();
-		if ( false === $organisations ) {
+		if ( is_null( $organisations ) ) {
 			return null;
 		}
 		$retvalue = array();
@@ -452,5 +452,47 @@ if ( ! function_exists( 'suc_get_organisations_choices' ) ) {
 		}
 
 		return $retvalue;
+	}
+}
+
+if ( ! function_exists( 'suc_reset_uphance_token_on_settings_change' ) ) {
+	/**
+	 * Reset Uphance token info when username/password settings change.
+	 *
+	 * @param string $setting_id The setting ID as string.
+	 * @param mixed $old_value The old value of the setting.
+	 * @param mixed $new_value The new value of the setting.
+	 * @param array $subscribers The list of subscribers subscribed to this event.
+	 *
+	 * @return void
+	 */
+	function suc_reset_uphance_token_on_settings_change( string $setting_id, $old_value, $new_value, array $subscribers ) {
+		if ( $old_value !== $new_value ) {
+			$uphance_client = SUCUphanceClient::instance();
+			if ( ! is_null( $uphance_client ) ) {
+				$uphance_client->reset_auth_token();
+			}
+		}
+	}
+}
+
+if ( ! function_exists( 'suc_reset_snelstart_token_on_settings_change' ) ) {
+	/**
+	 * Reset Snelstart token info when authentication credentials settings change.
+	 *
+	 * @param string $setting_id The setting ID as string.
+	 * @param mixed $old_value The old value of the setting.
+	 * @param mixed $new_value The new value of the setting.
+	 * @param array $subscribers The list of subscribers subscribed to this event.
+	 *
+	 * @return void
+	 */
+	function suc_reset_snelstart_token_on_settings_change( string $setting_id, $old_value, $new_value, array $subscribers ) {
+		if ( $old_value !== $new_value ) {
+			$snelstart_client = SUCSnelstartClient::instance();
+			if ( ! is_null( $snelstart_client ) ) {
+				$snelstart_client->reset_auth_token();
+			}
+		}
 	}
 }

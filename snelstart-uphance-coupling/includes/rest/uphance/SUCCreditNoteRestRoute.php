@@ -27,8 +27,7 @@ if ( ! class_exists( 'SUCCreditNoteRestRoute' ) ) {
 				array(
 					'methods' => 'POST',
 					'callback' => array( $this, 'synchronize_credit_note_to_snelstart' ),
-					'args' => array(
-					),
+					'args' => array(),
 					'permission_callback' => array( $this, 'check_permissions' ),
 				)
 			);
