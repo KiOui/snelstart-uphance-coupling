@@ -11,6 +11,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 include_once SUC_ABSPATH . 'includes/synchronizers/class-sucsynchronisable.php';
 include_once SUC_ABSPATH . 'includes/snelstart/class-sucbtw.php';
+include_once SUC_ABSPATH . 'includes/objects/SUCSynchronizedObjects.php';
+include_once SUC_ABSPATH . 'includes/objects/SUCObjectMapping.php';
+include_once SUC_ABSPATH . 'includes/class-sucsettings.php';
 
 if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 	/**
@@ -42,6 +45,31 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		private array $invoices;
 
 		/**
+		 * The Uphance client to use for the synchronizer.
+		 *
+		 * @var SUCUphanceClient
+		 */
+		protected SUCUphanceClient $uphance_client;
+
+		/**
+		 * The Snelstart client to use for the synchronizer.
+		 *
+		 * @var SUCSnelstartClient
+		 */
+		protected SUCSnelstartClient $snelstart_client;
+
+		/**
+		 * Constructor.
+		 *
+		 * @param SUCuphanceClient   $uphance_client the Uphance client.
+		 * @param SUCSnelstartClient $snelstart_client the Snelstart client.
+		 */
+		public function __construct( SUCuphanceClient $uphance_client, SUCSnelstartClient $snelstart_client ) {
+			$this->uphance_client = $uphance_client;
+			$this->snelstart_client = $snelstart_client;
+		}
+
+		/**
 		 * Get the invoices to sync.
 		 *
 		 * @throws SUCAPIException On Exception with the API.
@@ -67,6 +95,17 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		}
 
 		/**
+		 * Get the URL of an invoice.
+		 *
+		 * @param array $object The object to get the URL for.
+		 *
+		 * @return string A URL pointing to the Uphance resource.
+		 */
+		public function get_url( array $object ): string {
+			return sprintf( 'https://app.uphance.com/invoices/%d', $object['id'] );
+		}
+
+		/**
 		 * Run the synchronizer.
 		 *
 		 * @return void
@@ -75,38 +114,79 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 			$amount_of_invoices = count( $this->invoices );
 
 			for ( $i = 0; $i < $amount_of_invoices; $i ++ ) {
-				try {
-					$invoice_converted = $this->setup_invoice_for_synchronisation( $this->invoices[ $i ] );
-					$this->sync_invoice_to_snelstart( $invoice_converted );
-				} catch ( Exception $e ) {
-					$error_log = new SUCErrorLogging();
-					$error_log->set_error( $e . esc_html( sprintf( '\nURL: https://app.uphance.com/invoices/%d', $this->invoices[ $i ]['id'] ) ), 'synchronize-invoice', self::$type, $this->invoices[ $i ]['id'] );
+				if ( ! $this->object_already_successfully_synchronized( $this->invoices[ $i ]['id'] ) ) {
+					try {
+						$this->synchronize_one( $this->invoices[ $i ] );
+						$this->create_synchronized_object(
+							$this->invoices[ $i ],
+							true,
+							'cron',
+							'create',
+							null
+						);
+					} catch ( SUCAPIException $e ) {
+						$this->create_synchronized_object(
+							$this->invoices[ $i ],
+							false,
+							'cron',
+							'create',
+							$e->get_message()
+						);
+					} catch ( Exception $e ) {
+						$this->create_synchronized_object(
+							$this->invoices[ $i ],
+							false,
+							'cron',
+							'create',
+							$e->__toString()
+						);
+					}
 				}
 			}
 		}
 
 		/**
-		 * Setup an invoice for synchronisation.
+		 * Create a synchronized object.
 		 *
-		 * @throws SUCAPIException When setup failed.
+		 * @param array       $object The object.
+		 * @param bool        $succeeded Whether the synchronization succeeded.
+		 * @param string      $source The source of the synchronization.
+		 * @param string      $method The method of the synchronization.
+		 * @param string|null $error_message A possible error message that occurred during synchronization.
+		 *
+		 * @return void
 		 */
-		private function setup_invoice_for_synchronisation( array $invoice ): array {
-			$invoice['customer'] = $this->uphance_client->customer_by_id( $invoice['company_id'] )['customer'];
-			return $invoice;
+		public function create_synchronized_object( array $object, bool $succeeded, string $source, string $method, ?string $error_message ) {
+			$extra_data = array();
+			if ( array_key_exists( 'invoice_number', $object ) ) {
+				$extra_data['Invoice number'] = $object['invoice_number'];
+			}
+
+			if ( array_key_exists( 'items_total', $object ) && array_key_exists( 'items_tax', $object ) ) {
+				$extra_data['Total'] = suc_format_number( $object['items_total'] + $object['items_tax'] );
+			}
+
+			SUCSynchronizedObjects::create_synchronized_object(
+				intval( $object['id'] ),
+				$this::$type,
+				$succeeded,
+				$source,
+				$method,
+				$this::get_url( $object ),
+				$error_message,
+				$extra_data,
+			);
 		}
 
 		/**
-		 * Synchronize an invoice to Snelstart.
+		 * Setup an invoice for synchronisation.
 		 *
-		 * @param array $invoice the invoice to synchronize.
-		 *
-		 * @return void
-		 * @throws SUCAPIException|Exception With Exception in an API request or other Exception.
+		 * @throws SUCAPIException|Exception When setup failed or when construction of invoice fails.
 		 */
-		public function sync_invoice_to_snelstart( array $invoice ): void {
+		private function setup_invoice_for_synchronisation( array $invoice ): array {
 			$invoice_id = $invoice['id'];
-			$customer = $invoice['customer'];
-			$grootboek_regels = suc_construct_order_line_items( $invoice['line_items'], $this->btw_converter );
+			$customer                    = $this->uphance_client->customer_by_id( $invoice['company_id'] )['customer'];
+			$grootboek_regels            = suc_construct_order_line_items( $invoice['line_items'], $this->btw_converter );
 			$btw_regels                  = suc_construct_btw_line_items( $invoice['line_items'] );
 			$snelstart_relatie_for_order = get_or_create_relatie_with_name( $this->snelstart_client, $customer );
 			$betalingstermijn            = suc_convert_date_to_amount_of_days_until( $invoice['due_date'] );
@@ -117,7 +197,7 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 			}
 
 			if ( ! isset( $betalingstermijn ) ) {
-				throw new Exception( __( 'Failed to synchronize %1$s because invoice due date could not be converter.', 'snelstart-uphance-coupling' ), $invoice_id );
+				throw new Exception( __( 'Failed to synchronize %1$s because invoice due date could not be converted.', 'snelstart-uphance-coupling' ), $invoice_id );
 			}
 
 			try {
@@ -126,18 +206,49 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 				$invoice_date = new DateTime( 'now' );
 			}
 
-			$this->snelstart_client->add_verkoopboeking( $invoice['invoice_number'], $snelstart_relatie_for_order['id'], suc_format_number( $invoice['items_total'] + $invoice['items_tax'] ), $betalingstermijn, $grootboek_regels, $btw_regels, $invoice_date );
+			return array(
+				'factuurnummer' => $invoice['invoice_number'],
+				'klant' => array(
+					'id' => $snelstart_relatie_for_order['id'],
+				),
+				'boekingsregels' => $grootboek_regels,
+				'factuurbedrag' => suc_format_number( $invoice['items_total'] + $invoice['items_tax'] ),
+				'betalingstermijn' => $betalingstermijn,
+				'factuurdatum' => $invoice_date->format( 'Y-m-d H:i:s' ),
+				'btw' => $btw_regels,
+			);
 		}
 
 		/**
 		 * Synchronize one invoice to Snelstart.
 		 *
-		 * @param string $id the ID of the invoice to synchronize.
+		 * @param $to_synchronize array data to synchronize.
 		 *
 		 * @return void
+		 *
+		 * @throws SUCAPIException When the Snelstart API throws an exception.
 		 */
-		public function synchronize_one( string $id ): void {
-			// TODO: implement this method.
+		public function synchronize_one( array $to_synchronize ): void {
+			$invoice_converted = $this->setup_invoice_for_synchronisation( $to_synchronize );
+			$snelstart_invoice = $this->snelstart_client->add_verkoopboeking( $invoice_converted );
+			SUCObjectMapping::create_mapped_object(
+				self::$type,
+				'uphance',
+				'snelstart',
+				$to_synchronize['id'],
+				$snelstart_invoice['id'],
+			);
+		}
+
+		/**
+		 * Retrieve one of the invoices to synchronize by ID.
+		 *
+		 * @return array The invoice to synchronize.
+		 *
+		 * @throws SUCAPIException When the invoice could not be retrieved.
+		 */
+		public function retrieve_object( int $id ): array {
+			return $this->uphance_client->invoice( $id );
 		}
 
 		/**
@@ -147,8 +258,6 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		 */
 		public function setup(): void {
 			$manager          = SUCSettings::instance()->get_settings();
-			$invoices_from = $manager->get_value( 'uphance_synchronise_invoices_from' );
-			$max_to_sync      = $manager->get_value( 'max_invoices_to_synchronize' );
 			$grootboekcode_btw_hoog = $manager->get_value( 'snelstart_grootboekcode_btw_hoog' );
 			$grootboekcode_btw_geen = $manager->get_value( 'snelstart_grootboekcode_btw_geen' );
 			if ( ! isset( $grootboekcode_btw_hoog ) || ! isset( $grootboekcode_btw_geen ) ) {
@@ -158,6 +267,19 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 			$tax_types = $this->snelstart_client->btwtarieven();
 
 			$this->btw_converter = new SUCBTW( $grootboekcode_btw_hoog, $grootboekcode_btw_geen, $tax_types );
+		}
+
+		/**
+		 * Setup objects before run.
+		 *
+		 * @return void
+		 *
+		 * @throws SettingsConfigurationException|SUCAPIException When settings are not configured correctly and when invoice could not be retrieved from Uphance.
+		 */
+		public function setup_objects(): void {
+			$manager          = SUCSettings::instance()->get_settings();
+			$invoices_from = $manager->get_value( 'uphance_synchronise_invoices_from' );
+			$max_to_sync      = $manager->get_value( 'max_invoices_to_synchronize' );
 			$this->invoices = $this->get_invoices_to_sync( $invoices_from, $max_to_sync );
 		}
 
@@ -165,6 +287,8 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		 * Update settings after run.
 		 *
 		 * @return void
+		 *
+		 * @throws SettingsConfigurationException When settings are not configured correctly.
 		 */
 		public function after_run(): void {
 			if ( count( $this->invoices ) > 0 ) {
@@ -178,10 +302,48 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		 * Whether this synchronizer should be enabled.
 		 *
 		 * @return bool whether this synchronizer is enabled.
+		 *
+		 * @throws SettingsConfigurationException When settings are not configured correctly.
 		 */
 		public function enabled(): bool {
 			$manager          = SUCSettings::instance()->get_settings();
 			return $manager->get_value( 'synchronize_invoices_to_snelstart' );
+		}
+
+		/**
+		 * Update one instance.
+		 *
+		 * @param array $to_synchronize The data to synchronize.
+		 *
+		 * @throws SUCAPIException|Exception On Exception with the API or when the mapped object does not exist or the invoice can not be converted.
+		 */
+		public function update_one( array $to_synchronize ): void {
+			$mapped_object = SUCObjectMapping::get_mapped_object( self::$type, 'uphance', 'snelstart', $to_synchronize['id'] );
+			if ( null === $mapped_object ) {
+				throw new Exception( 'Mapped object for this type does not exist.' );
+			}
+
+			$invoice_data = $this->setup_invoice_for_synchronisation( $to_synchronize );
+			$id_in_snelstart = get_post_meta( $mapped_object->ID, 'mapped_to_object_id', true );
+			$invoice_data['id'] = $id_in_snelstart;
+			$this->snelstart_client->update_verkoopboeking( $id_in_snelstart, $invoice_data );
+		}
+
+		/**
+		 * Remove a verkoopboeking from Snelstart.
+		 *
+		 * @param array $to_synchronize The data to remove.
+		 *
+		 * @throws SUCAPIException | Exception On Exception with the API or when mapped object does not exist.
+		 */
+		public function delete_one( array $to_synchronize ): void {
+			$mapped_object = SUCObjectMapping::get_mapped_object( self::$type, 'uphance', 'snelstart', $to_synchronize['id'] );
+			if ( null === $mapped_object ) {
+				throw new Exception( 'Mapped object for this type does not exist.' );
+			}
+
+			$this->snelstart_client->remove_verkoopboeking( get_post_meta( $mapped_object->ID, 'mapped_to_object_id', true ) );
+			wp_delete_post( $mapped_object->ID, true );
 		}
 	}
 }

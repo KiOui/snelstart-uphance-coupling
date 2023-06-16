@@ -77,6 +77,13 @@ if ( ! class_exists( 'SettingsField' ) ) {
 		protected array $conditions;
 
 		/**
+		 * The subscribers of this setting, these will get called when the settings updates.
+		 *
+		 * @var array
+		 */
+		protected array $subscribers;
+
+		/**
 		 * Constructor of SettingsField.
 		 *
 		 * @param string    $id the slug-like ID of the setting.
@@ -89,13 +96,17 @@ if ( ! class_exists( 'SettingsField' ) ) {
 		 *
 		 * @throws SettingsConfigurationException When $default is null and $can_be_null is false.
 		 */
-		public function __construct( string $id, string $name, $default, ?callable $renderer = null, bool $can_be_null = false, string $hint = '', ?array $conditions = null ) {
+		public function __construct( string $id, string $name, $default, ?callable $renderer = null, bool $can_be_null = false, string $hint = '', ?array $conditions = null, ?array $subscribers = null ) {
 			if ( is_null( $default ) && ! $can_be_null ) {
 				throw new SettingsConfigurationException( "Error while registering setting $id, setting can not be null but no default is provided." );
 			}
 
 			if ( is_null( $conditions ) ) {
 				$conditions = array();
+			}
+
+			if ( is_null( $subscribers ) ) {
+				$subscribers = array();
 			}
 
 			$this->id = $id;
@@ -106,6 +117,7 @@ if ( ! class_exists( 'SettingsField' ) ) {
 			$this->conditions = $conditions;
 			$this->value = null;
 			$this->renderer = $renderer;
+			$this->subscribers = $subscribers;
 		}
 
 		/**
@@ -180,6 +192,23 @@ if ( ! class_exists( 'SettingsField' ) ) {
 		}
 
 		/**
+		 * Set the initial value of a setting (without calling the subscribers).
+		 *
+		 * @param mixed $value The value of a setting.
+		 *
+		 * @return bool Whether the setting was overwritten.
+		 */
+		public function set_initial_value( $value ): bool {
+			$sanitized_value = $this->sanitize( $value );
+			if ( $this->validate( $sanitized_value ) ) {
+				$this->value = $sanitized_value;
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		/**
 		 * Set the value of a setting.
 		 *
 		 * @param mixed $value The value of a setting.
@@ -189,7 +218,11 @@ if ( ! class_exists( 'SettingsField' ) ) {
 		public function set_value( $value ): bool {
 			$sanitized_value = $this->sanitize( $value );
 			if ( $this->validate( $sanitized_value ) ) {
+				$old_value = $this->value;
 				$this->value = $sanitized_value;
+				foreach ( $this->subscribers as $subscriber ) {
+					$subscriber( $this->id, $old_value, $sanitized_value, $this->subscribers );
+				}
 				return true;
 			} else {
 				return false;

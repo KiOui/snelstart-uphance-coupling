@@ -90,7 +90,7 @@ if ( ! class_exists( 'SUCUphanceAuthClient' ) ) {
 					-1,
 					$this->token_url . ":\n " . $msg,
 					null,
-					wp_remote_retrieve_headers( $response ),
+					is_array( wp_remote_retrieve_headers( $response ) ) ? wp_remote_retrieve_headers( $response ) : wp_remote_retrieve_headers( $response )->getAll(),
 				);
 			} else {
 				$body = json_decode( wp_remote_retrieve_body( $response ), true );
@@ -100,7 +100,7 @@ if ( ! class_exists( 'SUCUphanceAuthClient' ) ) {
 						-1,
 						$this->token_url . ":\n " . $body['error'],
 						null,
-						wp_remote_retrieve_headers( $response ),
+						is_array( wp_remote_retrieve_headers( $response ) ) ? wp_remote_retrieve_headers( $response ) : wp_remote_retrieve_headers( $response )->getAll(),
 					);
 				}
 				if ( is_null( $body ) ) {
@@ -109,7 +109,7 @@ if ( ! class_exists( 'SUCUphanceAuthClient' ) ) {
 						-1,
 						'Access token request returned null',
 						null,
-						wp_remote_retrieve_headers( $response ),
+						is_array( wp_remote_retrieve_headers( $response ) ) ? wp_remote_retrieve_headers( $response ) : wp_remote_retrieve_headers( $response )->getAll(),
 					);
 				}
 				return json_decode( wp_remote_retrieve_body( $response ), true );

@@ -20,6 +20,8 @@
         <exclude name="Squiz.Commenting.FunctionComment.MissingParamName"/>
         <exclude name="Squiz.Commenting.FunctionComment.IncorrectTypeHint"/>
         <exclude name="WordPress.WP.I18n.MissingTranslatorsComment"/>
+        <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
+        <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
     </rule>
 
     <exclude-pattern>*/index.php</exclude-pattern>

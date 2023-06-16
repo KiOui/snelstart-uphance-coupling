@@ -29,15 +29,20 @@ if ( ! class_exists( 'PasswordField' ) ) {
 		 * @param bool        $can_be_null whether the setting can be null.
 		 * @param string      $hint the hint to display next to the setting.
 		 * @param ?array      $conditions optional array of SettingsConditions that determine whether to display this setting.
+		 * @param ?array      $subscribers optional array of Subscribers that get called when this setting updates.
 		 *
 		 * @throws SettingsConfigurationException When $default is null and $can_be_null is false.
 		 */
-		public function __construct( string $id, string $name, ?string $default, ?callable $renderer = null, bool $can_be_null = false, string $hint = '', ?array $conditions = null ) {
+		public function __construct( string $id, string $name, ?string $default, ?callable $renderer = null, bool $can_be_null = false, string $hint = '', ?array $conditions = null, ?array $subscribers = null ) {
 			if ( is_null( $conditions ) ) {
 				$conditions = array();
 			}
 
-			parent::__construct( $id, $name, $default, $renderer, $can_be_null, $hint, $conditions );
+			if ( is_null( $subscribers ) ) {
+				$subscribers = array();
+			}
+
+			parent::__construct( $id, $name, $default, $renderer, $can_be_null, $hint, $conditions, $subscribers );
 		}
 
 		/**
@@ -76,7 +81,8 @@ if ( ! class_exists( 'PasswordField' ) ) {
 				isset( $initial_values['renderer'] ) ? $initial_values['renderer'] : null,
 				isset( $initial_values['can_be_null'] ) ? $initial_values['can_be_null'] : false,
 				isset( $initial_values['hint'] ) ? $initial_values['hint'] : '',
-				isset( $initial_values['conditions'] ) ? $initial_values['conditions'] : null
+				isset( $initial_values['conditions'] ) ? $initial_values['conditions'] : null,
+				isset( $initial_values['subscribers'] ) ? $initial_values['subscribers'] : null,
 			);
 		}
 	}

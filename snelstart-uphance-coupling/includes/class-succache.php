@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 include_once SUC_ABSPATH . 'includes/uphance/class-sucuphanceclient.php';
 include_once SUC_ABSPATH . 'includes/snelstart/class-sucsnelstartclient.php';
+include_once SUC_ABSPATH . 'includes/sendcloud/SUCSendcloudClient.php';
 include_once SUC_ABSPATH . 'includes/suc-functions.php';
 
 if ( ! class_exists( 'SUCCache' ) ) {
@@ -63,6 +64,15 @@ if ( ! class_exists( 'SUCCache' ) ) {
 		 * @var ?mixed
 		 */
 		private $cached_organisations = null;
+
+		/**
+		 * Variable for storing shipping methods.
+		 *
+		 * Null when not retrieved yet, array if this variable holds valid shipping methods, false if retrieving failed.
+		 *
+		 * @var ?mixed
+		 */
+		private $cached_shipping_methods = null;
 
 		/**
 		 * Uses the Singleton pattern to load 1 instance of this class at maximum.
@@ -200,6 +210,37 @@ if ( ! class_exists( 'SUCCache' ) ) {
 					}
 				} else {
 					$this->cached_organisations = false;
+
+					return null;
+				}
+			}
+		}
+
+		/**
+		 * Get shipping methods and set cache.
+		 *
+		 * @return array|null the shipping methods (array) if succeeded, null otherwise.
+		 */
+		public function get_shipping_methods(): ?array {
+			if ( isset( $this->cached_shipping_methods ) ) {
+				if ( false === $this->cached_shipping_methods ) {
+					return null;
+				} else {
+					return $this->cached_shipping_methods;
+				}
+			} else {
+				$sendcloud_client = SUCSendcloudClient::instance();
+				if ( isset( $sendcloud_client ) ) {
+					try {
+						$this->cached_shipping_methods = $sendcloud_client->get_shipping_methods();
+
+						return $this->cached_shipping_methods;
+					} catch ( SUCAPIException $e ) {
+						$this->cached_shipping_methods = false;
+						return null;
+					}
+				} else {
+					$this->cached_shipping_methods = false;
 
 					return null;
 				}

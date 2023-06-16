@@ -85,7 +85,7 @@ if ( ! function_exists( 'convert_snelstart_payment_to_payment' ) ) {
 	 * @throws Exception On conversion error.
 	 */
 	function convert_snelstart_payment_to_payment( array $snelstart_payment ): SUCPayment {
-		include_once SUC_ABSPATH . 'includes/model/class-sucpayment.php';
+		include_once SUC_ABSPATH . 'includes/model/SUCPayment.php';
 		return new SUCPayment( 'snelstart_' . $snelstart_payment['id'], floatval( $snelstart_payment['saldo'] ), $snelstart_payment['factuur_nummer'], $snelstart_payment['omschrijving'], new DateTime( $snelstart_payment['datum'] ), new DateTime( $snelstart_payment['datum'] ) );
 	}
 }
@@ -101,9 +101,9 @@ if ( ! function_exists( 'run_synchronizer' ) ) {
 	function run_synchronizer( SUCSynchronisable $synchronizer ) {
 		try {
 			$synchronizer->setup();
+			$synchronizer->setup_objects();
 		} catch ( Exception $e ) {
-			$error_log = new SUCErrorLogging();
-			$error_log->set_error( $e, 'default', null, null );
+			// TODO: Maybe log some kind of exception here.
 			return;
 		}
 		$synchronizer->run();
@@ -118,7 +118,6 @@ if ( ! function_exists( 'cron_runner_sync_all' ) ) {
 	 * @return void
 	 */
 	function cron_runner_sync_all(): void {
-		include_once SUC_ABSPATH . 'includes/synchronizers/synchronizer-init.php';
 		include_once SUC_ABSPATH . 'includes/synchronizers/class-sucsynchronizer.php';
 
 		$uphance_client   = SUCUphanceClient::instance();
@@ -140,8 +139,6 @@ if ( ! function_exists( 'cron_runner_sync_all' ) ) {
 				return;
 			}
 		}
-
-		initialize_synchronizers( $uphance_client, $snelstart_client );
 
 		foreach ( SUCSynchronizer::$synchronizer_classes as $type => $synchronizer_class ) {
 			if ( $synchronizer_class->enabled() ) {
@@ -356,6 +353,27 @@ if ( ! function_exists( 'suc_construct_order_line_items' ) ) {
 	}
 }
 
+if ( ! function_exists( 'suc_get_shipping_choices' ) ) {
+	/**
+	 * Get shipping choices.
+	 *
+	 * @return array|null An array of string => string choices on succes, null on failure.
+	 */
+	function suc_get_shipping_choices(): ?array {
+		include_once SUC_ABSPATH . 'includes/class-succache.php';
+		$shipping_methods = SUCCache::instance()->get_shipping_methods();
+		if ( is_null( $shipping_methods ) ) {
+			return null;
+		}
+		$retvalue = array();
+		foreach ( $shipping_methods['shipping_methods'] as $shipping_method ) {
+			$retvalue[ strval( $shipping_method['name'] ) ] = $shipping_method['name'];
+		}
+
+		return $retvalue;
+	}
+}
+
 if ( ! function_exists( 'suc_get_grootboek_choices' ) ) {
 	/**
 	 * Get choices for grootboek setting.
@@ -425,7 +443,7 @@ if ( ! function_exists( 'suc_get_organisations_choices' ) ) {
 	 */
 	function suc_get_organisations_choices(): ?array {
 		$organisations = SUCCache::instance()->get_organisations();
-		if ( false === $organisations ) {
+		if ( is_null( $organisations ) ) {
 			return null;
 		}
 		$retvalue = array();
@@ -434,5 +452,47 @@ if ( ! function_exists( 'suc_get_organisations_choices' ) ) {
 		}
 
 		return $retvalue;
+	}
+}
+
+if ( ! function_exists( 'suc_reset_uphance_token_on_settings_change' ) ) {
+	/**
+	 * Reset Uphance token info when username/password settings change.
+	 *
+	 * @param string $setting_id The setting ID as string.
+	 * @param mixed  $old_value The old value of the setting.
+	 * @param mixed  $new_value The new value of the setting.
+	 * @param array  $subscribers The list of subscribers subscribed to this event.
+	 *
+	 * @return void
+	 */
+	function suc_reset_uphance_token_on_settings_change( string $setting_id, $old_value, $new_value, array $subscribers ) {
+		if ( $old_value !== $new_value ) {
+			$uphance_client = SUCUphanceClient::instance();
+			if ( ! is_null( $uphance_client ) ) {
+				$uphance_client->reset_auth_token();
+			}
+		}
+	}
+}
+
+if ( ! function_exists( 'suc_reset_snelstart_token_on_settings_change' ) ) {
+	/**
+	 * Reset Snelstart token info when authentication credentials settings change.
+	 *
+	 * @param string $setting_id The setting ID as string.
+	 * @param mixed  $old_value The old value of the setting.
+	 * @param mixed  $new_value The new value of the setting.
+	 * @param array  $subscribers The list of subscribers subscribed to this event.
+	 *
+	 * @return void
+	 */
+	function suc_reset_snelstart_token_on_settings_change( string $setting_id, $old_value, $new_value, array $subscribers ) {
+		if ( $old_value !== $new_value ) {
+			$snelstart_client = SUCSnelstartClient::instance();
+			if ( ! is_null( $snelstart_client ) ) {
+				$snelstart_client->reset_auth_token();
+			}
+		}
 	}
 }

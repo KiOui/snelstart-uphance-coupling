@@ -38,13 +38,18 @@ if ( ! class_exists( 'ChoiceField' ) ) {
 		 * @param bool      $can_be_null whether the setting can be null.
 		 * @param string    $hint the hint to display next to the setting.
 		 * @param ?array    $conditions optional array of SettingsConditions that determine whether to display this setting.
+		 * @param ?array    $subscribers optional array of Subscribers that get called when this setting updates.
 		 *
 		 * @throws SettingsConfigurationException When $default is null and $can_be_null is false or when the choices
 		 * array is not a string => string array.
 		 */
-		public function __construct( string $id, string $name, array $choices, ?string $default, ?callable $renderer, bool $can_be_null = false, string $hint = '', ?array $conditions = null ) {
+		public function __construct( string $id, string $name, array $choices, ?string $default, ?callable $renderer, bool $can_be_null = false, string $hint = '', ?array $conditions = null, ?array $subscribers = null ) {
 			if ( is_null( $conditions ) ) {
 				$conditions = array();
+			}
+
+			if ( is_null( $subscribers ) ) {
+				$subscribers = array();
 			}
 
 			foreach ( $choices as $key => $choice_value ) {
@@ -56,7 +61,7 @@ if ( ! class_exists( 'ChoiceField' ) ) {
 			if ( isset( $default ) && ! array_key_exists( $default, $choices ) ) {
 				throw new SettingsConfigurationException( 'Default choice value is not present in choices array.' );
 			}
-			parent::__construct( $id, $name, $default, $renderer, $can_be_null, $hint, $conditions );
+			parent::__construct( $id, $name, $default, $renderer, $can_be_null, $hint, $conditions, $subscribers );
 			$this->choices = $choices;
 		}
 
@@ -173,6 +178,7 @@ if ( ! class_exists( 'ChoiceField' ) ) {
 				isset( $initial_values['can_be_null'] ) ? $initial_values['can_be_null'] : false,
 				isset( $initial_values['hint'] ) ? $initial_values['hint'] : '',
 				isset( $initial_values['conditions'] ) ? $initial_values['conditions'] : null,
+				isset( $initial_values['subscribers'] ) ? $initial_values['subscribers'] : null,
 			);
 		}
 	}

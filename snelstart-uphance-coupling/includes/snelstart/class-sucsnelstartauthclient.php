@@ -75,7 +75,7 @@ if ( ! class_exists( 'SUCSnelstartAuthClient' ) ) {
 					-1,
 					$this->_token_url . ":\n " . $msg,
 					null,
-					wp_remote_retrieve_headers( $response ),
+					is_array( wp_remote_retrieve_headers( $response ) ) ? wp_remote_retrieve_headers( $response ) : wp_remote_retrieve_headers( $response )->getAll(),
 				);
 			} else {
 				return json_decode( wp_remote_retrieve_body( $response ), true );

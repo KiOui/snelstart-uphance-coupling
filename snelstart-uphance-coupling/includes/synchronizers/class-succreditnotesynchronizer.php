@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 include_once SUC_ABSPATH . 'includes/synchronizers/class-sucsynchronisable.php';
 include_once SUC_ABSPATH . 'includes/snelstart/class-sucbtw.php';
+include_once SUC_ABSPATH . '/includes/objects/SUCSynchronizedObjects.php';
 
 if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 	/**
@@ -42,6 +43,31 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 		private array $credit_notes;
 
 		/**
+		 * The Uphance client to use for the synchronizer.
+		 *
+		 * @var SUCUphanceClient
+		 */
+		protected SUCUphanceClient $uphance_client;
+
+		/**
+		 * The Snelstart client to use for the synchronizer.
+		 *
+		 * @var SUCSnelstartClient
+		 */
+		protected SUCSnelstartClient $snelstart_client;
+
+		/**
+		 * Constructor.
+		 *
+		 * @param SUCuphanceClient   $uphance_client the Uphance client.
+		 * @param SUCSnelstartClient $snelstart_client the Snelstart client.
+		 */
+		public function __construct( SUCuphanceClient $uphance_client, SUCSnelstartClient $snelstart_client ) {
+			$this->uphance_client = $uphance_client;
+			$this->snelstart_client = $snelstart_client;
+		}
+
+		/**
 		 * Get the credit notes to sync.
 		 *
 		 * @throws SUCAPIException On Exception with the API.
@@ -67,6 +93,44 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 		}
 
 		/**
+		 * Get the URL of a credit note.
+		 *
+		 * @param array $object The object to get the URL for.
+		 *
+		 * @return string A URL pointing to the Uphance resource.
+		 */
+		public function get_url( array $object ): string {
+			return sprintf( 'https://app.uphance.com/credit_notes/%d', $object['id'] );
+		}
+
+		/**
+		 * Create a synchronized object.
+		 *
+		 * @param array       $object The object.
+		 * @param bool        $succeeded Whether the synchronization succeeded.
+		 * @param string      $source The source of the synchronization.
+		 * @param string      $method The method of the synchronization.
+		 * @param string|null $error_message A possible error message that occurred during synchronization.
+		 *
+		 * @return void
+		 */
+		public function create_synchronized_object( array $object, bool $succeeded, string $source, string $method, ?string $error_message ) {
+			SUCSynchronizedObjects::create_synchronized_object(
+				intval( $object['id'] ),
+				$this::$type,
+				$succeeded,
+				$source,
+				$method,
+				$this::get_url( $object ),
+				$error_message,
+				array(
+					'Credit note number' => $object['credit_note_number'],
+					'Total' => suc_format_number( $object['grand_total'] ),
+				),
+			);
+		}
+
+		/**
 		 * Synchronize credit notes to Snelstart.
 		 *
 		 * @return void
@@ -75,24 +139,32 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 			$amount_of_credit_notes = count( $this->credit_notes );
 
 			for ( $i = 0; $i < $amount_of_credit_notes; $i ++ ) {
-				try {
-					$credit_note_converted = $this->setup_credit_note_for_synchronisation( $this->credit_notes[ $i ] );
-					$this->sync_credit_note_to_snelstart( $credit_note_converted );
-				} catch ( Exception $e ) {
-					$error_log = new SUCErrorLogging();
-					$error_log->set_error( $e . esc_html( sprintf( '\nURL: https://app.uphance.com/credit_notes/%d', $this->credit_notes[ $i ]['id'] ) ), 'synchronize-credit-note', self::$type, $this->credit_notes[ $i ]['id'] );
+				if ( ! $this->object_already_successfully_synchronized( $this->credit_notes[ $i ]['id'] ) ) {
+					try {
+						$this->synchronize_one( $this->credit_notes[ $i ] );
+						$this->create_synchronized_object( $this->credit_notes[ $i ], true, 'cron', 'create', null );
+					} catch ( Exception $e ) {
+						if ( get_class( $e ) === 'SUCAPIException' ) {
+							$message = $e->get_message();
+						} else {
+							$message = $e->__toString();
+						}
+						$this->create_synchronized_object( $this->credit_notes[ $i ], false, 'cron', 'create', $message );
+					}
 				}
 			}
 		}
 
 		/**
-		 * Setup a credit note for synchronization to Snelstart.
+		 * Set up a credit note for synchronization to Snelstart.
 		 *
-		 * @throws SUCAPIException On Exception with the API.
+		 * @param array $credit_note The credit note from Uphance.
+		 *
+		 * @throws Exception|SUCAPIException On Exception with the API or if Snelstart relatie was not found.
 		 */
 		private function setup_credit_note_for_synchronisation( array $credit_note ): array {
 			$order = $this->uphance_client->orders( $credit_note['order_number'] )->result['sales_orders'][0];
-			$credit_note['customer'] = $this->uphance_client->customer_by_id( $order['company_id'] )['customer'];
+			$customer = $this->uphance_client->customer_by_id( $order['company_id'] )['customer'];
 			$credit_note['items_total'] = $credit_note['items_total'] * -1;
 			$credit_note['items_tax'] = $credit_note['items_total'] * -1;
 			$credit_note['subtotal'] = $credit_note['subtotal'] * -1;
@@ -121,21 +193,9 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 					),
 				);
 			}
-			return $credit_note;
-		}
 
-		/**
-		 * Synchronize a credit note to Snelstart.
-		 *
-		 * @param array $credit_note the credit note to synchronize.
-		 *
-		 * @return void
-		 * @throws SUCAPIException|Exception On Exception with the API or something else.
-		 */
-		public function sync_credit_note_to_snelstart( array $credit_note ): void {
-			$credit_note_id = $credit_note['id'];
-			$customer = $credit_note['customer'];
-			$grootboek_regels = suc_construct_order_line_items( $credit_note['line_items'], $this->btw_converter );
+			$credit_note_id              = $credit_note['id'];
+			$grootboek_regels            = suc_construct_order_line_items( $credit_note['line_items'], $this->btw_converter );
 			$btw_regels                  = suc_construct_btw_line_items( $credit_note['line_items'] );
 			$snelstart_relatie_for_order = get_or_create_relatie_with_name( $this->snelstart_client, $customer );
 
@@ -150,18 +210,47 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 				$credit_note_date = new DateTime( 'now' );
 			}
 
-			$this->snelstart_client->add_verkoopboeking( $credit_note['credit_note_number'], $snelstart_relatie_for_order['id'], suc_format_number( $credit_note['grand_total'] ), 0, $grootboek_regels, $btw_regels, $credit_note_date );
+			return array(
+				'factuurnummer' => $credit_note['credit_note_number'],
+				'klant' => array(
+					'id' => $snelstart_relatie_for_order['id'],
+				),
+				'boekingsregels' => $grootboek_regels,
+				'factuurbedrag' => suc_format_number( $credit_note['grand_total'] ),
+				'betalingstermijn' => 0,
+				'factuurdatum' => $credit_note_date->format( 'Y-m-d H:i:s' ),
+				'btw' => $btw_regels,
+			);
 		}
 
 		/**
 		 * Synchronize one credit note to Snelstart.
 		 *
-		 * @param string $id the ID of the credit note to synchronize.
+		 * @param array $to_synchronize the data of the credit note to synchronize.
 		 *
 		 * @return void
+		 *
+		 * @throws SUCAPIException On Snelstart API exception.
 		 */
-		public function synchronize_one( string $id ): void {
-			// TODO: implement this method.
+		public function synchronize_one( array $to_synchronize ): void {
+			$credit_note_converted = $this->setup_credit_note_for_synchronisation( $to_synchronize );
+			$snelstart_credit_note = $this->snelstart_client->add_verkoopboeking( $credit_note_converted );
+			SUCObjectMapping::create_mapped_object(
+				self::$type,
+				'uphance',
+				'snelstart',
+				$to_synchronize['id'],
+				$snelstart_credit_note['id'],
+			);
+		}
+
+		/**
+		 * Retrieve an object from Uphance by ID.
+		 *
+		 * @throws SUCAPIException On Uphance API exception.
+		 */
+		public function retrieve_object( int $id ): array {
+			return $this->uphance_client->credit_note( $id );
 		}
 
 		/**
@@ -170,9 +259,7 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 		 * @throws SUCAPIException|Exception When settings are not configured or on Exception with the API.
 		 */
 		public function setup(): void {
-			$manager          = SUCSettings::instance()->get_settings();
-			$credit_note_from = $manager->get_value( 'uphance_synchronise_credit_notes_from' );
-			$max_to_sync      = $manager->get_value( 'max_credit_notes_to_synchronize' );
+			$manager                = SUCSettings::instance()->get_settings();
 			$grootboekcode_btw_hoog = $manager->get_value( 'snelstart_grootboekcode_btw_hoog' );
 			$grootboekcode_btw_geen = $manager->get_value( 'snelstart_grootboekcode_btw_geen' );
 			if ( ! isset( $grootboekcode_btw_hoog ) || ! isset( $grootboekcode_btw_geen ) ) {
@@ -182,6 +269,17 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 			$tax_types = $this->snelstart_client->btwtarieven();
 
 			$this->btw_converter = new SUCBTW( $grootboekcode_btw_hoog, $grootboekcode_btw_geen, $tax_types );
+		}
+
+		/**
+		 * Set up objects for synchronization.
+		 *
+		 * @throws SUCAPIException|SettingsConfigurationException On exception with the API or when settings are not configured correctly.
+		 */
+		public function setup_objects(): void {
+			$manager          = SUCSettings::instance()->get_settings();
+			$credit_note_from = $manager->get_value( 'uphance_synchronise_credit_notes_from' );
+			$max_to_sync      = $manager->get_value( 'max_credit_notes_to_synchronize' );
 			$this->credit_notes = $this->get_credit_notes_to_sync( $credit_note_from, $max_to_sync );
 		}
 
@@ -189,6 +287,7 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 		 * Update the WordPress settings.
 		 *
 		 * @return void
+		 * @throws SettingsConfigurationException When settings are not configured correctly.
 		 */
 		public function after_run(): void {
 			if ( count( $this->credit_notes ) > 0 ) {
@@ -203,10 +302,33 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 		 * Whether this synchronizer is enabled.
 		 *
 		 * @return bool True when this synchronizer is enabled.
+		 * @throws SettingsConfigurationException When settings are not configured correctly.
 		 */
 		public function enabled(): bool {
 			$manager          = SUCSettings::instance()->get_settings();
 			return $manager->get_value( 'synchronize_credit_notes_to_snelstart' );
+		}
+
+		/**
+		 * Update a credit note.
+		 *
+		 * @param array $to_synchronize The credit note to update.
+		 *
+		 * @return void
+		 */
+		public function update_one( array $to_synchronize ): void {
+			// TODO: Implement update_one() method.
+		}
+
+		/**
+		 * Delete a credit note.
+		 *
+		 * @param array $to_synchronize The credit note to delete.
+		 *
+		 * @return void
+		 */
+		public function delete_one( array $to_synchronize ): void {
+			// TODO: Implement delete_one() method.
 		}
 	}
 }

@@ -18,56 +18,130 @@ if ( ! interface_exists( 'SUCSynchronisable' ) ) {
 	abstract class SUCSynchronisable {
 
 		/**
-		 * The Uphance client to use for the synchronizer.
-		 *
-		 * @var SUCUphanceClient
-		 */
-		protected SUCUphanceClient $uphance_client;
-
-		/**
-		 * The Snelstart client to use for the synchronizer.
-		 *
-		 * @var SUCSnelstartClient
-		 */
-		protected SUCSnelstartClient $snelstart_client;
-
-		/**
-		 * Constructor.
-		 *
-		 * @param SUCuphanceClient   $uphance_client the Uphance client.
-		 * @param SUCSnelstartClient $snelstart_client the Snelstart client.
-		 */
-		public function __construct( SUCuphanceClient $uphance_client, SUCSnelstartClient $snelstart_client ) {
-			$this->uphance_client = $uphance_client;
-			$this->snelstart_client = $snelstart_client;
-		}
-
-		/**
 		 * Setup this class for a run() or synchronize_one().
 		 *
 		 * @return void
+		 * @throws Exception When setup of the class fails.
 		 */
 		abstract public function setup(): void;
+
+
+		/**
+		 * Setup the class objects for a run().
+		 *
+		 * @return void
+		 */
+		abstract public function setup_objects(): void;
 
 		/**
 		 * Method to synchronize multiple instances.
 		 *
-		 * The method setup() must be called before this method. The method after_run() must be called after this method.
+		 * The setup() and setup_objects() methods must be called before this method. The method after_run() must be called after this method.
 		 *
 		 * @return void
 		 */
 		abstract public function run(): void;
 
 		/**
-		 * Method to synchronize one instance.
+		 * Get the URL of an object.
 		 *
-		 * The method setup() must be called before this method.
+		 * @param array $object The object to get the URL for.
 		 *
-		 * @param string $id the ID of the instance to synchronize.
+		 * @return string A URL pointing to the Uphance resource.
+		 */
+		abstract public function get_url( array $object ): string;
+
+		/**
+		 * Check whether a successful synchronization already took place via another method.
+		 *
+		 * @param int $id The ID of the invoice.
+		 *
+		 * @return bool Whether the invoice was already successfully synchronized.
+		 */
+		public function object_already_successfully_synchronized( int $id ): bool {
+			$posts = get_posts(
+				array(
+					'post_type' => 'suc_synchronized',
+					'meta_query' => array(
+						array(
+							'key'     => 'id',
+							'value'   => $id,
+							'compare' => '=',
+						),
+						array(
+							'key' => 'succeeded',
+							'value' => true,
+							'compare' => '=',
+						),
+						array(
+							'key' => 'type',
+							'value' => $this::$type,
+							'compare' => '=',
+						),
+					),
+				)
+			);
+			return count( $posts ) > 0;
+		}
+
+		/**
+		 * Create a synchronized object.
+		 *
+		 * @param array       $object The object.
+		 * @param bool        $succeeded Whether the synchronization succeeded.
+		 * @param string      $source The source of the synchronization.
+		 * @param string      $method The method of the synchronization.
+		 * @param string|null $error_message A possible error message that occurred during synchronization.
 		 *
 		 * @return void
 		 */
-		abstract public function synchronize_one( string $id): void;
+		abstract public function create_synchronized_object( array $object, bool $succeeded, string $source, string $method, ?string $error_message );
+
+		/**
+		 * Method to synchronize one instance.
+		 *
+		 * The setup() method must be called before this method.
+		 *
+		 * @param array $to_synchronize the data to synchronize.
+		 *
+		 * @throws SUCAPIException On Exception with the API.
+		 * @return void
+		 */
+		abstract public function synchronize_one( array $to_synchronize ): void;
+
+		/**
+		 * Method to update one instance.
+		 *
+		 * The setup() method must be called before this method.
+		 *
+		 * @param array $to_synchronize the data to synchronize.
+		 *
+		 * @throws SUCAPIException On Exception with the API.
+		 * @return void
+		 */
+		abstract public function update_one( array $to_synchronize ): void;
+
+		/**
+		 * Method to delete one instance.
+		 *
+		 * The setup() method must be called before this method.
+		 *
+		 * @param array $to_synchronize the data to delete.
+		 *
+		 * @throws SUCAPIException On Exception with the API.
+		 * @return void
+		 */
+		abstract public function delete_one( array $to_synchronize ): void;
+
+		/**
+		 * Retrieve data of an object by its ID.
+		 *
+		 * @param int $id the ID of the object to retrieve.
+		 *
+		 * @throws SUCAPIException On Exception with the API.
+		 * @return array
+		 */
+		abstract public function retrieve_object( int $id ): array;
 
 		/**
 		 * Actions to execute after a run.

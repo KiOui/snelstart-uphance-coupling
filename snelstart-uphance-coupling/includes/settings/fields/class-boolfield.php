@@ -29,12 +29,17 @@ if ( ! class_exists( 'BoolField' ) ) {
 		 * @param ?callable $renderer an optional default renderer for the setting.
 		 * @param string    $hint the hint to display next to the setting.
 		 * @param ?array    $conditions optional array of SettingsConditions that determine whether to display this setting.
+		 * @param ?array    $subscribers optional array of Subscribers that get called when this setting updates.
 		 *
 		 * @throws SettingsConfigurationException When $default is null and $can_be_null is false.
 		 */
-		public function __construct( string $id, string $name, ?bool $default, ?callable $renderer = null, string $hint = '', ?array $conditions = null ) {
+		public function __construct( string $id, string $name, ?bool $default, ?callable $renderer = null, string $hint = '', ?array $conditions = null, ?array $subscribers = null ) {
 			if ( is_null( $conditions ) ) {
 				$conditions = array();
+			}
+
+			if ( is_null( $subscribers ) ) {
+				$subscribers = array();
 			}
 
 			if ( ! is_null( $default ) ) {
@@ -56,7 +61,8 @@ if ( ! class_exists( 'BoolField' ) ) {
 				$renderer,
 				false,
 				$hint,
-				$conditions
+				$conditions,
+				$subscribers
 			);
 		}
 
@@ -195,6 +201,7 @@ if ( ! class_exists( 'BoolField' ) ) {
 				isset( $initial_values['renderer'] ) ? $initial_values['renderer'] : null,
 				isset( $initial_values['hint'] ) ? $initial_values['hint'] : '',
 				isset( $initial_values['conditions'] ) ? $initial_values['conditions'] : null,
+				isset( $initial_values['subscribers'] ) ? $initial_values['subscribers'] : null,
 			);
 		}
 	}

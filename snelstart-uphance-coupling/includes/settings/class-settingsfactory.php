@@ -71,7 +71,7 @@ if ( ! class_exists( 'SettingsFactory' ) ) {
 		 *
 		 * @param array $setting_configuration The configuration to use for the setting.
 		 *
-		 * @throws SettingsConfigurationException When the setting type in $setting_configuration was not found.
+		 * @throws SettingsConfigurationException | ReflectionException When the setting type in $setting_configuration was not found or when a method is not found.
 		 */
 		public static function create_setting( array $setting_configuration ): SettingsField {
 			$type = $setting_configuration['type'];

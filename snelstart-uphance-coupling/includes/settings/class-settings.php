@@ -152,7 +152,7 @@ if ( ! class_exists( 'Settings' ) ) {
 			foreach ( $this->settings as $id => $setting ) {
 				if ( array_key_exists( $id, $serialized_setting_values ) ) {
 					$deserialized_setting_value = $setting->deserialize( $serialized_setting_values[ $id ] );
-					if ( ! $setting->set_value( $deserialized_setting_value ) ) {
+					if ( ! $setting->set_initial_value( $deserialized_setting_value ) ) {
 						$setting->set_default();
 					}
 				} else {
