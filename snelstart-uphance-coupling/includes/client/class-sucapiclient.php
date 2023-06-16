@@ -85,20 +85,22 @@ abstract class SUCAPIClient {
 		try {
 			$decoded_json = json_decode( $body, true );
 		} catch ( Exception $e ) {
-			return 'error';
+			return $body;
 		}
 		if ( gettype( $decoded_json ) === 'array' ) {
 			if ( key_exists( 'message', $decoded_json ) ) {
 				return $decoded_json['message'];
 			} else if ( key_exists( 0, $decoded_json ) && key_exists( 'message', $decoded_json[0] ) ) {
 				return $decoded_json[0]['message'];
+			} else if ( key_exists( 'error', $decoded_json ) && key_exists( 'message', $decoded_json['error'] ) ) {
+				return $decoded_json['error']['message'];
 			} else {
-				return 'error';
+				return $body;
 			}
 		} else if ( gettype( $decoded_json ) === 'string' ) {
 			return $decoded_json;
 		} else {
-			return 'error';
+			return $body;
 		}
 	}
 

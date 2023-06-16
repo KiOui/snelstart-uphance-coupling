@@ -1,4 +1,9 @@
 <?php
+/**
+ * SUC Pick Ticket REST Route.
+ *
+ * @package snelstart-uphance-coupling
+ */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

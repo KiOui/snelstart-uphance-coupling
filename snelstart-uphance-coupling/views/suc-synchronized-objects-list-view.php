@@ -1,17 +1,27 @@
 <?php
+/**
+ * Synchronized objects list view.
+ *
+ * @package snelstart-uphance-coupling
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 include_once SUC_ABSPATH . 'includes/synchronizers/class-sucsynchronizer.php';
 
-$paged = isset( $_GET['paged'] ) ? intval( wp_unslash( $_GET['paged'] ) ) : 1;
-if ( $paged <= 0 ) {
-	$paged = 1;
+$suc_paged = isset( $_GET['paged'] ) ? intval( wp_unslash( $_GET['paged'] ) ) : 1;
+if ( $suc_paged <= 0 ) {
+	$suc_paged = 1;
 }
 
-$per_page = isset( $_GET['per_page'] ) ? intval( wp_unslash( $_GET['per_page'] ) ) : 20;
-if ( $per_page <= 0 ) {
-	$per_page = 20;
+$suc_per_page = isset( $_GET['per_page'] ) ? intval( wp_unslash( $_GET['per_page'] ) ) : 20;
+if ( $suc_per_page <= 0 ) {
+	$suc_per_page = 20;
 }
 
+// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- If statement rules everything out except for true and false.
 $filter_succeeded = isset( $_GET['succeeded'] ) ? strval( wp_unslash( $_GET['succeeded'] ) ) : null;
 if ( 'true' !== $filter_succeeded && 'false' !== $filter_succeeded ) {
 	$filter_succeeded = null;
@@ -19,16 +29,19 @@ if ( 'true' !== $filter_succeeded && 'false' !== $filter_succeeded ) {
 
 $types = array_keys( SUCSynchronizer::$synchronizer_classes );
 
+// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- We check whether the type is in the array.
 $filter_type = isset( $_GET['type'] ) ? strval( wp_unslash( $_GET['type'] ) ) : null;
 if ( ! in_array( $filter_type, $types ) ) {
 	$filter_type = null;
 }
 
+// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- If statement rules everything out except for webhook and cron.
 $filter_source = isset( $_GET['source'] ) ? strval( wp_unslash( $_GET['source'] ) ) : null;
 if ( 'webhook' !== $filter_source && 'cron' !== $filter_source ) {
 	$filter_source = null;
 }
 
+// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- If statement rules everything out except for create, update and delete.
 $filter_method = isset( $_GET['method'] ) ? strval( wp_unslash( $_GET['method'] ) ) : null;
 if ( 'create' !== $filter_method && 'update' !== $filter_method && 'delete' !== $filter_method ) {
 	$filter_method = null;
@@ -46,9 +59,9 @@ $nonce = wp_create_nonce( 'wp_rest' );
 			<select class="filter-object-type input-mini me-1" title="Filter object type" v-model="filter_type">
 				<option value="">Filter object type</option>
 				<?php
-				foreach ( $types as $type ) {
+				foreach ( $types as $suc_type ) {
 					?>
-						<option value="<?php echo esc_attr( $type ); ?>"><?php echo esc_html( $type ); ?></option>
+						<option value="<?php echo esc_attr( $suc_type ); ?>"><?php echo esc_html( $suc_type ); ?></option>
 						<?php
 				}
 				?>
@@ -258,8 +271,8 @@ $nonce = wp_create_nonce( 'wp_rest' );
 	createApp({
 		data() {
 			return {
-				page: <?php echo esc_js( $paged ); ?>,
-				per_page: <?php echo esc_js( $per_page ); ?>,
+				page: <?php echo esc_js( $suc_paged ); ?>,
+				per_page: <?php echo esc_js( $suc_per_page ); ?>,
 				filter_succeeded: "<?php echo esc_js( $filter_succeeded ); ?>",
 				filter_type: "<?php echo esc_js( $filter_type ); ?>",
 				filter_source: "<?php echo esc_js( $filter_source ); ?>",

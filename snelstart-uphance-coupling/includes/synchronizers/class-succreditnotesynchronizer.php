@@ -309,10 +309,24 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 			return $manager->get_value( 'synchronize_credit_notes_to_snelstart' );
 		}
 
+		/**
+		 * Update a credit note.
+		 *
+		 * @param array $to_synchronize The credit note to update.
+		 *
+		 * @return void
+		 */
 		public function update_one( array $to_synchronize ): void {
 			// TODO: Implement update_one() method.
 		}
 
+		/**
+		 * Delete a credit note.
+		 *
+		 * @param array $to_synchronize The credit note to delete.
+		 *
+		 * @return void
+		 */
 		public function delete_one( array $to_synchronize ): void {
 			// TODO: Implement delete_one() method.
 		}

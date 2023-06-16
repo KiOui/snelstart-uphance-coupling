@@ -1,4 +1,9 @@
 <?php
+/**
+ * SUC Retry REST Route.
+ *
+ * @package snelstart-uphance-coupling
+ */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

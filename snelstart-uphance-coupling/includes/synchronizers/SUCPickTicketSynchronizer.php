@@ -37,14 +37,14 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		/**
 		 * The shipping method to use.
 		 *
-		 * @var array
+		 * @var string
 		 */
 		private string $shipping_method;
 
 		/**
 		 * The ID of the shipping method to use.
 		 *
-		 * @var array
+		 * @var int
 		 */
 		private int $shipping_method_id;
 
@@ -80,7 +80,6 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		 */
 		public function run(): void {
 			$amount_of_pick_tickets = count( $this->pick_tickets );
-
 			for ( $i = 0; $i < $amount_of_pick_tickets; $i ++ ) {
 				if ( ! $this->object_already_successfully_synchronized( $this->pick_tickets[ $i ]['id'] ) ) {
 					try {
@@ -92,22 +91,24 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 							'create',
 							null
 						);
-					} catch ( SUCAPIException $e ) {
-						$this->create_synchronized_object(
-							$this->pick_tickets[ $i ],
-							false,
-							'cron',
-							'create',
-							$e->get_message()
-						);
 					} catch ( Exception $e ) {
-						$this->create_synchronized_object(
-							$this->pick_tickets[ $i ],
-							false,
-							'cron',
-							'create',
-							$e->__toString()
-						);
+						if ( get_class( $e ) === 'SUCAPIException' ) {
+							$this->create_synchronized_object(
+								$this->pick_tickets[ $i ],
+								false,
+								'cron',
+								'create',
+								$e->get_message()
+							);
+						} else {
+							$this->create_synchronized_object(
+								$this->pick_tickets[ $i ],
+								false,
+								'cron',
+								'create',
+								$e->__toString()
+							);
+						}
 					}
 				}
 			}
@@ -156,7 +157,7 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		 *
 		 * @return float The weight converted to KG.
 		 */
-		private function convert_weight_to_kg( float $weight, string $weight_unit ) {
+		private function convert_weight_to_kg( float $weight, string $weight_unit ): float {
 			if ( 'g' === $weight_unit ) {
 				return $weight / 1000;
 			} else if ( 'oz' === $weight_unit ) {
@@ -195,7 +196,7 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		 *
 		 * @return array The data to be sent to Sendcloud.
 		 */
-		public function setup_pick_ticket_for_synchronisation( array $pick_ticket ) {
+		public function setup_pick_ticket_for_synchronisation( array $pick_ticket ): array {
 			if ( ! empty( $pick_ticket['address']['line_2'] ) && ! empty( $pick_ticket['address']['line_3'] ) ) {
 				$address_2 = $pick_ticket['address']['line_2'] . ' - ' . $pick_ticket['address']['line_3'];
 			} else if ( ! empty( $pick_ticket['address']['line_2'] ) ) {
@@ -206,12 +207,21 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 				$address_2 = '';
 			}
 
-			$dimensions = $this->convert_dimensions( $pick_ticket['dimensions'] );
+			if ( $pick_ticket['dimensions'] ) {
+				$dimensions = $this->convert_dimensions( $pick_ticket['dimensions'] );
+			} else {
+				$dimensions = null;
+			}
 
 			if ( isset( $pick_ticket['gross_weight'] ) && '' !== $pick_ticket['gross_weight'] ) {
 				$weight = suc_format_number( $this->convert_weight_to_kg( $pick_ticket['gross_weight'], $pick_ticket['gross_weight_unit'] ) );
 			} else {
-				$weight = null;
+				$weight = 0.001;
+			}
+
+			// Weight parameter must be greater than 0.001.
+			if ( $weight < 0.001 ) {
+				$weight = 0.001;
 			}
 
 			return array(
@@ -268,12 +278,19 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		 * Whether this synchronizer should be enabled.
 		 *
 		 * @return bool whether this synchronizer is enabled.
+		 * @throws SettingsConfigurationException When the 'synchronize_pick_tickets_to_sendcloud' setting is not registered.
 		 */
 		public function enabled(): bool {
 			$manager          = SUCSettings::instance()->get_settings();
 			return $manager->get_value( 'synchronize_pick_tickets_to_sendcloud' );
 		}
 
+		/**
+		 * Setup this class.
+		 *
+		 * @return void
+		 * @throws SettingsConfigurationException|Exception When an Exception occurs during setup.
+		 */
 		public function setup(): void {
 			$shipping_methods = SUCCache::instance()->get_shipping_methods();
 			if ( null === $shipping_methods ) {
@@ -342,7 +359,20 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 			$this->pick_tickets = $this->get_pick_tickets_to_sync( $pick_tickets_from, $max_to_sync );
 		}
 
-		public function after_run(): void {}
+		/**
+		 * Update settings after run.
+		 *
+		 * @return void
+		 *
+		 * @throws SettingsConfigurationException When settings are not configured correctly.
+		 */
+		public function after_run(): void {
+			if ( count( $this->pick_tickets ) > 0 ) {
+				$latest_pick_ticket = $this->pick_tickets[ count( $this->pick_tickets ) - 1 ]['id'];
+				$settings_manager = SUCSettings::instance()->get_settings();
+				$settings_manager->set_value( 'uphance_synchronise_pick_tickets_from', $latest_pick_ticket );
+			}
+		}
 
 		/**
 		 * Get the URL of a pick ticket.
@@ -396,6 +426,14 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 			return $this->uphance_client->pick_ticket( $id );
 		}
 
+		/**
+		 * Update a pick ticket.
+		 *
+		 * @param array $to_synchronize The pick ticket to update.
+		 *
+		 * @return void
+		 * @throws Exception When the mapped object does not exist.
+		 */
 		public function update_one( array $to_synchronize ): void {
 			$mapped_object = SUCObjectMapping::get_mapped_object( self::$type, 'uphance', 'sendcloud', $to_synchronize['id'] );
 			if ( null === $mapped_object ) {

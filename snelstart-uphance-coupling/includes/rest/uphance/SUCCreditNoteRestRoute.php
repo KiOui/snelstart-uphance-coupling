@@ -1,4 +1,9 @@
 <?php
+/**
+ * SUC Credit Note REST Route.
+ *
+ * @package snelstart-uphance-coupling
+ */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

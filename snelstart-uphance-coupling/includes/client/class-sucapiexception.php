@@ -66,8 +66,13 @@ if ( ! class_exists( 'SUCAPIException' ) ) {
 			return 'http status: ' . $this->http_status . ', code: ' . $this->code . ' - ' . $this->message . ', reason: ' . $this->reason;
 		}
 
-		public function get_message() {
-			return $this->message;
+		/**
+		 * Get the message.
+		 *
+		 * @return string
+		 */
+		public function get_message(): string {
+			return strval( $this->message );
 		}
 
 	}

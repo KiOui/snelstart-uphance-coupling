@@ -1,4 +1,9 @@
 <?php
+/**
+ * SUC Invoice REST Route.
+ *
+ * @package snelstart-uphance-coupling
+ */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

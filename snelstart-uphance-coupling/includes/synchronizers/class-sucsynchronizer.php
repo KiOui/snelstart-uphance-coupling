@@ -36,6 +36,13 @@ if ( ! class_exists( 'SUCSynchronizer' ) ) {
 			self::$synchronizer_classes[ $type ] = $class;
 		}
 
+		/**
+		 * Get a registered synchronizer.
+		 *
+		 * @param string $type The type of the synchronizer.
+		 *
+		 * @return SUCSynchronisable|null Either an SUCSynchronisable or null if the type was not found.
+		 */
 		public static function get_synchronizer_class( string $type ): ?SUCSynchronisable {
 			if ( array_key_exists( $type, self::$synchronizer_classes ) ) {
 				return self::$synchronizer_classes[ $type ];

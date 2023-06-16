@@ -72,6 +72,7 @@ if ( ! class_exists( 'SUCSendcloudClient' ) ) {
 		 * Overwrite auth_headers function to add Ocp-Apim-Subscription-Key.
 		 *
 		 * @return array auth headers to use for all requests.
+		 * @throws SUCAPIException When requesting the access token fails.
 		 */
 		protected function auth_headers(): array {
 			$keys = $this->auth_manager->request_access_token();
@@ -83,7 +84,15 @@ if ( ! class_exists( 'SUCSendcloudClient' ) ) {
 			);
 		}
 
-		public function create_parcel( array $data ) {
+		/**
+		 * Create a parcel in Sendcloud.
+		 *
+		 * @param array $data The data for the parcel.
+		 *
+		 * @return array the returned data.
+		 * @throws SUCAPIException On Exception with the request.
+		 */
+		public function create_parcel( array $data ): array {
 			return $this->_post(
 				'parcels',
 				null,
@@ -91,7 +100,15 @@ if ( ! class_exists( 'SUCSendcloudClient' ) ) {
 			);
 		}
 
-		public function update_parcel( array $data ) {
+		/**
+		 * Update a parcel in Sendcloud.
+		 *
+		 * @param array $data The data for the parcel.
+		 *
+		 * @return array the returned data.
+		 * @throws SUCAPIException On Exception with the request.
+		 */
+		public function update_parcel( array $data ): array {
 			return $this->_put(
 				'parcels',
 				null,
@@ -99,7 +116,15 @@ if ( ! class_exists( 'SUCSendcloudClient' ) ) {
 			);
 		}
 
-		public function cancel_parcel( string $id ) {
+		/**
+		 * Remove a parcel from Sendcloud.
+		 *
+		 * @param string $id The ID of the parcel in Sendcloud.
+		 *
+		 * @return array the returned data.
+		 * @throws SUCAPIException On Exception with the request.
+		 */
+		public function cancel_parcel( string $id ): array {
 			return $this->_post(
 				"parcels/$id/cancel",
 				null,
@@ -107,7 +132,13 @@ if ( ! class_exists( 'SUCSendcloudClient' ) ) {
 			);
 		}
 
-		public function get_shipping_methods() {
+		/**
+		 * Get available shipping methods.
+		 *
+		 * @return array An array with available shipping methods.
+		 * @throws SUCAPIException On exception with the API.
+		 */
+		public function get_shipping_methods(): array {
 			return $this->_get(
 				'shipping_methods',
 				null,

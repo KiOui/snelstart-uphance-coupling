@@ -181,8 +181,7 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		/**
 		 * Setup an invoice for synchronisation.
 		 *
-		 * @throws SUCAPIException When setup failed.
-		 * @throws Exception When construction of invoice failed.
+		 * @throws SUCAPIException|Exception When setup failed or when construction of invoice fails.
 		 */
 		private function setup_invoice_for_synchronisation( array $invoice ): array {
 			$invoice_id = $invoice['id'];
@@ -275,8 +274,7 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		 *
 		 * @return void
 		 *
-		 * @throws SettingsConfigurationException When settings are not configured correctly.
-		 * @throws SUCAPIException When invoices could not be retrieved from Uphance.
+		 * @throws SettingsConfigurationException|SUCAPIException When settings are not configured correctly and when invoice could not be retrieved from Uphance.
 		 */
 		public function setup_objects(): void {
 			$manager          = SUCSettings::instance()->get_settings();
@@ -317,8 +315,7 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		 *
 		 * @param array $to_synchronize The data to synchronize.
 		 *
-		 * @throws SUCAPIException On Exception with the API.
-		 * @throws Exception When the mapped object does not exist or the invoice can not be converted.
+		 * @throws SUCAPIException|Exception On Exception with the API or when the mapped object does not exist or the invoice can not be converted.
 		 */
 		public function update_one( array $to_synchronize ): void {
 			$mapped_object = SUCObjectMapping::get_mapped_object( self::$type, 'uphance', 'snelstart', $to_synchronize['id'] );
@@ -337,8 +334,7 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		 *
 		 * @param array $to_synchronize The data to remove.
 		 *
-		 * @throws SUCAPIException On Exception with the API.
-		 * @throws Exception When mapped object does not exist.
+		 * @throws SUCAPIException | Exception On Exception with the API or when mapped object does not exist.
 		 */
 		public function delete_one( array $to_synchronize ): void {
 			$mapped_object = SUCObjectMapping::get_mapped_object( self::$type, 'uphance', 'snelstart', $to_synchronize['id'] );

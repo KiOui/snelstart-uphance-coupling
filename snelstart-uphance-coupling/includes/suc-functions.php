@@ -460,9 +460,9 @@ if ( ! function_exists( 'suc_reset_uphance_token_on_settings_change' ) ) {
 	 * Reset Uphance token info when username/password settings change.
 	 *
 	 * @param string $setting_id The setting ID as string.
-	 * @param mixed $old_value The old value of the setting.
-	 * @param mixed $new_value The new value of the setting.
-	 * @param array $subscribers The list of subscribers subscribed to this event.
+	 * @param mixed  $old_value The old value of the setting.
+	 * @param mixed  $new_value The new value of the setting.
+	 * @param array  $subscribers The list of subscribers subscribed to this event.
 	 *
 	 * @return void
 	 */
@@ -481,9 +481,9 @@ if ( ! function_exists( 'suc_reset_snelstart_token_on_settings_change' ) ) {
 	 * Reset Snelstart token info when authentication credentials settings change.
 	 *
 	 * @param string $setting_id The setting ID as string.
-	 * @param mixed $old_value The old value of the setting.
-	 * @param mixed $new_value The new value of the setting.
-	 * @param array $subscribers The list of subscribers subscribed to this event.
+	 * @param mixed  $old_value The old value of the setting.
+	 * @param mixed  $new_value The new value of the setting.
+	 * @param array  $subscribers The list of subscribers subscribed to this event.
 	 *
 	 * @return void
 	 */

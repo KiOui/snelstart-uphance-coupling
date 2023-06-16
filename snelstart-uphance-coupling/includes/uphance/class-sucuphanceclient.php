@@ -175,7 +175,7 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 		 */
 		public function credit_note( int $credit_note_id ): array {
 			$url = "credit_notes/$credit_note_id";
-			return $this->_get( $url, null, null )['credit_notes'][0];
+			return $this->_get( $url, null, null )['credit_notes'];
 		}
 
 		/**
