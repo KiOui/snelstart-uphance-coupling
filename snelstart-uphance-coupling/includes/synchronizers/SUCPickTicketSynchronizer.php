@@ -226,7 +226,7 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 
 			return array(
 				'parcel' => array(
-					'name' => $pick_ticket['contact_name'],
+					'name' => is_null( $pick_ticket['contact_name'] ) ? $pick_ticket['customer_name'] : $pick_ticket['contact_name'],
 					'company_name' => $pick_ticket['customer_name'],
 					'email' => $pick_ticket['contact_email'],
 					'telephone' => $pick_ticket['contact_phone'],
