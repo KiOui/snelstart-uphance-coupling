@@ -28,7 +28,7 @@ if ( ! class_exists( 'SUCPickTicketRestRoute' ) ) {
 		public function add_rest_api_endpoints(): void {
 			register_rest_route(
 				'snelstart-uphance-coupling/v1',
-				'/uphance/pick-ticket',
+				'/uphance/pick-ticket/(?P<secret>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})',
 				array(
 					'methods' => 'POST',
 					'callback' => array( $this, 'synchronize_pick_ticket_to_sendcloud' ),
@@ -259,7 +259,6 @@ if ( ! class_exists( 'SUCPickTicketRestRoute' ) ) {
 		 * @throws SettingsConfigurationException When settings were not configured correctly.
 		 */
 		public function check_permissions( WP_REST_Request $request ): bool {
-			return false;
 			$manager          = SUCSettings::instance()->get_settings();
 			$api_secret = $manager->get_value( 'uphance_api_secret' );
 
