@@ -111,6 +111,187 @@ if ( ! function_exists( 'run_synchronizer' ) ) {
 	}
 }
 
+if ( ! function_exists( 'suc_send_daily_mail' ) ) {
+	/**
+	 * Send daily mail for failed synchronizations.
+	 *
+	 * @return void
+	 */
+	function suc_send_daily_mail(): void {
+		$admin_email = SUCSettings::instance()->get_settings()->get_value( 'send_error_email_to' );
+		if ( is_null( $admin_email ) ) {
+			return;
+		}
+
+		$now = time();
+		$posts = get_posts(
+			array(
+				'post_type' => 'suc_synchronized',
+				'date_query' => array(
+					'before' => gmdate( 'c', $now ),
+					'after' => gmdate( 'c', strtotime( '- 1 days', $now ) ),
+				),
+				'numberposts' => -1,
+			),
+		);
+
+		$summary = array();
+
+		foreach ( $posts as $post ) {
+			$post_meta = get_post_meta( $post->ID );
+
+			$succeeded = $post_meta['succeeded'];
+			$type = $post_meta['type'];
+			$method = $post_meta['method'];
+
+			if ( is_array( $succeeded ) && count( $succeeded ) > 0 ) {
+				$succeeded = '1' === $succeeded[0];
+			}
+
+			if ( is_array( $type ) && count( $method ) > 0 ) {
+				$type = strval( $type[0] );
+			}
+
+			if ( is_array( $method ) && count( $method ) > 0 ) {
+				$method = $method[0];
+			}
+
+			if ( 'create' === $method || 'update' === $method || 'delete' === $method ) {
+				if ( ! array_key_exists( $type, $summary ) ) {
+					$summary[ $type ] = array(
+						'create' => array(
+							'succeeded' => 0,
+							'not_succeeded' => 0,
+						),
+						'update' => array(
+							'succeeded' => 0,
+							'not_succeeded' => 0,
+						),
+						'delete' => array(
+							'succeeded' => 0,
+							'not_succeeded' => 0,
+						),
+					);
+				}
+
+				if ( $succeeded ) {
+					$summary[ $type ][ $method ]['succeeded'] = $summary[ $type ][ $method ]['succeeded'] + 1;
+				} else {
+					$summary[ $type ][ $method ]['not_succeeded'] = $summary[ $type ][ $method ]['not_succeeded'] + 1;
+				}
+			}
+		}
+
+		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
+
+		$subject = 'Snelstart Uphance Coupling: Daily Summary';
+		ob_start();
+		?>
+		<!DOCTYPE HTML>
+			<html style="font-family: Roboto, sans-serif;">
+				<head>
+					<title>Snelstart Uphance Coupling: Summary Email</title>
+				</head>
+				<body style="margin: 0; padding: 0;">
+					<div class="header" style="width: calc(100% - 30px);color: white;background-color: black;padding: 15px;">
+						<div class="top-header" style="width: calc(100%-30px);display: flex;align-items: center;">
+						</div>
+						<div class="bottom-header">
+							<p style="margin: 0;"><?php echo esc_html( get_bloginfo( 'name' ) ); ?></p>
+						</div>
+					</div>
+					<div class="salutation" style="padding: 15px;padding-top: 30px;width: calc(100%-30px);font-size: 30px;text-align: center;">
+						Hallo!
+					</div>
+
+					<div class="text" style="display: flex;flex-wrap: wrap;justify-content: center;padding: 15px;align-items: stretch;width: calc(100%-30px);">
+						<p style="max-width: 400px;">
+							Dit is een automatische samenvatting email van de gesynchroniseerde objecten van de afgelopen dag. Hieronder een tabel met details.
+						</p>
+					</div>
+
+					<div class="table-view" style="display: flex; flex-wrap: nowrap; overflow: scroll; justify-content: center; margin-bottom: 10px;">
+						<table style="border: 1px solid #c3c4c7; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
+							<thead style="border: 1px solid #c3c4c7;">
+								<tr>
+									<th style="padding: 10px;">
+										Type
+									</th>
+									<th style="padding: 10px;">
+										Create
+									</th>
+									<th style="padding: 10px;">
+										Update
+									</th>
+									<th style="padding: 10px;">
+										Delete
+									</th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ( $summary as $type => $data ) : ?>
+									<tr style="background-color: #f6f7f7;">
+										<td style="padding: 10px;">
+											<?php echo esc_html( $type ); ?>
+										</td>
+										<td style="padding: 10px;<?php if ( $data['create']['succeeded'] > 0 ) : ?>
+											color: green;
+										<?php endif; ?>">
+											<?php echo esc_html( $data['create']['succeeded'] ); ?> succeeded<br>
+										</td>
+										<td style="padding: 10px;<?php if ( $data['update']['succeeded'] > 0 ) : ?>
+											color: green;
+										<?php endif; ?>">
+											<?php echo esc_html( $data['update']['succeeded'] ); ?> succeeded<br>
+										</td>
+										<td style="padding: 10px;<?php if ( $data['delete']['succeeded'] > 0 ) : ?>
+											color: green;
+										<?php endif; ?>">
+											<?php echo esc_html( $data['delete']['succeeded'] ); ?> succeeded<br>
+										</td>
+									</tr>
+									<tr>
+										<td style="padding: 10px;">
+										</td>
+										<td style="padding: 10px; 
+										<?php if ( $data['create']['not_succeeded'] > 0 ) : ?>
+											color: red;
+										<?php endif; ?>">
+											<?php echo esc_html( $data['create']['not_succeeded'] ); ?> not succeeded
+										</td>
+										<td style="padding: 10px;
+										<?php if ( $data['update']['not_succeeded'] > 0 ) : ?>
+											color: red;
+										<?php endif; ?>">
+											<?php echo esc_html( $data['update']['not_succeeded'] ); ?> not succeeded
+										</td>
+										<td style="padding: 10px;
+										<?php if ( $data['delete']['not_succeeded'] > 0 ) : ?>
+											color: red;
+										<?php endif; ?>">
+											<?php echo esc_html( $data['delete']['not_succeeded'] ); ?> not succeeded
+										</td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+
+					<div class="greeting" style="text-align: center;">
+						Met vriendelijke groet,<br> <strong><?php echo esc_html( get_bloginfo( 'name' ) ); ?></strong>
+					</div>
+
+					<div class="footer" style="text-align: center;padding-top: 30px;font-size: 10px;width: calc(100%-30px);">
+						Deze e-mail is automatisch gegenereerd door <?php echo esc_html( get_bloginfo( 'name' ) ); ?>. Antwoorden is niet mogelijk.
+					</div>
+				</body>
+			</html>
+		<?php
+		$message = ob_get_clean();
+		wp_mail( $admin_email, $subject, $message, $headers );
+	}
+}
+
 if ( ! function_exists( 'cron_runner_sync_all' ) ) {
 	/**
 	 * Synchronization runner for cron.

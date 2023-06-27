@@ -1,6 +1,6 @@
 <?php
 /**
- * SUCSettings class
+ * SUCSettings class.
  *
  * @package snelstart-uphance-coupling
  */

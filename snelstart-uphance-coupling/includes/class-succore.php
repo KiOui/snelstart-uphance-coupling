@@ -106,6 +106,9 @@ if ( ! class_exists( 'SUCCore' ) ) {
 			if ( ! wp_next_scheduled( 'suc_sync_all' ) ) {
 				wp_schedule_event( time(), 'hourly', 'suc_sync_all' );
 			}
+			if ( ! wp_next_scheduled( 'suc_sync_daily_mail' ) ) {
+				wp_schedule_event( time(), 'daily', 'suc_daily_mail' );
+			}
 		}
 
 		/**
@@ -114,6 +117,8 @@ if ( ! class_exists( 'SUCCore' ) ) {
 		public function deactivation() {
 			$timestamp = wp_next_scheduled( 'suc_sync_all' );
 			wp_unschedule_event( $timestamp, 'suc_sync_all' );
+			$timestamp = wp_next_scheduled( 'suc_daily_mail' );
+			wp_unschedule_event( $timestamp, 'suc_daily_mail' );
 		}
 
 		/**
@@ -159,6 +164,7 @@ if ( ! class_exists( 'SUCCore' ) ) {
 			SUCSynchronizedObjects::init();
 			SUCObjectMapping::init();
 			add_action( 'suc_sync_all', 'cron_runner_sync_all' );
+			add_action( 'suc_daily_mail', 'suc_send_daily_mail' );
 			$this->register_rest_routes();
 
 			if ( ! isset( $uphance_client ) || ! isset( $snelstart_client ) ) {
