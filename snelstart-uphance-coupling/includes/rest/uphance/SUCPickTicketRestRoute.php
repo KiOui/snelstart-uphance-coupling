@@ -200,6 +200,33 @@ if ( ! class_exists( 'SUCPickTicketRestRoute' ) ) {
 		}
 
 		/**
+		 * Create or update a pick ticket.
+		 *
+		 * Because in some specific circumstances, a pick ticket in Uphance might only send an update call instead of
+		 * a create and update call we need to wrap update calls in this function. If we suspect that an update call
+		 * should have actually been preceded by a create call, we modify the update call and do a create request
+		 * instead.
+		 *
+		 * This happens when a draft pick ticket is modified to published. On the draft creation, no create call is
+		 * being sent. On the published modification, only an update call is sent.
+		 *
+		 * @param WP_REST_Request $request The REST API Request.
+		 *
+		 * @return WP_REST_Response A REST response with a failed or succeeded status code.
+		 */
+		private function create_or_update_pick_ticket_in_sendcloud( WP_REST_Request $request ): WP_REST_Response {
+			$pick_ticket = $request->get_param( 'pick_ticket' );
+			$mapped_object = SUCObjectMapping::get_mapped_object( SUCPickTicketSynchronizer::$type, 'uphance', 'sendcloud', $pick_ticket['id'] );
+			if ( null === $mapped_object ) {
+				// There is no mapped object yet, so this should have been a create call.
+				return $this->create_pick_ticket_in_sendcloud( $request );
+			} else {
+				// There is a mapped object, so a create call already preceded.
+				return $this->update_pick_ticket_in_sendcloud( $request );
+			}
+		}
+
+		/**
 		 * Try to synchronize an object again.
 		 *
 		 * @param WP_REST_Request $request The REST API request.
@@ -211,7 +238,7 @@ if ( ! class_exists( 'SUCPickTicketRestRoute' ) ) {
 			if ( 'pick_ticket_create' === $event ) {
 				return $this->create_pick_ticket_in_sendcloud( $request );
 			} else if ( 'pick_ticket_update' === $event ) {
-				return $this->update_pick_ticket_in_sendcloud( $request );
+				return $this->create_or_update_pick_ticket_in_sendcloud( $request );
 			} else if ( 'pick_ticket_delete' === $event ) {
 				return $this->delete_pick_ticket_from_sendcloud( $request );
 			} else {
