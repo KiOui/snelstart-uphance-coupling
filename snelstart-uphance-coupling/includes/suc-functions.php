@@ -677,3 +677,16 @@ if ( ! function_exists( 'suc_reset_snelstart_token_on_settings_change' ) ) {
 		}
 	}
 }
+
+if ( ! function_exists( 'suc_sendcloud_requires_state' ) ) {
+	/**
+     * Whether a country requires a state to be set in Sendcloud.
+     *
+	 * @param string $iso3166_1_land_code An ISO 3166 land code of a country to send a package to.
+	 *
+	 * @return bool Whether a country requires the state to be set in a POST request.
+	 */
+    function suc_sendcloud_requires_state( string $iso3166_1_land_code ): bool {
+        return 'US' === $iso3166_1_land_code || 'IT' === $iso3166_1_land_code || 'CA' === $iso3166_1_land_code;
+    }
+}

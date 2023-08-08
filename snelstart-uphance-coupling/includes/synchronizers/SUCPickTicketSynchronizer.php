@@ -236,7 +236,7 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 					'city' => $pick_ticket['address']['city'],
 					'country' => $pick_ticket['address']['country'],
 					'postal_code' => $pick_ticket['address']['postcode'],
-					'country_state' => $pick_ticket['address']['state'],
+					'country_state' => suc_sendcloud_requires_state( $pick_ticket['address']['country'] ) ? $pick_ticket['address']['state'] : null,
 					'parcel_items' => $this->map_parcel_items( $pick_ticket ),
 					'weight' => $weight,
 					'length' => is_null( $dimensions ) ? null : $dimensions['length'],
