@@ -68,7 +68,5 @@ if ( ! class_exists( 'SUCLand' ) ) {
 			$this->id                    = $id;
 			$this->uri                   = $uri;
 		}
-
-
 	}
 }

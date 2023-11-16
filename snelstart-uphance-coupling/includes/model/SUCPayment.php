@@ -82,6 +82,5 @@ if ( ! class_exists( 'SUCPayment' ) ) {
 		public function __toString() {
 			return sprintf( 'Payment %s (invoice: %s)', $this->id, $this->invoice_id );
 		}
-
 	}
 }

@@ -80,7 +80,7 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		 */
 		public function run(): void {
 			$amount_of_pick_tickets = count( $this->pick_tickets );
-			for ( $i = 0; $i < $amount_of_pick_tickets; $i ++ ) {
+			for ( $i = 0; $i < $amount_of_pick_tickets; $i++ ) {
 				if ( ! $this->object_already_successfully_synchronized( $this->pick_tickets[ $i ]['id'] ) ) {
 					try {
 						$this->synchronize_one( $this->pick_tickets[ $i ] );
@@ -89,6 +89,7 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 							true,
 							'cron',
 							'create',
+							null,
 							null
 						);
 					} catch ( Exception $e ) {
@@ -98,7 +99,8 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 								false,
 								'cron',
 								'create',
-								$e->get_message()
+								$e->get_message(),
+								null
 							);
 						} else {
 							$this->create_synchronized_object(
@@ -106,7 +108,8 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 								false,
 								'cron',
 								'create',
-								$e->__toString()
+								$e->__toString(),
+								null
 							);
 						}
 					}
@@ -174,7 +177,7 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		 *
 		 * @param string $dimension_string The dimension string.
 		 *
-		 * @return array An array of split dimensions.
+		 * @return array|null An array of split dimensions if the dimensions match, else null.
 		 */
 		private function convert_dimensions( string $dimension_string ): ?array {
 			$matches = array();
@@ -250,7 +253,7 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 						'id' => $this->shipping_method_id,
 						'name' => $this->shipping_method,
 					),
-					'request_label' => 'shipped' === $pick_ticket['status'],
+					'request_label' => false,
 				),
 			);
 		}
@@ -393,13 +396,21 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 		 * @param string      $source The source of the synchronization.
 		 * @param string      $method The method of the synchronization.
 		 * @param string|null $error_message A possible error message that occurred during synchronization.
+		 * @param array|null  $extra_data Possible extra data.
 		 *
 		 * @return void
 		 */
-		public function create_synchronized_object( array $object, bool $succeeded, string $source, string $method, ?string $error_message ) {
-			$extra_data = array();
+		public function create_synchronized_object( array $object, bool $succeeded, string $source, string $method, ?string $error_message, ?array $extra_data ): void {
+			if ( null === $extra_data ) {
+				$extra_data = array();
+			}
+
 			if ( array_key_exists( 'order_number', $object ) ) {
 				$extra_data['Order number'] = $object['order_number'];
+			}
+
+			if ( array_key_exists( 'status', $object ) ) {
+				$extra_data['Shipped'] = 'shipped' === $object['status'] ? 'true' : 'false';
 			}
 
 			SUCSynchronizedObjects::create_synchronized_object(

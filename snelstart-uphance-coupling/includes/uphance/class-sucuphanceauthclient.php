@@ -88,8 +88,9 @@ if ( ! class_exists( 'SUCUphanceAuthClient' ) ) {
 				throw new SUCAPIException(
 					intval( wp_remote_retrieve_response_code( $response ) ),
 					-1,
-					$this->token_url . ":\n " . $msg,
+					esc_html( $this->token_url . ":\n " . $msg ),
 					null,
+					// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- This is an array.
 					is_array( wp_remote_retrieve_headers( $response ) ) ? wp_remote_retrieve_headers( $response ) : wp_remote_retrieve_headers( $response )->getAll(),
 				);
 			} else {
@@ -98,8 +99,9 @@ if ( ! class_exists( 'SUCUphanceAuthClient' ) ) {
 					throw new SUCAPIException(
 						intval( wp_remote_retrieve_response_code( $response ) ),
 						-1,
-						$this->token_url . ":\n " . $body['error'],
+						esc_html( $this->token_url . ":\n " . $body['error'] ),
 						null,
+						// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- This is an array.
 						is_array( wp_remote_retrieve_headers( $response ) ) ? wp_remote_retrieve_headers( $response ) : wp_remote_retrieve_headers( $response )->getAll(),
 					);
 				}
@@ -107,8 +109,9 @@ if ( ! class_exists( 'SUCUphanceAuthClient' ) ) {
 					throw new SUCAPIException(
 						intval( wp_remote_retrieve_response_code( $response ) ),
 						-1,
-						'Access token request returned null',
+						esc_html( 'Access token request returned null' ),
 						null,
+						// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- This is an array.
 						is_array( wp_remote_retrieve_headers( $response ) ) ? wp_remote_retrieve_headers( $response ) : wp_remote_retrieve_headers( $response )->getAll(),
 					);
 				}

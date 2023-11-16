@@ -74,6 +74,5 @@ if ( ! class_exists( 'SUCAPIException' ) ) {
 		public function get_message(): string {
 			return strval( $this->message );
 		}
-
 	}
 }

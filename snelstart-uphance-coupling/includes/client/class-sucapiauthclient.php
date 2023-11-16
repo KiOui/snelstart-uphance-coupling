@@ -87,7 +87,7 @@ abstract class SUCAPIAuthClient {
 
 		$token_info = $this->request_access_token();
 		if ( isset( $token_info['error'] ) ) {
-			throw new SUCAPIException( 200, 200, $token_info['error'], null, null );
+			throw new SUCAPIException( 200, 200, esc_html( $token_info['error'] ), null, null );
 		}
 
 		if ( isset( $token_info['access_token'] ) ) {
@@ -133,4 +133,3 @@ abstract class SUCAPIAuthClient {
 		$this->_save_token_info( null );
 	}
 }
-

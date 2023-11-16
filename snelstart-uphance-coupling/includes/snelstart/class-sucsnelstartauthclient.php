@@ -73,8 +73,9 @@ if ( ! class_exists( 'SUCSnelstartAuthClient' ) ) {
 				throw new SUCAPIException(
 					intval( wp_remote_retrieve_response_code( $response ) ),
 					-1,
-					$this->_token_url . ":\n " . $msg,
+					esc_html( $this->_token_url . ":\n " . $msg ),
 					null,
+					// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- This is an array.
 					is_array( wp_remote_retrieve_headers( $response ) ) ? wp_remote_retrieve_headers( $response ) : wp_remote_retrieve_headers( $response )->getAll(),
 				);
 			} else {

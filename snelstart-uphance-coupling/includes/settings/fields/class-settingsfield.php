@@ -98,7 +98,7 @@ if ( ! class_exists( 'SettingsField' ) ) {
 		 */
 		public function __construct( string $id, string $name, $default, ?callable $renderer = null, bool $can_be_null = false, string $hint = '', ?array $conditions = null, ?array $subscribers = null ) {
 			if ( is_null( $default ) && ! $can_be_null ) {
-				throw new SettingsConfigurationException( "Error while registering setting $id, setting can not be null but no default is provided." );
+				throw new SettingsConfigurationException( esc_html( "Error while registering setting $id, setting can not be null but no default is provided." ) );
 			}
 
 			if ( is_null( $conditions ) ) {

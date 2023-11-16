@@ -110,7 +110,7 @@ if ( ! class_exists( 'SettingsSection' ) ) {
 			foreach ( $this->settings as $setting_key ) {
 				$setting_obj = $settings->get_field( $setting_key );
 				if ( is_null( $setting_obj ) ) {
-					throw new SettingsConfigurationException( "Setting with key $setting_key does not exist." );
+					throw new SettingsConfigurationException( esc_html( "Setting with key $setting_key does not exist." ) );
 				}
 				$conditions_hold = true;
 				foreach ( $setting_obj->get_conditions() as $condition ) {

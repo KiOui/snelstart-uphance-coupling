@@ -427,7 +427,7 @@ if ( ! function_exists( 'suc_get_or_create_relatie_with_name' ) ) {
 		if ( count( $relaties ) === 1 ) {
 			return $relaties[0];
 		} else if ( count( $relaties ) > 1 ) {
-			throw new Exception( sprintf( __( 'Multiple relaties found with name %s', 'snelstart-uphance-coupling' ), $naam ) );
+			throw new Exception( esc_html( sprintf( __( 'Multiple relaties found with name %s', 'snelstart-uphance-coupling' ), $naam ) ) );
 		}
 
 		$address = suc_retrieve_address_information( $customer );
@@ -456,8 +456,9 @@ if ( ! function_exists( 'suc_construct_btw_line_items' ) ) {
 	 * @param array $items the item array.
 	 *
 	 * @return array an array with BTW line items, null if constructing the BTW line items failed.
+	 * @throws Exception When construction of BTW line items failed.
 	 */
-	function suc_construct_btw_line_items( array $items ): array {
+	function suc_construct_btw_line_items( array $items, ?float $shipping_costs, ?float $shipping_tax ): array {
 		include_once SUC_ABSPATH . 'includes/snelstart/class-sucbtw.php';
 		$btw_items = array();
 		foreach ( $items as $item ) {
@@ -465,12 +466,15 @@ if ( ! function_exists( 'suc_construct_btw_line_items' ) ) {
 			$tax_level = $item['tax_level'];
 			$amount = array_reduce(
 				$item['line_quantities'],
-				function( int $carry, array $item ) {
+				function ( int $carry, array $item ) {
 					return $carry + $item['quantity'];
 				},
 				0
 			);
 			$tax_name = SUCBTW::convert_btw_amount_to_name( $tax_level );
+			if ( ! isset( $tax_name ) ) {
+				throw new Exception( esc_html( sprintf( __( 'Failed to get tax type for %.2F.', 'snelstart-uphance-coupling' ), $tax_level ) ) );
+			}
 			if ( key_exists( $tax_name, $btw_items ) ) {
 				$btw_items[ $tax_name ]['btwBedrag'] = $btw_items[ $tax_name ]['btwBedrag'] + $price * $amount * $tax_level / 100;
 			} else {
@@ -480,6 +484,23 @@ if ( ! function_exists( 'suc_construct_btw_line_items' ) ) {
 				);
 			}
 		}
+
+		if ( null !== $shipping_costs && $shipping_costs > 0 ) {
+			$tax_level = intval( $shipping_tax / $shipping_costs * 100 );
+			$tax_name = SUCBTW::convert_btw_amount_to_name( $tax_level );
+			if ( ! isset( $tax_name ) ) {
+				throw new Exception( esc_html( sprintf( __( 'Failed to get tax type for %.2F while computing shipping tax.', 'snelstart-uphance-coupling' ), $tax_level ) ) );
+			}
+			if ( key_exists( $tax_name, $btw_items ) ) {
+				$btw_items[ $tax_name ]['btwBedrag'] = $btw_items[ $tax_name ]['btwBedrag'] + $shipping_tax;
+			} else {
+				$btw_items[ $tax_name ] = array(
+					'btwSoort' => $tax_name,
+					'btwBedrag' => $shipping_tax,
+				);
+			}
+		}
+
 		// Format all btw items such that they have a maximum of two decimals.
 		foreach ( array_keys( $btw_items ) as $btw_items_key ) {
 			$btw_items[ $btw_items_key ]['btwBedrag'] = suc_format_number( $btw_items[ $btw_items_key ]['btwBedrag'] );
@@ -492,13 +513,15 @@ if ( ! function_exists( 'suc_construct_order_line_items' ) ) {
 	/**
 	 * Construct order line items for an invoice.
 	 *
-	 * @param array  $items the item array.
-	 * @param SUCBTW $btw_converter the BTW converter.
+	 * @param array      $items the item array.
+	 * @param float|null $shipping_costs optional shipping costs.
+	 * @param float|null $shipping_tax optional shipping tax.
+	 * @param SUCBTW     $btw_converter the BTW converter.
 	 *
-	 * @return array|null an array with line items, null if constructing the line items failed.
+	 * @return array an array with line items.
 	 * @throws Exception When construction of order line items failed.
 	 */
-	function suc_construct_order_line_items( array $items, SUCBTW $btw_converter ): array {
+	function suc_construct_order_line_items( array $items, ?float $shipping_costs, ?float $shipping_tax, SUCBTW $btw_converter ): array {
 		$to_order = array();
 		foreach ( $items as $item ) {
 			$price = $item['unit_price'];
@@ -507,7 +530,7 @@ if ( ! function_exists( 'suc_construct_order_line_items' ) ) {
 			$tax_level = $item['tax_level'];
 			$amount = array_reduce(
 				$item['line_quantities'],
-				function( int $carry, array $item ) {
+				function ( int $carry, array $item ) {
 					return $carry + $item['quantity'];
 				},
 				0
@@ -515,10 +538,10 @@ if ( ! function_exists( 'suc_construct_order_line_items' ) ) {
 			$grootboekcode = $btw_converter->get_grootboekcode_for_tax_amount( $tax_level );
 			$tax_type = $btw_converter->convert_btw_amount_to_type( $tax_level );
 			if ( ! isset( $tax_type ) ) {
-				throw new Exception( sprintf( __( 'Failed to get tax type for %.2F.', 'snelstart-uphance-coupling' ), $tax_level ) );
+				throw new Exception( esc_html( sprintf( __( 'Failed to get tax type for %.2F.', 'snelstart-uphance-coupling' ), $tax_level ) ) );
 			}
 			if ( ! isset( $grootboekcode ) ) {
-				throw new Exception( sprintf( __( 'Failed to get the grootboekcode for tax level %.2F.', 'snelstart-uphance-coupling' ), $tax_level ) );
+				throw new Exception( esc_html( sprintf( __( 'Failed to get the grootboekcode for tax level %.2F.', 'snelstart-uphance-coupling' ), $tax_level ) ) );
 			}
 			$tax_name   = $tax_type['btwSoort'];
 			$to_order[] = array(
@@ -530,6 +553,28 @@ if ( ! function_exists( 'suc_construct_order_line_items' ) ) {
 				'btwSoort'     => $tax_name,
 			);
 		}
+
+		if ( null !== $shipping_costs && $shipping_costs > 0 ) {
+			$tax_level = intval( $shipping_tax / $shipping_costs * 100 );
+			$grootboekcode = $btw_converter->get_grootboekcode_for_tax_amount( $tax_level );
+			$tax_type = $btw_converter->convert_btw_amount_to_type( $tax_level );
+			if ( ! isset( $tax_type ) ) {
+				throw new Exception( esc_html( sprintf( __( 'Failed to get tax type for %.2F.', 'snelstart-uphance-coupling' ), $tax_level ) ) );
+			}
+			if ( ! isset( $grootboekcode ) ) {
+				throw new Exception( esc_html( sprintf( __( 'Failed to get the grootboekcode for tax level %.2F.', 'snelstart-uphance-coupling' ), $tax_level ) ) );
+			}
+			$tax_name = $tax_type['btwSoort'];
+			$to_order[] = array(
+				'omschrijving' => __( 'Shipping costs', 'snelstart-uphance-coupling' ),
+				'grootboek'    => array(
+					'id' => $grootboekcode,
+				),
+				'bedrag'       => suc_format_number( $shipping_costs ),
+				'btwSoort'     => $tax_name,
+			);
+		}
+
 		return $to_order;
 	}
 }
@@ -680,13 +725,13 @@ if ( ! function_exists( 'suc_reset_snelstart_token_on_settings_change' ) ) {
 
 if ( ! function_exists( 'suc_sendcloud_requires_state' ) ) {
 	/**
-     * Whether a country requires a state to be set in Sendcloud.
-     *
+	 * Whether a country requires a state to be set in Sendcloud.
+	 *
 	 * @param string $iso3166_1_land_code An ISO 3166 land code of a country to send a package to.
 	 *
 	 * @return bool Whether a country requires the state to be set in a POST request.
 	 */
-    function suc_sendcloud_requires_state( string $iso3166_1_land_code ): bool {
-        return 'US' === $iso3166_1_land_code || 'IT' === $iso3166_1_land_code || 'CA' === $iso3166_1_land_code;
-    }
+	function suc_sendcloud_requires_state( string $iso3166_1_land_code ): bool {
+		return 'US' === $iso3166_1_land_code || 'IT' === $iso3166_1_land_code || 'CA' === $iso3166_1_land_code;
+	}
 }

@@ -64,9 +64,9 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 				$synchronizer_class->setup();
 			} catch ( Exception $e ) {
 				if ( $e instanceof SUCAPIException ) {
-					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'update', $e->get_message() );
+					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'update', $e->get_message(), null );
 				} else {
-					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'update', $e->__toString() );
+					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'update', $e->__toString(), null );
 				}
 				return new WP_REST_Response(
 					array(
@@ -78,12 +78,12 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 
 			try {
 				$synchronizer_class->update_one( $invoice );
-				$synchronizer_class->create_synchronized_object( $invoice, true, 'webhook', 'update', null );
+				$synchronizer_class->create_synchronized_object( $invoice, true, 'webhook', 'update', null, null );
 			} catch ( Exception $e ) {
 				if ( $e instanceof SUCAPIException ) {
-					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'update', $e->get_message() );
+					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'update', $e->get_message(), null );
 				} else {
-					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'update', $e->__toString() );
+					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'update', $e->__toString(), null );
 				}
 				return new WP_REST_Response(
 					array(
@@ -110,9 +110,9 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 				$synchronizer_class->setup();
 			} catch ( Exception $e ) {
 				if ( $e instanceof SUCAPIException ) {
-					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'delete', $e->get_message() );
+					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'delete', $e->get_message(), null );
 				} else {
-					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'delete', $e->__toString() );
+					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'delete', $e->__toString(), null );
 				}
 
 				return new WP_REST_Response(
@@ -125,9 +125,9 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 
 			try {
 				$synchronizer_class->delete_one( $invoice );
-				$synchronizer_class->create_synchronized_object( $invoice, true, 'webhook', 'delete', null );
+				$synchronizer_class->create_synchronized_object( $invoice, true, 'webhook', 'delete', null, null );
 			} catch ( SUCAPIException $e ) {
-				$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'delete', $e->get_message() );
+				$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'delete', $e->get_message(), null );
 				return new WP_REST_Response(
 					array(
 						'error_message' => 'Failed to remove object: ' . esc_js( $e->get_message() ),
@@ -135,7 +135,7 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 					200
 				);
 			} catch ( Exception $e ) {
-				$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'delete', $e->__toString() );
+				$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'delete', $e->__toString(), null );
 				return new WP_REST_Response(
 					array(
 						'error_message' => 'Failed to remove object: ' . esc_js( $e->__toString() ),
@@ -160,7 +160,7 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 
 			$mapped_object = SUCObjectMapping::get_mapped_object( SUCInvoiceSynchronizer::$type, 'uphance', 'snelstart', $invoice['id'] );
 			if ( null !== $mapped_object ) {
-				$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'create', 'Mapped object for this type already exists.' );
+				$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'create', 'Mapped object for this type already exists.', null );
 				return new WP_REST_Response(
 					array(
 						'error_message' => 'Mapped object for this type already exists.',
@@ -173,9 +173,9 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 				$synchronizer_class->setup();
 			} catch ( Exception $e ) {
 				if ( $e instanceof SUCAPIException ) {
-					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'create', $e->get_message() );
+					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'create', $e->get_message(), null );
 				} else {
-					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'create', $e->__toString() );
+					$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'create', $e->__toString(), null );
 				}
 				return new WP_REST_Response(
 					array(
@@ -187,9 +187,9 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 
 			try {
 				$synchronizer_class->synchronize_one( $invoice );
-				$synchronizer_class->create_synchronized_object( $invoice, true, 'webhook', 'create', null );
+				$synchronizer_class->create_synchronized_object( $invoice, true, 'webhook', 'create', null, null );
 			} catch ( SUCAPIException $e ) {
-				$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'create', $e->get_message() );
+				$synchronizer_class->create_synchronized_object( $invoice, false, 'webhook', 'create', $e->get_message(), null );
 				return new WP_REST_Response(
 					array(
 						'error_message' => 'Failed to synchronize object: ' . esc_js( $e->get_message() ),
@@ -234,7 +234,7 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 		 *
 		 * @return bool Whether the secret parameter was validated correctly.
 		 */
-		public function validate_args_event( $param, WP_REST_Request $request, string $key ): bool {
+		public function validate_args_event( mixed $param, WP_REST_Request $request, string $key ): bool {
 			return 'invoice_create' === $param || 'invoice_update' === $param || 'invoice_delete' === $param;
 		}
 
@@ -247,7 +247,7 @@ if ( ! class_exists( 'SUCInvoiceRestRoute' ) ) {
 		 *
 		 * @return string Sanitized REST parameter for secret.
 		 */
-		public function sanitize_args_event( $value, WP_REST_Request $request, string $param ): string {
+		public function sanitize_args_event( mixed $value, WP_REST_Request $request, string $param ): string {
 			return strval( $value );
 		}
 

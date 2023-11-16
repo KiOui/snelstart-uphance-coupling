@@ -79,7 +79,7 @@ if ( ! class_exists( 'SettingsFactory' ) ) {
 				$from_array = new ReflectionMethod( self::$setting_types[ $type ], 'from_array' );
 				return $from_array->invoke( null, $setting_configuration );
 			} else {
-				throw new SettingsConfigurationException( "Setting type $type is not registered." );
+				throw new SettingsConfigurationException( esc_html( "Setting type $type is not registered." ) );
 			}
 		}
 

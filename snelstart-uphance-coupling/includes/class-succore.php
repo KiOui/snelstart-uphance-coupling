@@ -21,7 +21,7 @@ if ( ! class_exists( 'SUCCore' ) ) {
 		 *
 		 * @var string
 		 */
-		public string $version = '1.1.0';
+		public string $version = '1.3.0';
 
 		/**
 		 * The single instance of the class.

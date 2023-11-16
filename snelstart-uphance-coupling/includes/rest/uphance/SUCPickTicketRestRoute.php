@@ -62,7 +62,7 @@ if ( ! class_exists( 'SUCPickTicketRestRoute' ) ) {
 
 			$mapped_object = SUCObjectMapping::get_mapped_object( SUCPickTicketSynchronizer::$type, 'uphance', 'sendcloud', $pick_ticket['id'] );
 			if ( null !== $mapped_object ) {
-				$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'create', 'Mapped object for this type already exists.' );
+				$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'create', 'Mapped object for this type already exists.', null );
 				return new WP_REST_Response(
 					array(
 						'error_message' => 'Mapped object for this type already exists.',
@@ -75,9 +75,9 @@ if ( ! class_exists( 'SUCPickTicketRestRoute' ) ) {
 				$synchronizer_class->setup();
 			} catch ( Exception $e ) {
 				if ( $e instanceof SUCAPIException ) {
-					$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'create', $e->get_message() );
+					$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'create', $e->get_message(), null );
 				} else {
-					$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'create', $e->__toString() );
+					$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'create', $e->__toString(), null );
 				}
 				return new WP_REST_Response(
 					array(
@@ -89,9 +89,9 @@ if ( ! class_exists( 'SUCPickTicketRestRoute' ) ) {
 
 			try {
 				$synchronizer_class->synchronize_one( $pick_ticket );
-				$synchronizer_class->create_synchronized_object( $pick_ticket, true, 'webhook', 'create', null );
+				$synchronizer_class->create_synchronized_object( $pick_ticket, true, 'webhook', 'create', null, null );
 			} catch ( SUCAPIException $e ) {
-				$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'create', $e->get_message() );
+				$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'create', $e->get_message(), null );
 				return new WP_REST_Response(
 					array(
 						'error_message' => 'Failed to synchronize object: ' . esc_js( $e->get_message() ),
@@ -116,9 +116,9 @@ if ( ! class_exists( 'SUCPickTicketRestRoute' ) ) {
 				$synchronizer_class->setup();
 			} catch ( Exception $e ) {
 				if ( $e instanceof SUCAPIException ) {
-					$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'update', $e->get_message() );
+					$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'update', $e->get_message(), null );
 				} else {
-					$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'update', $e->__toString() );
+					$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'update', $e->__toString(), null );
 				}
 				return new WP_REST_Response(
 					array(
@@ -130,12 +130,12 @@ if ( ! class_exists( 'SUCPickTicketRestRoute' ) ) {
 
 			try {
 				$synchronizer_class->update_one( $pick_ticket );
-				$synchronizer_class->create_synchronized_object( $pick_ticket, true, 'webhook', 'update', null );
+				$synchronizer_class->create_synchronized_object( $pick_ticket, true, 'webhook', 'update', null, null );
 			} catch ( Exception $e ) {
 				if ( $e instanceof SUCAPIException ) {
-					$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'update', $e->get_message() );
+					$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'update', $e->get_message(), null );
 				} else {
-					$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'update', $e->__toString() );
+					$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'update', $e->__toString(), null );
 				}
 				return new WP_REST_Response(
 					array(
@@ -162,9 +162,9 @@ if ( ! class_exists( 'SUCPickTicketRestRoute' ) ) {
 				$synchronizer_class->setup();
 			} catch ( Exception $e ) {
 				if ( $e instanceof SUCAPIException ) {
-					$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'delete', $e->get_message() );
+					$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'delete', $e->get_message(), null );
 				} else {
-					$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'delete', $e->__toString() );
+					$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'delete', $e->__toString(), null );
 				}
 
 				return new WP_REST_Response(
@@ -177,9 +177,9 @@ if ( ! class_exists( 'SUCPickTicketRestRoute' ) ) {
 
 			try {
 				$synchronizer_class->delete_one( $pick_ticket );
-				$synchronizer_class->create_synchronized_object( $pick_ticket, true, 'webhook', 'delete', null );
+				$synchronizer_class->create_synchronized_object( $pick_ticket, true, 'webhook', 'delete', null, null );
 			} catch ( SUCAPIException $e ) {
-				$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'delete', $e->get_message() );
+				$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'delete', $e->get_message(), null );
 				return new WP_REST_Response(
 					array(
 						'error_message' => 'Failed to remove object: ' . esc_js( $e->get_message() ),
@@ -187,7 +187,7 @@ if ( ! class_exists( 'SUCPickTicketRestRoute' ) ) {
 					200
 				);
 			} catch ( Exception $e ) {
-				$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'delete', $e->__toString() );
+				$synchronizer_class->create_synchronized_object( $pick_ticket, false, 'webhook', 'delete', $e->__toString(), null );
 				return new WP_REST_Response(
 					array(
 						'error_message' => 'Failed to remove object: ' . esc_js( $e->__toString() ),
@@ -235,10 +235,19 @@ if ( ! class_exists( 'SUCPickTicketRestRoute' ) ) {
 		 */
 		public function synchronize_pick_ticket_to_sendcloud( WP_REST_Request $request ): WP_REST_Response {
 			$event = $request->get_param( 'event' );
-			if ( 'pick_ticket_create' === $event ) {
-				return $this->create_pick_ticket_in_sendcloud( $request );
-			} else if ( 'pick_ticket_update' === $event ) {
-				return $this->create_or_update_pick_ticket_in_sendcloud( $request );
+			if ( 'pick_ticket_create' === $event || 'pick_ticket_update' === $event ) {
+				$object = $request->get_param( 'pick_ticket' );
+				if ( 'shipped' === $object['status'] ) {
+					if ( 'pick_ticket_create' === $event ) {
+						return $this->create_pick_ticket_in_sendcloud( $request );
+					} else {
+						return $this->create_or_update_pick_ticket_in_sendcloud( $request );
+					}
+				} else {
+					$synchronizer_class = SUCSynchronizer::get_synchronizer_class( SUCPickTicketSynchronizer::$type );
+					$synchronizer_class->create_synchronized_object( $object, true, 'webhook', 'pick_ticket_create' === $event ? 'create' : 'update', null, null );
+					return new WP_REST_Response();
+				}
 			} else if ( 'pick_ticket_delete' === $event ) {
 				return $this->delete_pick_ticket_from_sendcloud( $request );
 			} else {
@@ -260,7 +269,7 @@ if ( ! class_exists( 'SUCPickTicketRestRoute' ) ) {
 		 *
 		 * @return bool Whether the secret parameter was validated correctly.
 		 */
-		public function validate_args_event( $param, WP_REST_Request $request, string $key ): bool {
+		public function validate_args_event( mixed $param, WP_REST_Request $request, string $key ): bool {
 			return 'pick_ticket_create' === $param || 'pick_ticket_update' === $param || 'pick_ticket_delete' === $param;
 		}
 
@@ -273,7 +282,7 @@ if ( ! class_exists( 'SUCPickTicketRestRoute' ) ) {
 		 *
 		 * @return string Sanitized REST parameter for secret.
 		 */
-		public function sanitize_args_event( $value, WP_REST_Request $request, string $param ): string {
+		public function sanitize_args_event( mixed $value, WP_REST_Request $request, string $param ): string {
 			return strval( $value );
 		}
 

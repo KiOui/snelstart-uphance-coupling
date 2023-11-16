@@ -140,7 +140,5 @@ if ( ! class_exists( 'SUCSnelstartGrootboek' ) ) {
 			$this->id                    = $id;
 			$this->uri                   = $uri;
 		}
-
-
 	}
 }

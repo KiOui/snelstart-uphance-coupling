@@ -76,6 +76,5 @@ if ( ! class_exists( 'SUCLanden' ) ) {
 			}
 			return null;
 		}
-
 	}
 }

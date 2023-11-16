@@ -56,7 +56,7 @@ abstract class SUCAPIClient {
 	 *
 	 * @return void
 	 */
-	public function reset_auth_token() {
+	public function reset_auth_token(): void {
 		$this->auth_manager->reset_token();
 	}
 
@@ -107,17 +107,17 @@ abstract class SUCAPIClient {
 	/**
 	 * Create an Exception from a response.
 	 *
-	 * @param array|WP_Error $response the response.
+	 * @param WP_Error|array $response the response.
 	 * @param string         $url the URL of the request.
 	 *
 	 * @return SUCAPIException the created exception.
 	 */
-	protected function make_exception( $response, string $url ): SUCAPIException {
+	protected function make_exception( WP_Error|array $response, string $url ): SUCAPIException {
 		$msg = self::get_error_message( wp_remote_retrieve_body( $response ) );
 		return new SUCAPIException(
 			intval( wp_remote_retrieve_response_code( $response ) ),
 			-1,
-			$msg,
+			esc_html( $msg ),
 			null,
 			gettype( wp_remote_retrieve_headers( $response ) ) === 'array' ? wp_remote_retrieve_headers( $response ) : wp_remote_retrieve_headers( $response )->getAll(),
 		);
@@ -188,17 +188,17 @@ abstract class SUCAPIClient {
 
 		$response = wp_remote_get( $url, $args );
 		if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) < 200 || wp_remote_retrieve_response_code( $response ) >= 300 ) {
-			throw $this->make_exception( $response, $url );
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Response will be escaped in make_exception function.
+			throw $this->make_exception( $response, esc_html( $url ) );
 		} else {
 			$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
 			if ( isset( $decoded ) ) {
 				return $decoded;
+			} elseif ( $expect_data ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Response will be escaped in make_exception function.
+					throw $this->make_exception( $response, esc_html( $url ) );
 			} else {
-				if ( $expect_data ) {
-					throw $this->make_exception( $response, $url );
-				} else {
-					return array();
-				}
+				return array();
 			}
 		}
 	}

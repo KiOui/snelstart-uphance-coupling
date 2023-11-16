@@ -113,7 +113,7 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		public function run(): void {
 			$amount_of_invoices = count( $this->invoices );
 
-			for ( $i = 0; $i < $amount_of_invoices; $i ++ ) {
+			for ( $i = 0; $i < $amount_of_invoices; $i++ ) {
 				if ( ! $this->object_already_successfully_synchronized( $this->invoices[ $i ]['id'] ) ) {
 					try {
 						$this->synchronize_one( $this->invoices[ $i ] );
@@ -122,6 +122,7 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 							true,
 							'cron',
 							'create',
+							null,
 							null
 						);
 					} catch ( SUCAPIException $e ) {
@@ -130,7 +131,8 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 							false,
 							'cron',
 							'create',
-							$e->get_message()
+							$e->get_message(),
+							null
 						);
 					} catch ( Exception $e ) {
 						$this->create_synchronized_object(
@@ -138,7 +140,8 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 							false,
 							'cron',
 							'create',
-							$e->__toString()
+							$e->__toString(),
+							null
 						);
 					}
 				}
@@ -153,11 +156,15 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		 * @param string      $source The source of the synchronization.
 		 * @param string      $method The method of the synchronization.
 		 * @param string|null $error_message A possible error message that occurred during synchronization.
+		 * @param array|null  $extra_data Possible extra data.
 		 *
 		 * @return void
 		 */
-		public function create_synchronized_object( array $object, bool $succeeded, string $source, string $method, ?string $error_message ) {
-			$extra_data = array();
+		public function create_synchronized_object( array $object, bool $succeeded, string $source, string $method, ?string $error_message, ?array $extra_data ): void {
+			if ( null === $extra_data ) {
+				$extra_data = array();
+			}
+
 			if ( array_key_exists( 'invoice_number', $object ) ) {
 				$extra_data['Invoice number'] = $object['invoice_number'];
 			}
@@ -186,18 +193,18 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		private function setup_invoice_for_synchronisation( array $invoice ): array {
 			$invoice_id = $invoice['id'];
 			$customer                    = $this->uphance_client->customer_by_id( $invoice['company_id'] )['customer'];
-			$grootboek_regels            = suc_construct_order_line_items( $invoice['line_items'], $this->btw_converter );
-			$btw_regels                  = suc_construct_btw_line_items( $invoice['line_items'] );
+			$grootboek_regels            = suc_construct_order_line_items( $invoice['line_items'], $invoice['shipping_cost'] > 0 ? $invoice['shipping_cost'] : null, $invoice['shipping_cost'] > 0 ? $invoice['shipping_tax'] : null, $this->btw_converter );
+			$btw_regels                  = suc_construct_btw_line_items( $invoice['line_items'], $invoice['shipping_cost'] > 0 ? $invoice['shipping_cost'] : null, $invoice['shipping_cost'] > 0 ? $invoice['shipping_tax'] : null );
 			$snelstart_relatie_for_order = get_or_create_relatie_with_name( $this->snelstart_client, $customer );
 			$betalingstermijn            = suc_convert_date_to_amount_of_days_until( $invoice['due_date'] );
 
 			if ( ! isset( $snelstart_relatie_for_order ) ) {
 				$name = $customer['name'];
-				throw new Exception( __( 'Failed to synchronize %1$s because customer %2$s could not be found and created in Snelstart.', 'snelstart-uphance-coupling' ), $invoice_id, $name );
+				throw new Exception( esc_html( sprintf( __( 'Failed to synchronize %1$s because customer %2$s could not be found and created in Snelstart.', 'snelstart-uphance-coupling' ), $invoice_id, $name ) ) );
 			}
 
 			if ( ! isset( $betalingstermijn ) ) {
-				throw new Exception( __( 'Failed to synchronize %1$s because invoice due date could not be converted.', 'snelstart-uphance-coupling' ), $invoice_id );
+				throw new Exception( esc_html( sprintf( __( 'Failed to synchronize %1$s because invoice due date could not be converted.', 'snelstart-uphance-coupling' ), $invoice_id ) ) );
 			}
 
 			try {
@@ -212,7 +219,7 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 					'id' => $snelstart_relatie_for_order['id'],
 				),
 				'boekingsregels' => $grootboek_regels,
-				'factuurbedrag' => suc_format_number( $invoice['items_total'] + $invoice['items_tax'] ),
+				'factuurbedrag' => suc_format_number( $invoice['items_total'] + $invoice['items_tax'] + $invoice['shipping_cost'] + $invoice['shipping_tax'] ),
 				'betalingstermijn' => $betalingstermijn,
 				'factuurdatum' => $invoice_date->format( 'Y-m-d H:i:s' ),
 				'btw' => $btw_regels,

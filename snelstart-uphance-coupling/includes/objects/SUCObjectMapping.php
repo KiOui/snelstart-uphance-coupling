@@ -215,6 +215,5 @@ if ( ! class_exists( 'SUCObjectMapping' ) ) {
 				)
 			);
 		}
-
 	}
 }

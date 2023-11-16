@@ -111,10 +111,23 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 		 * @param string      $source The source of the synchronization.
 		 * @param string      $method The method of the synchronization.
 		 * @param string|null $error_message A possible error message that occurred during synchronization.
+		 * @param array|null  $extra_data Possible extra data.
 		 *
 		 * @return void
 		 */
-		public function create_synchronized_object( array $object, bool $succeeded, string $source, string $method, ?string $error_message ) {
+		public function create_synchronized_object( array $object, bool $succeeded, string $source, string $method, ?string $error_message, ?array $extra_data ): void {
+			if ( null === $extra_data ) {
+				$extra_data = array();
+			}
+
+			if ( array_key_exists( 'credit_note_number', $object ) ) {
+				$extra_data['Credit note number'] = $object['credit_note_number'];
+			}
+
+			if ( array_key_exists( 'grand_total', $object ) ) {
+				$extra_data['Total'] = suc_format_number( $object['grand_total'] );
+			}
+
 			SUCSynchronizedObjects::create_synchronized_object(
 				intval( $object['id'] ),
 				$this::$type,
@@ -123,10 +136,7 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 				$method,
 				$this::get_url( $object ),
 				$error_message,
-				array(
-					'Credit note number' => $object['credit_note_number'],
-					'Total' => suc_format_number( $object['grand_total'] ),
-				),
+				$extra_data
 			);
 		}
 
@@ -138,18 +148,18 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 		public function run(): void {
 			$amount_of_credit_notes = count( $this->credit_notes );
 
-			for ( $i = 0; $i < $amount_of_credit_notes; $i ++ ) {
+			for ( $i = 0; $i < $amount_of_credit_notes; $i++ ) {
 				if ( ! $this->object_already_successfully_synchronized( $this->credit_notes[ $i ]['id'] ) ) {
 					try {
 						$this->synchronize_one( $this->credit_notes[ $i ] );
-						$this->create_synchronized_object( $this->credit_notes[ $i ], true, 'cron', 'create', null );
+						$this->create_synchronized_object( $this->credit_notes[ $i ], true, 'cron', 'create', null, null );
 					} catch ( Exception $e ) {
 						if ( get_class( $e ) === 'SUCAPIException' ) {
 							$message = $e->get_message();
 						} else {
 							$message = $e->__toString();
 						}
-						$this->create_synchronized_object( $this->credit_notes[ $i ], false, 'cron', 'create', $message );
+						$this->create_synchronized_object( $this->credit_notes[ $i ], false, 'cron', 'create', $message, null );
 					}
 				}
 			}
@@ -201,7 +211,7 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 
 			if ( ! isset( $snelstart_relatie_for_order ) ) {
 				$name = $customer['name'];
-				throw new Exception( __( 'Failed to synchronize %1$s because customer %2$s could not be found and created in Snelstart.', 'snelstart-uphance-coupling' ), $credit_note_id, $name );
+				throw new Exception( esc_html( sprintf( __( 'Failed to synchronize %1$s because customer %2$s could not be found and created in Snelstart.', 'snelstart-uphance-coupling' ), $credit_note_id, $name ) ) );
 			}
 
 			try {

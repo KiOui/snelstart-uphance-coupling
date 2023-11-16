@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! class_exists( 'SettingsMenu' ) ) {
+if ( ! class_exists( 'SettingsPage' ) ) {
 	/**
 	 * Page for Settings.
 	 *
@@ -90,12 +90,13 @@ if ( ! class_exists( 'SettingsMenu' ) ) {
 		/**
 		 * Register the menu in WordPress.
 		 *
-		 * @param string $parent_slug the slug of the parent to register this menu on.
+		 * @param string   $parent_slug the slug of the parent to register this menu on.
+		 * @param Settings $settings the settings to register.
 		 *
 		 * @return void
 		 * @throws SettingsConfigurationException When a setting was not found.
 		 */
-		public function register( string $parent_slug, Settings $settings ) {
+		public function register( string $parent_slug, Settings $settings ): void {
 			$this->register_self( $parent_slug );
 			$this->register_settings_sections( $settings );
 		}
@@ -107,7 +108,7 @@ if ( ! class_exists( 'SettingsMenu' ) ) {
 		 *
 		 * @return void
 		 */
-		public function register_self( string $parent_slug ) {
+		public function register_self( string $parent_slug ): void {
 			add_submenu_page(
 				$parent_slug,
 				$this->page_title,
@@ -124,7 +125,7 @@ if ( ! class_exists( 'SettingsMenu' ) ) {
 		 *
 		 * @throws SettingsConfigurationException When a setting can not be found in the configuration.
 		 */
-		public function register_settings_sections( Settings $settings ) {
+		public function register_settings_sections( Settings $settings ): void {
 			foreach ( $this->settings_sections as $settings_section ) {
 				$settings_section->register( $this->menu_slug, $settings );
 			}

@@ -145,6 +145,5 @@ if ( ! class_exists( 'SUCSendcloudClient' ) ) {
 				null,
 			);
 		}
-
 	}
 }

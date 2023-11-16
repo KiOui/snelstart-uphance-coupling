@@ -335,6 +335,5 @@ if ( ! class_exists( 'SUCSynchronizedObjects' ) ) {
 				)
 			);
 		}
-
 	}
 }

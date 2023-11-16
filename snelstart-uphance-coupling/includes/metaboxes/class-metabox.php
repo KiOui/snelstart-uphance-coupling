@@ -2,7 +2,7 @@
 /**
  * Metabox class
  *
- * @package beestfeest-ragweek-plugin
+ * @package snelstart-uphance-coupling
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'Metabox' ) ) {
 	/**
-	 * WidCol Metabox class
+	 * Metabox class
 	 *
 	 * This class is able to render a custom metabox with a custom specification of fields.
 	 *
@@ -48,7 +48,7 @@ if ( ! class_exists( 'Metabox' ) ) {
 		private $meta_box_title;
 
 		/**
-		 * WidgetCollectionMetabox constructor.
+		 * Metabox constructor.
 		 *
 		 * @param string $meta_box_name the post type to add this custom meta box to.
 		 * @param array  $meta_fields array of (label: Label of meta box, desc: Description of meta box, id: ID of meta box
@@ -246,14 +246,13 @@ if ( ! class_exists( 'Metabox' ) ) {
 						if ( $value_updated ) {
 							update_post_meta( $post_id, $field['id'], $new );
 						}
+                    // phpcs:ignore Universal.ControlStructures.DisallowLonelyIf.Found -- Structure of this else is more clear.
 					} else {
 						// Value has been removed or is not set.
 						if ( $field['required'] ) {
 							update_post_meta( $post_id, $field['id'], $field['default'] );
-						} else {
-							if ( $value_updated ) {
-								delete_post_meta( $post_id, $field['id'], $old );
-							}
+						} elseif ( $value_updated ) {
+							delete_post_meta( $post_id, $field['id'], $old );
 						}
 					}
 				}

@@ -244,7 +244,7 @@ if ( ! function_exists( 'suc_get_settings_screen_config' ) ) {
 					'menu_title'        => esc_html__( 'Dashboard', 'snelstart-uphance-coupling' ),
 					'capability_needed' => 'edit_plugins',
 					'menu_slug'         => 'suc_admin_menu',
-					'renderer'          => function() {
+					'renderer'          => function () {
 						include_once SUC_ABSPATH . 'views/suc-admin-dashboard-view.php';
 					},
 					'settings_sections' => array(
