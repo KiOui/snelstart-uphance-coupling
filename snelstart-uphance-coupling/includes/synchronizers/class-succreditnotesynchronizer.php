@@ -205,8 +205,8 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 			}
 
 			$credit_note_id              = $credit_note['id'];
-			$grootboek_regels            = suc_construct_order_line_items( $credit_note['line_items'], $this->btw_converter );
-			$btw_regels                  = suc_construct_btw_line_items( $credit_note['line_items'] );
+			$grootboek_regels            = suc_construct_order_line_items( $credit_note['line_items'], null, null, $this->btw_converter );
+			$btw_regels                  = suc_construct_btw_line_items( $credit_note['line_items'], null, null );
 			$snelstart_relatie_for_order = get_or_create_relatie_with_name( $this->snelstart_client, $customer );
 
 			if ( ! isset( $snelstart_relatie_for_order ) ) {
@@ -272,13 +272,15 @@ if ( ! class_exists( 'SUCCreditNoteSynchronizer' ) ) {
 			$manager                = SUCSettings::instance()->get_settings();
 			$grootboekcode_btw_hoog = $manager->get_value( 'snelstart_grootboekcode_btw_hoog' );
 			$grootboekcode_btw_geen = $manager->get_value( 'snelstart_grootboekcode_btw_geen' );
-			if ( ! isset( $grootboekcode_btw_hoog ) || ! isset( $grootboekcode_btw_geen ) ) {
+			$grootboekcode_btw_hoog_shipping = $manager->get_value( 'snelstart_grootboekcode_shipping_costs_btw_hoog' );
+			$grootboekcode_btw_geen_shipping = $manager->get_value( 'snelstart_grootboekcode_shipping_costs_btw_geen' );
+			if ( ! isset( $grootboekcode_btw_hoog ) || ! isset( $grootboekcode_btw_geen ) || ! isset( $grootboekcode_btw_hoog_shipping ) || ! isset( $grootboekcode_btw_geen_shipping ) ) {
 				throw new Exception( 'Grootboekcodes must be set in order to use Credit note synchronizer' );
 			}
 
 			$tax_types = $this->snelstart_client->btwtarieven();
 
-			$this->btw_converter = new SUCBTW( $grootboekcode_btw_hoog, $grootboekcode_btw_geen, $tax_types );
+			$this->btw_converter = new SUCBTW( $grootboekcode_btw_hoog, $grootboekcode_btw_geen, $grootboekcode_btw_hoog_shipping, $grootboekcode_btw_geen_shipping, $tax_types );
 		}
 
 		/**

@@ -264,16 +264,18 @@ if ( ! class_exists( 'SUCInvoiceSynchronizer' ) ) {
 		 * @throws Exception When setup of the class fails.
 		 */
 		public function setup(): void {
-			$manager          = SUCSettings::instance()->get_settings();
+			$manager                = SUCSettings::instance()->get_settings();
 			$grootboekcode_btw_hoog = $manager->get_value( 'snelstart_grootboekcode_btw_hoog' );
 			$grootboekcode_btw_geen = $manager->get_value( 'snelstart_grootboekcode_btw_geen' );
-			if ( ! isset( $grootboekcode_btw_hoog ) || ! isset( $grootboekcode_btw_geen ) ) {
+			$grootboekcode_btw_hoog_shipping = $manager->get_value( 'snelstart_grootboekcode_shipping_costs_btw_hoog' );
+			$grootboekcode_btw_geen_shipping = $manager->get_value( 'snelstart_grootboekcode_shipping_costs_btw_geen' );
+			if ( ! isset( $grootboekcode_btw_hoog ) || ! isset( $grootboekcode_btw_geen ) || ! isset( $grootboekcode_btw_hoog_shipping ) || ! isset( $grootboekcode_btw_geen_shipping ) ) {
 				throw new Exception( 'Grootboekcodes must be set in order to use Credit note synchronizer' );
 			}
 
 			$tax_types = $this->snelstart_client->btwtarieven();
 
-			$this->btw_converter = new SUCBTW( $grootboekcode_btw_hoog, $grootboekcode_btw_geen, $tax_types );
+			$this->btw_converter = new SUCBTW( $grootboekcode_btw_hoog, $grootboekcode_btw_geen, $grootboekcode_btw_hoog_shipping, $grootboekcode_btw_geen_shipping, $tax_types );
 		}
 
 		/**

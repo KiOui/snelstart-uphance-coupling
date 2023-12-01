@@ -60,6 +60,20 @@ if ( ! class_exists( 'SUCBTW' ) ) {
 		private string $grootboekcode_btw_geen;
 
 		/**
+		 * Grootboekcode for BTW Hoog post (shipping).
+		 *
+		 * @var string
+		 */
+		private string $grootboekcode_btw_hoog_shipping;
+
+		/**
+		 * Grootboekcode for BTW None post (shipping).
+		 *
+		 * @var string
+		 */
+		private string $grootboekcode_btw_geen_shipping;
+
+		/**
 		 * Tax types.
 		 *
 		 * @var array
@@ -71,11 +85,15 @@ if ( ! class_exists( 'SUCBTW' ) ) {
 		 *
 		 * @param string $grootboekcode_btw_hoog the grootboekcode for BTW hoog items.
 		 * @param string $grootboekcode_btw_geen the grootboekcode for BTW laag items.
+		 * @param string $grootboekcode_btw_hoog_shipping the grootboekcode for BTW hoog items (shipping only).
+		 * @param string $grootboekcode_btw_geen_shipping the grootboekcode for BTW laag items (shipping only).
 		 * @param array  $tax_types the tax types registered in Snelstart.
 		 */
-		public function __construct( string $grootboekcode_btw_hoog, string $grootboekcode_btw_geen, array $tax_types ) {
+		public function __construct( string $grootboekcode_btw_hoog, string $grootboekcode_btw_geen, string $grootboekcode_btw_hoog_shipping, string $grootboekcode_btw_geen_shipping, array $tax_types ) {
 			$this->grootboekcode_btw_hoog = $grootboekcode_btw_hoog;
 			$this->grootboekcode_btw_geen = $grootboekcode_btw_geen;
+			$this->grootboekcode_btw_hoog_shipping = $grootboekcode_btw_hoog_shipping;
+			$this->grootboekcode_btw_geen_shipping = $grootboekcode_btw_geen_shipping;
 			$this->tax_types              = $tax_types;
 		}
 
@@ -100,17 +118,23 @@ if ( ! class_exists( 'SUCBTW' ) ) {
 		 * Get a grootboekcode for a tax amount.
 		 *
 		 * @param float $btw_amount the BTW amount to get the grootboekcode for.
+		 * @param bool  $is_shipping whether to retrieve the grootboekcode for a shipping item.
 		 *
 		 * @return string|null the grootboekcode ID or null if it does not exist.
 		 */
-		public function get_grootboekcode_for_tax_amount( float $btw_amount ): ?string {
-			if ( self::$btw_none === $btw_amount ) {
-				return $this->grootboekcode_btw_geen;
+		public function get_grootboekcode_for_tax_amount( float $btw_amount, bool $is_shipping = false ): ?string {
+			if ( $is_shipping ) {
+				if ( self::$btw_none == $btw_amount ) {
+					return $this->grootboekcode_btw_geen_shipping;
+				} else if ( self::$btw_hoog == $btw_amount ) {
+					return $this->grootboekcode_btw_hoog_shipping;
+				}
+			} elseif ( self::$btw_none === $btw_amount ) {
+					return $this->grootboekcode_btw_geen;
 			} else if ( self::$btw_hoog === $btw_amount ) {
 				return $this->grootboekcode_btw_hoog;
-			} else {
-				return null;
 			}
+			return null;
 		}
 
 		/**

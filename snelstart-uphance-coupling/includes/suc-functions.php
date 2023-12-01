@@ -556,7 +556,7 @@ if ( ! function_exists( 'suc_construct_order_line_items' ) ) {
 
 		if ( null !== $shipping_costs && $shipping_costs > 0 ) {
 			$tax_level = intval( $shipping_tax / $shipping_costs * 100 );
-			$grootboekcode = $btw_converter->get_grootboekcode_for_tax_amount( $tax_level );
+			$grootboekcode = $btw_converter->get_grootboekcode_for_tax_amount( $tax_level, true );
 			$tax_type = $btw_converter->convert_btw_amount_to_type( $tax_level );
 			if ( ! isset( $tax_type ) ) {
 				throw new Exception( esc_html( sprintf( __( 'Failed to get tax type for %.2F.', 'snelstart-uphance-coupling' ), $tax_level ) ) );

@@ -128,6 +128,28 @@ if ( ! function_exists( 'suc_get_settings_config' ) ) {
 					),
 				),
 				array(
+					'type'        => 'callable_choice',
+					'id'          => 'snelstart_grootboekcode_shipping_costs_btw_hoog',
+					'name'        => __( 'Snelstart Ledger code', 'snelstart-uphance-coupling' ),
+					'can_be_null' => true,
+					'hint'        => __( 'Snelstart Ledger code for Shipping costs (BTW hoog).', 'snelstart-uphance-coupling' ),
+					'callable'    => 'suc_get_grootboek_choices',
+					'conditions'  => array(
+						new FieldsSetSettingsCondition( array( 'snelstart_client_key', 'snelstart_subscription_key' ) ),
+					),
+				),
+				array(
+					'type'        => 'callable_choice',
+					'id'          => 'snelstart_grootboekcode_shipping_costs_btw_geen',
+					'name'        => __( 'Snelstart Ledger code', 'snelstart-uphance-coupling' ),
+					'can_be_null' => true,
+					'hint'        => __( 'Snelstart Ledger code for Shipping costs (BTW geen).', 'snelstart-uphance-coupling' ),
+					'callable'    => 'suc_get_grootboek_choices',
+					'conditions'  => array(
+						new FieldsSetSettingsCondition( array( 'snelstart_client_key', 'snelstart_subscription_key' ) ),
+					),
+				),
+				array(
 					'type'        => 'text',
 					'id'          => 'sendcloud_public_key',
 					'name'        => __( 'Sendcloud Public Key', 'snelstart-uphance-coupling' ),
@@ -270,6 +292,8 @@ if ( ! function_exists( 'suc_get_settings_screen_config' ) ) {
 								'snelstart_grootboekcode_debiteuren',
 								'snelstart_grootboekcode_btw_hoog',
 								'snelstart_grootboekcode_btw_geen',
+								'snelstart_grootboekcode_shipping_costs_btw_hoog',
+								'snelstart_grootboekcode_shipping_costs_btw_geen',
 							),
 						),
 						array(
