@@ -302,10 +302,9 @@ if ( ! function_exists( 'cron_runner_sync_all' ) ) {
 		include_once SUC_ABSPATH . 'includes/synchronizers/class-sucsynchronizer.php';
 
 		$uphance_client   = SUCUphanceClient::instance();
-		$snelstart_client = SUCSnelstartClient::instance();
 		$settings_manager = SUCSettings::instance()->get_settings();
 
-		if ( ! isset( $uphance_client ) || ! isset( $snelstart_client ) ) {
+		if ( ! isset( $uphance_client ) ) {
 			return;
 		}
 

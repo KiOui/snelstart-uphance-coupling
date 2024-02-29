@@ -334,6 +334,11 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 				$pick_tickets = $this->uphance_client->pick_tickets()->result;
 			}
 
+            echo '<pre>';
+            print_r( $pick_tickets );
+            echo '</pre>';
+            exit;
+
 			$pick_tickets = $pick_tickets['pick_tickets'];
 
 			if ( isset( $max_to_sync ) ) {

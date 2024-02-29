@@ -229,6 +229,19 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 			return new SUCAPIPaginatedResult( $response );
 		}
 
+        /**
+         * Get the box items of a pick ticket.
+         *
+         * @param int $pick_ticket_id The ID of the pick ticket for which to get the box items.
+         *
+         * @return array the result of the box items
+         * @throws SUCAPIException On exception with API request.
+         */
+        public function pick_ticket_box_items( int $pick_ticket_id ): array {
+            $url = "pick_tickets/$pick_ticket_id/box_items";
+            return $this->_get( $url, null, null );
+        }
+
 		/**
 		 * Get Customer by ID.
 		 *
