@@ -322,22 +322,25 @@ if ( ! class_exists( 'SUCPickTicketSynchronizer' ) ) {
 			}
 		}
 
+		private function
+
 		/**
 		 * Get the pick tickets to sync.
 		 *
 		 * @throws SUCAPIException On Exception with the API.
 		 */
 		private function get_pick_tickets_to_sync( ?string $pick_tickets_from, ?int $max_to_sync ): array {
+			$box_items = $this->uphance_client->pick_ticket_box_items( 951897 );
+			echo '<pre>';
+			print_r( $box_items );
+			echo '</pre>';
+			exit;
+
 			if ( isset( $pick_tickets_from ) ) {
 				$pick_tickets = $this->uphance_client->pick_tickets( $pick_tickets_from )->result;
 			} else {
 				$pick_tickets = $this->uphance_client->pick_tickets()->result;
 			}
-
-            echo '<pre>';
-            print_r( $pick_tickets );
-            echo '</pre>';
-            exit;
 
 			$pick_tickets = $pick_tickets['pick_tickets'];
 

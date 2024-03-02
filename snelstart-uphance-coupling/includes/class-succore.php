@@ -149,6 +149,7 @@ if ( ! class_exists( 'SUCCore' ) ) {
 			include_once SUC_ABSPATH . '/includes/objects/SUCSynchronizedObjects.php';
 			include_once SUC_ABSPATH . '/includes/objects/SUCObjectMapping.php';
 			include_once SUC_ABSPATH . '/includes/suc-functions.php';
+			include_once SUC_ABSPATH . '/includes/model/collect/collect.php';
 			include_once SUC_ABSPATH . '/includes/synchronizers/class-sucsynchronizer.php';
 			include_once SUC_ABSPATH . '/includes/synchronizers/class-succreditnotesynchronizer.php';
 			include_once SUC_ABSPATH . '/includes/synchronizers/class-sucinvoicesynchronizer.php';
