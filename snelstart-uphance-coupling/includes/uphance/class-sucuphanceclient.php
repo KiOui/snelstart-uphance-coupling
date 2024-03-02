@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 include_once SUC_ABSPATH . 'includes/client/class-sucapiclient.php';
 include_once SUC_ABSPATH . 'includes/uphance/class-sucuphanceauthclient.php';
 include_once SUC_ABSPATH . 'includes/client/class-sucapipaginatedresult.php';
+include_once SUC_ABSPATH . 'includes/uphance/model/SUCShipmentBox.php';
 
 if ( ! class_exists( 'SUCUphanceClient' ) ) {
 	/**
@@ -229,18 +230,29 @@ if ( ! class_exists( 'SUCUphanceClient' ) ) {
 			return new SUCAPIPaginatedResult( $response );
 		}
 
-        /**
-         * Get the box items of a pick ticket.
-         *
-         * @param int $pick_ticket_id The ID of the pick ticket for which to get the box items.
-         *
-         * @return array the result of the box items
-         * @throws SUCAPIException On exception with API request.
-         */
-        public function pick_ticket_box_items( int $pick_ticket_id ): array {
-            $url = "pick_tickets/$pick_ticket_id/box_items";
-            return $this->_get( $url, null, null );
-        }
+		/**
+		 * Get the box items of a pick ticket.
+		 *
+		 * @param int  $pick_ticket_id The ID of the pick ticket for which to get the box items.
+		 * @param bool $convert_object Whether to convert the value from the API endpoint to an object.
+		 *
+		 * @return array the result of the box items
+		 * @throws SUCAPIException On exception with API request.
+		 */
+		public function pick_ticket_box_items( int $pick_ticket_id, bool $convert_object = true ): array {
+			$url = "pick_tickets/$pick_ticket_id/box_items";
+			$value = $this->_get( $url, null, null );
+			if ( false === $convert_object ) {
+				return $value;
+			}
+			$converted_object = array();
+			foreach ( $value['shipment_boxes'] as $value_single ) {
+				$converted_object[] = SUCShipmentBox::from_json( $value_single );
+			}
+			return array(
+				'shipment_boxes' => $converted_object,
+			);
+		}
 
 		/**
 		 * Get Customer by ID.

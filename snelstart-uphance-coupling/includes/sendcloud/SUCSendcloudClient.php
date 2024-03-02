@@ -93,8 +93,8 @@ if ( ! class_exists( 'SUCSendcloudClient' ) ) {
 		 * @throws SUCAPIException On Exception with the request.
 		 */
 		public function create_parcel( array $data ): array {
-            // TODO
-            return [];
+			// TODO
+			return array();
 			return $this->_post(
 				'parcels',
 				null,
