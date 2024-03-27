@@ -90,9 +90,9 @@ abstract class SUCAPIClient {
 		if ( gettype( $decoded_json ) === 'array' ) {
 			if ( key_exists( 'message', $decoded_json ) ) {
 				return $decoded_json['message'];
-			} else if ( key_exists( 0, $decoded_json ) && key_exists( 'message', $decoded_json[0] ) ) {
+			} else if ( key_exists( 0, $decoded_json ) && gettype( $decoded_json[0] ) === 'array' && key_exists( 'message', $decoded_json[0] ) ) {
 				return $decoded_json[0]['message'];
-			} else if ( key_exists( 'error', $decoded_json ) && key_exists( 'message', $decoded_json['error'] ) ) {
+			} else if ( key_exists( 'error', $decoded_json ) && gettype( $decoded_json['error'] ) === 'array' && key_exists( 'message', $decoded_json['error'] ) ) {
 				return $decoded_json['error']['message'];
 			} else {
 				return $body;
